@@ -27,10 +27,14 @@ fn handle_msgq(rx: mpsc::Receiver<Command>) {
     }
     let result1 = method::list_nodes();
     println!("{:#?}", result1);
-    let result2 = method::list_node_units("nuc-cent");
-    println!("{:#?}", result2);
-    let result3 = method::unit_lifecycle(method::Lifecycle::Stop, "nuc-cent", "pr-pong.service");
+    //let result2 = method::list_node_units("nuc-cent");
+    //println!("{:#?}", result2);
+    let result3 = method::unit_lifecycle(method::Lifecycle::Restart, "nuc-cent", "pr-pingpong.service");
     println!("{:#?}", result3);
+    //let result4 = method::enable_unit("nuc-cent", "bluechi-agent.service");
+    //println!("{:#?}", result4);
+    let result5 = method::disable_unit("nuc-cent", "bluechi-controller.service");
+    println!("{:#?}", result5);
 }
 
 pub fn run() {

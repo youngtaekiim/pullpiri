@@ -84,6 +84,7 @@ pub fn unit_lifecycle(life_cycle: Lifecycle, node_name: &str, unit_name: &str) -
 }
 
 pub fn enable_unit(node_name: &str, unit_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let unit_vector = vec![unit_name.to_string()];
     let conn = Connection::new_system()?;
 
     let bluechi = conn.with_proxy(
@@ -101,7 +102,7 @@ pub fn enable_unit(node_name: &str, unit_name: &str) -> Result<(), Box<dyn std::
         .method_call(
             "org.eclipse.bluechi.Node",
             "EnableUnitFiles",
-            (unit_name, false, false),
+            (unit_vector, false, false),
         )?;
 
     if carries_install_info {
@@ -122,6 +123,7 @@ pub fn enable_unit(node_name: &str, unit_name: &str) -> Result<(), Box<dyn std::
 }
 
 pub fn disable_unit(node_name: &str, unit_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let unit_vector = vec![unit_name.to_string()];
     let conn = Connection::new_system()?;
 
     let bluechi = conn.with_proxy(
@@ -139,7 +141,7 @@ pub fn disable_unit(node_name: &str, unit_name: &str) -> Result<(), Box<dyn std:
         .method_call(
             "org.eclipse.bluechi.Node",
             "DisableUnitFiles",
-            (unit_name, false),
+            (unit_vector, false),
         )?;
 
     for (op_type, file_name, file_dest) in changes {
