@@ -52,8 +52,12 @@ pub fn list_node_units(node_name: &str) -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
-pub fn unit_lifecycle(life_cycle: Lifecycle, node_name: &str, unit_name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let method:&str = match life_cycle {
+pub fn unit_lifecycle(
+    life_cycle: Lifecycle,
+    node_name: &str,
+    unit_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let method: &str = match life_cycle {
         Lifecycle::Start => "StartUnit",
         Lifecycle::Stop => "StopUnit",
         Lifecycle::Restart => "RestartUnit",
@@ -72,11 +76,8 @@ pub fn unit_lifecycle(life_cycle: Lifecycle, node_name: &str, unit_name: &str) -
 
     let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
 
-    let (job_path,): (Path,) = node_proxy.method_call(
-        "org.eclipse.bluechi.Node",
-        method,
-        (unit_name, "replace"),
-    )?;
+    let (job_path,): (Path,) =
+        node_proxy.method_call("org.eclipse.bluechi.Node", method, (unit_name, "replace"))?;
 
     println!("{method} '{unit_name}' on node '{node_name}': {job_path}");
 
@@ -137,12 +138,11 @@ pub fn disable_unit(node_name: &str, unit_name: &str) -> Result<(), Box<dyn std:
 
     let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
 
-    let (changes,): (Vec<(String, String, String)>,) = node_proxy
-        .method_call(
-            "org.eclipse.bluechi.Node",
-            "DisableUnitFiles",
-            (unit_vector, false),
-        )?;
+    let (changes,): (Vec<(String, String, String)>,) = node_proxy.method_call(
+        "org.eclipse.bluechi.Node",
+        "DisableUnitFiles",
+        (unit_vector, false),
+    )?;
 
     for (op_type, file_name, file_dest) in changes {
         if op_type == "symlink" {
