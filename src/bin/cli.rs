@@ -17,7 +17,7 @@ fn main() {
     let publisher = domain_participant.create_publisher(&qos).unwrap();
     let piccolo_internal_topic = domain_participant
         .create_topic(
-            "let piccolo_internal_topic".to_string(),
+            "piccolo_internal_topic".to_string(),
             "PiccoloInternalDdsType".to_string(),
             &qos,
             TopicKind::NoKey,

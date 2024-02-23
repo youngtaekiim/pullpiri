@@ -28,7 +28,7 @@ fn ddsmsg_to_msgq(tx: mpsc::Sender<Command>) {
     let subscriber = domain_participant.create_subscriber(&qos).unwrap();
     let piccolo_internal_topic = domain_participant
         .create_topic(
-            "let piccolo_internal_topic".to_string(),
+            "piccolo_internal_topic".to_string(),
             "PiccoloInternalDdsType".to_string(),
             &qos,
             TopicKind::NoKey,
