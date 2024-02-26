@@ -2,12 +2,12 @@ use rustdds::*;
 use serde::{Deserialize, Serialize};
 use std::thread;
 
-fn main() {
-    #[derive(Serialize, Deserialize, Debug)]
-    struct PiccoloInternalDdsType {
-        msg: String,
-    }
+#[derive(Serialize, Deserialize, Debug)]
+struct PiccoloInternalDdsType {
+    msg: String,
+}
 
+pub fn run(config: String) {
     let domain_participant = DomainParticipant::new(0).unwrap();
     let qos = QosPolicyBuilder::new()
         .reliability(policy::Reliability::Reliable {
@@ -30,7 +30,7 @@ fn main() {
 
     let dds_sender = thread::spawn(move || loop {
         let some_data = PiccoloInternalDdsType {
-            msg: String::from("hello123"),
+            msg: config.clone(),
         };
         let result = writer.write(some_data, None);
         let _result = match result {
@@ -39,7 +39,8 @@ fn main() {
                 panic!("error : {:?}", error)
             }
         };
-        thread::sleep(std::time::Duration::from_millis(1000));
+        thread::sleep(std::time::Duration::from_millis(5000));
+        break;
     });
     dds_sender.join().unwrap();
 }

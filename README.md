@@ -4,7 +4,8 @@ Piccolo for bluechi.
 ## Getting started
 ```sh
 cargo build
-cargo run --bin piccolo-bluechi
+cargo run --bin piccolod
+cargo run --bin piccoloctl
 ```
 
 ## API
