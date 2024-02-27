@@ -9,49 +9,6 @@ pub enum Lifecycle {
     Reload,
 }
 
-pub fn list_nodes() -> Result<(), Box<dyn std::error::Error>> {
-    let conn = Connection::new_system()?;
-
-    let bluechi = conn.with_proxy(
-        "org.eclipse.bluechi",
-        "/org/eclipse/bluechi",
-        Duration::from_millis(5000),
-    );
-
-    let (nodes,): (Vec<(String, dbus::Path, String)>,) =
-        bluechi.method_call("org.eclipse.bluechi.Controller", "ListNodes", ())?;
-
-    for (name, _, status) in nodes {
-        println!("Node: {}, Status: {}", name, status);
-    }
-    Ok(())
-}
-
-pub fn list_node_units(node_name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let conn = Connection::new_system()?;
-
-    let bluechi = conn.with_proxy(
-        "org.eclipse.bluechi",
-        "/org/eclipse/bluechi",
-        Duration::from_millis(5000),
-    );
-
-    let (node,): (Path,) =
-        bluechi.method_call("org.eclipse.bluechi.Controller", "GetNode", (node_name,))?;
-
-    let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
-
-    // we are only interested in the first two response values - unit name and description
-    let (units,): (Vec<(String, String)>,) =
-        node_proxy.method_call("org.eclipse.bluechi.Node", "ListUnits", ())?;
-
-    for (name, description) in units {
-        println!("{} - {}", name, description);
-    }
-
-    Ok(())
-}
-
 pub fn unit_lifecycle(
     life_cycle: Lifecycle,
     node_name: &str,

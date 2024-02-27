@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 use std::sync::mpsc;
 use std::thread;
 
-pub mod method;
+mod method_controller;
+mod method_node;
+mod method_unit;
+
 struct Command {
     cmd_name: String,
 }
@@ -51,32 +54,34 @@ fn ddsmsg_to_msgq(tx: mpsc::Sender<Command>) {
         let received_msg = &msg_struct.value().msg;
         let cmd = Command::new(String::from(received_msg));
         tx.send(cmd).unwrap();
-        thread::sleep(std::time::Duration::from_millis(2000));
+        thread::sleep(std::time::Duration::from_millis(500));
     }
 }
 
 fn handle_msgq(rx: mpsc::Receiver<Command>) {
     for received in rx {
         println!("{received}\n");
-        let result1 = method::list_nodes();
+        let result1 = method_controller::list_nodes();
         println!("{:#?}", result1);
 
         /**********************************
          ***** bluechi method example *****
-         **********************************
-        let result2 = method::list_node_units("nuc-cent");
+         *********************************/
+        /*let result2 = method_node::list_node_units("nuc-cent");
         println!("{:#?}", result2);
-        let result3 = method::unit_lifecycle(
-            method::Lifecycle::Restart,
-            "nuc-cent",
-            "pr-pingpong.service",
-        );
+        let a: method_unit::Lifecycle = match received.cmd_name.len() {
+            1 => method_unit::Lifecycle::Start,
+            2 => method_unit::Lifecycle::Stop,
+            3 => method_unit::Lifecycle::Restart,
+            _ => method_unit::Lifecycle::Reload,
+        };
+        let result3 = method_unit::unit_lifecycle(a, "nuc-cent", "pr-pingpong.service");
         println!("{:#?}", result3);
-        let result4 = method::enable_unit("nuc-cent", "bluechi-agent.service");
+        let result4 = method_unit::enable_unit("nuc-cent", "bluechi-agent.service");
         println!("{:#?}", result4);
-        let result5 = method::disable_unit("nuc-cent", "bluechi-controller.service");
-        println!("{:#?}", result5);
-        **********************************/
+        let result5 = method_unit::disable_unit("nuc-cent", "bluechi-controller.service");
+        println!("{:#?}", result5);*/
+        /*********************************/
     }
 }
 
