@@ -1,7 +1,7 @@
 use dbus::blocking::Connection;
-use std::time::Duration;
+use std::{ops::Deref, time::Duration};
 
-pub fn list_nodes() -> Result<(), Box<dyn std::error::Error>> {
+fn list_nodes() -> Result<String, Box<dyn std::error::Error>> {
     let conn = Connection::new_system()?;
 
     let bluechi = conn.with_proxy(
@@ -13,8 +13,16 @@ pub fn list_nodes() -> Result<(), Box<dyn std::error::Error>> {
     let (nodes,): (Vec<(String, dbus::Path, String)>,) =
         bluechi.method_call("org.eclipse.bluechi.Controller", "ListNodes", ())?;
 
+    let mut result = String::new();
     for (name, _, status) in nodes {
-        println!("Node: {}, Status: {}", name, status);
+        result = result + format!("Node: {}, Status: {}\n", name, status).deref();
     }
-    Ok(())
+    Ok(result)
+}
+
+pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn std::error::Error>> {
+    match c[0] {
+        "list" => list_nodes(),
+        _ => Err("cannot find command".into()),
+    }
 }

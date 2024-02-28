@@ -60,28 +60,20 @@ fn ddsmsg_to_msgq(tx: mpsc::Sender<Command>) {
 
 fn handle_msgq(rx: mpsc::Receiver<Command>) {
     for received in rx {
-        println!("{received}\n");
-        let result1 = method_controller::list_nodes();
-        println!("{:#?}", result1);
+        println!("{}\n", received);
 
-        /**********************************
-         ***** bluechi method example *****
-         *********************************/
-        /*let result2 = method_node::list_node_units("nuc-cent");
-        println!("{:#?}", result2);
-        let a: method_unit::Lifecycle = match received.cmd_name.len() {
-            1 => method_unit::Lifecycle::Start,
-            2 => method_unit::Lifecycle::Stop,
-            3 => method_unit::Lifecycle::Restart,
-            _ => method_unit::Lifecycle::Reload,
+        let cmd: Vec<&str> = received.cmd_name.split("/").collect();
+        let result = match cmd.len() {
+            1 => method_controller::handle_cmd(cmd),
+            2 => method_node::handle_cmd(cmd),
+            3 => method_unit::handle_cmd(cmd),
+            _ => Err("support only 1 ~ 3 parameters".into()),
         };
-        let result3 = method_unit::unit_lifecycle(a, "nuc-cent", "pr-pingpong.service");
-        println!("{:#?}", result3);
-        let result4 = method_unit::enable_unit("nuc-cent", "bluechi-agent.service");
-        println!("{:#?}", result4);
-        let result5 = method_unit::disable_unit("nuc-cent", "bluechi-controller.service");
-        println!("{:#?}", result5);*/
-        /*********************************/
+
+        match result {
+            Ok(v) => println!("{}", v),
+            Err(e) => println!("Error : {}", e.to_string()),
+        }
     }
 }
 

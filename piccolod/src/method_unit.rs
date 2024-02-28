@@ -1,19 +1,20 @@
 use dbus::blocking::Connection;
 use dbus::Path;
+use std::ops::Deref;
 use std::time::Duration;
 
-pub enum Lifecycle {
+enum Lifecycle {
     Start,
     Stop,
     Restart,
     Reload,
 }
 
-pub fn unit_lifecycle(
+fn unit_lifecycle(
     life_cycle: Lifecycle,
     node_name: &str,
     unit_name: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error>> {
     let method: &str = match life_cycle {
         Lifecycle::Start => "StartUnit",
         Lifecycle::Stop => "StopUnit",
@@ -36,12 +37,13 @@ pub fn unit_lifecycle(
     let (job_path,): (Path,) =
         node_proxy.method_call("org.eclipse.bluechi.Node", method, (unit_name, "replace"))?;
 
-    println!("{method} '{unit_name}' on node '{node_name}': {job_path}");
+    let mut result = String::new();
+    result = result + format!("{method} '{unit_name}' on node '{node_name}': {job_path}\n").deref();
 
-    Ok(())
+    Ok(result)
 }
 
-pub fn enable_unit(node_name: &str, unit_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::error::Error>> {
     let unit_vector = vec![unit_name.to_string()];
     let conn = Connection::new_system()?;
 
@@ -63,24 +65,25 @@ pub fn enable_unit(node_name: &str, unit_name: &str) -> Result<(), Box<dyn std::
             (unit_vector, false, false),
         )?;
 
+    let mut result = String::new();
     if carries_install_info {
-        println!("The unit files included enablement information");
+        result = result + "The unit files included enablement information\n";
     } else {
-        println!("The unit files did not include any enablement information");
+        result = result + "The unit files did not include any enablement information\n";
     }
 
     for (op_type, file_name, file_dest) in changes {
         if op_type == "symlink" {
-            println!("Created symlink {} -> {}", file_name, file_dest);
+            result = result + format!("Created symlink {file_name} -> {file_dest}\n").deref();
         } else if op_type == "unlink" {
-            println!("Removed '{}'", file_name);
+            result = result + format!("Removed '{file_name}'\n").deref();
         }
     }
 
-    Ok(())
+    Ok(result)
 }
 
-pub fn disable_unit(node_name: &str, unit_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn disable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::error::Error>> {
     let unit_vector = vec![unit_name.to_string()];
     let conn = Connection::new_system()?;
 
@@ -101,13 +104,25 @@ pub fn disable_unit(node_name: &str, unit_name: &str) -> Result<(), Box<dyn std:
         (unit_vector, false),
     )?;
 
+    let mut result = String::new();
     for (op_type, file_name, file_dest) in changes {
         if op_type == "symlink" {
-            println!("Created symlink {} -> {}", file_name, file_dest);
+            result = result + format!("Created symlink {file_name} -> {file_dest}\n").deref();
         } else if op_type == "unlink" {
-            println!("Removed '{}'", file_name);
+            result = result + format!("Removed '{file_name}'\n").deref();
         }
     }
+    Ok(result)
+}
 
-    Ok(())
+pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn std::error::Error>> {
+    match c[0] {
+        "start" => unit_lifecycle(Lifecycle::Start, c[1], c[2]),
+        "stop" => unit_lifecycle(Lifecycle::Stop, c[1], c[2]),
+        "restart" => unit_lifecycle(Lifecycle::Restart, c[1], c[2]),
+        "reload" => unit_lifecycle(Lifecycle::Reload, c[1], c[2]),
+        "enable" => enable_unit(c[1], c[2]),
+        "disable" => disable_unit(c[1], c[2]),
+        _ => Err("cannot find command".into()),
+    }
 }
