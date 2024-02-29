@@ -29,9 +29,7 @@ pub fn run(config: String) {
         .unwrap();
 
     let dds_sender = thread::spawn(move || loop {
-        let some_data = PiccoloInternalDdsType {
-            msg: config.clone(),
-        };
+        let some_data = PiccoloInternalDdsType { msg: config };
         let result = writer.write(some_data, None);
         let _result = match result {
             Ok(t) => t,
