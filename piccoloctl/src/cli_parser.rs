@@ -17,6 +17,8 @@ fn help() -> String {
     println!("    usage: piccoloctl enable NODE_NAME UNIT_NAME");
     println!("  - disable: disable unit in node");
     println!("    usage: piccoloctl disable NODE_NAME UNIT_NAME");
+    println!("  - daemon-reload: equivalent to 'systemctl daemon-reload'");
+    println!("    usage: piccoloctl daemon-reload NODE_NAME");
     "not support".to_string()
 }
 
