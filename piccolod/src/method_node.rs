@@ -49,8 +49,8 @@ fn node_daemon_reload(node_name: &str) -> Result<String, Box<dyn std::error::Err
 
 pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn std::error::Error>> {
     match c[0] {
-        "list" => list_node_units(c[1]),
-        "reload" => node_daemon_reload(c[1]),
+        "list-unit" => list_node_units(c[1]),
+        "daemon-reload" => node_daemon_reload(c[1]),
         _ => Err("cannot find command".into()),
     }
 }

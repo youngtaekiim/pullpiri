@@ -22,7 +22,7 @@ fn list_nodes() -> Result<String, Box<dyn std::error::Error>> {
 
 pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn std::error::Error>> {
     match c[0] {
-        "list" => list_nodes(),
+        "list-node" => list_nodes(),
         _ => Err("cannot find command".into()),
     }
 }

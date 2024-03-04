@@ -1,10 +1,10 @@
 fn help() -> String {
     println!("Usage - piccoloctl COMMAND [PARAMETERS]");
     println!("Available command");
-    println!("  - list: shows node list");
-    println!("    usage: piccoloctl list");
-    println!("  - list (unit): shows unit list in node");
-    println!("    usage: piccoloctl list NODE_NAME");
+    println!("  - list-node: shows node list");
+    println!("    usage: piccoloctl list-node");
+    println!("  - list-unit: shows unit list in node");
+    println!("    usage: piccoloctl list-unit NODE_NAME");
     println!("  - start: start unit in node");
     println!("    usage: piccoloctl start NODE_NAME UNIT_NAME");
     println!("  - stop: stop unit in node");
