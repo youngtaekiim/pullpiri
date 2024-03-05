@@ -1,6 +1,5 @@
 use dbus::blocking::Connection;
 use dbus::Path;
-use std::ops::Deref;
 use std::time::Duration;
 
 fn list_node_units(node_name: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -23,7 +22,7 @@ fn list_node_units(node_name: &str) -> Result<String, Box<dyn std::error::Error>
 
     let mut result = String::new();
     for (name, description) in units {
-        result = result + format!("{} - {}\n", name, description).deref();
+        result.push_str(&format!("{} - {}\n", name, description));
     }
 
     Ok(result)

@@ -1,6 +1,5 @@
 use dbus::blocking::Connection;
 use dbus::Path;
-use std::ops::Deref;
 use std::time::Duration;
 
 enum Lifecycle {
@@ -37,10 +36,7 @@ fn unit_lifecycle(
     let (job_path,): (Path,) =
         node_proxy.method_call("org.eclipse.bluechi.Node", method, (unit_name, "replace"))?;
 
-    let mut result = String::new();
-    result = result + format!("{method} '{unit_name}' on node '{node_name}': {job_path}\n").deref();
-
-    Ok(result)
+    Ok(format!("{method} '{unit_name}' on node '{node_name}': {job_path}\n"))
 }
 
 fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -74,9 +70,9 @@ fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::
 
     for (op_type, file_name, file_dest) in changes {
         if op_type == "symlink" {
-            result = result + format!("Created symlink {file_name} -> {file_dest}\n").deref();
+            result.push_str(&format!("Created symlink {file_name} -> {file_dest}\n"));
         } else if op_type == "unlink" {
-            result = result + format!("Removed '{file_name}'\n").deref();
+            result.push_str(&format!("Removed '{file_name}'\n"));
         }
     }
 
@@ -107,9 +103,9 @@ fn disable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std:
     let mut result = String::new();
     for (op_type, file_name, file_dest) in changes {
         if op_type == "symlink" {
-            result = result + format!("Created symlink {file_name} -> {file_dest}\n").deref();
+            result.push_str(&format!("Created symlink {file_name} -> {file_dest}\n"));
         } else if op_type == "unlink" {
-            result = result + format!("Removed '{file_name}'\n").deref();
+            result.push_str(&format!("Removed '{file_name}'\n"));
         }
     }
     Ok(result)

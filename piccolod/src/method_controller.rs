@@ -1,5 +1,5 @@
 use dbus::blocking::Connection;
-use std::{ops::Deref, time::Duration};
+use std::time::Duration;
 
 fn list_nodes() -> Result<String, Box<dyn std::error::Error>> {
     let conn = Connection::new_system()?;
@@ -15,7 +15,7 @@ fn list_nodes() -> Result<String, Box<dyn std::error::Error>> {
 
     let mut result = String::new();
     for (name, _, status) in nodes {
-        result = result + format!("Node: {}, Status: {}\n", name, status).deref();
+        result.push_str(&format!("Node: {}, Status: {}\n", name, status));
     }
     Ok(result)
 }
