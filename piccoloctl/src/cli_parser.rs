@@ -19,7 +19,7 @@ fn help() -> String {
     println!("    usage: piccoloctl disable NODE_NAME UNIT_NAME");
     println!("  - daemon-reload: equivalent to 'systemctl daemon-reload'");
     println!("    usage: piccoloctl daemon-reload NODE_NAME");
-    "not support".to_string()
+    "not support".to_owned()
 }
 
 pub fn check(input: &Vec<String>) -> Result<String, String> {

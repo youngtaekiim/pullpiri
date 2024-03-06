@@ -1,5 +1,6 @@
 use piccolod;
 
-fn main() {
-    piccolod::run();
+#[tokio::main]
+async fn main() {
+    piccolod::run().await;
 }

@@ -2,13 +2,32 @@ use std::env;
 use std::process;
 
 mod cli_parser;
-mod dds_sender;
 
-fn main() {
+pub mod command {
+    tonic::include_proto!("command");
+}
+use command::command_client::CommandClient;
+use command::SendRequest;
+
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = env::args().collect();
-    let config = cli_parser::check(&args).unwrap_or_else(|_err| {
+    let config = cli_parser::check(&args).unwrap_or_else(|err| {
+        println!("{}", err);
         process::exit(1);
     });
-    println!("{config}");
-    dds_sender::run(config);
+    println!("sending msg - '{config}'");
+
+    let mut client = CommandClient::connect("http://[::1]:50101")
+        .await
+        .unwrap_or_else(|err| {
+            println!("{}", err);
+            process::exit(1);
+        });
+    let request = tonic::Request::new(SendRequest { cmd: config });
+    let response = client.send(request).await;
+    match response {
+        Ok(t) => println!("SUCCESS - {:?}", t.into_inner()),
+        Err(t) => println!("FAIL - {:?}", t),
+    }
 }

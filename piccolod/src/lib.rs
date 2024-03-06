@@ -1,93 +1,51 @@
-use rustdds::*;
-use serde::{Deserialize, Serialize};
-use std::sync::mpsc;
-use std::thread;
-
 mod method_controller;
 mod method_node;
 mod method_unit;
 
-struct Command {
-    cmd_name: String,
+pub mod command {
+    tonic::include_proto!("command");
 }
-impl Command {
-    fn new(cmd_name: String) -> Self {
-        Self { cmd_name }
-    }
-}
-impl std::fmt::Display for Command {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "str : {}", self.cmd_name)
-    }
-}
+use command::command_server::{Command, CommandServer};
+use command::{SendReply, SendRequest};
+use tonic::{transport::Server, Request, Response, Status};
 
-fn ddsmsg_to_msgq(tx: mpsc::Sender<Command>) {
-    let domain_participant = DomainParticipant::new(0).unwrap();
-    let qos = QosPolicyBuilder::new()
-        .reliability(policy::Reliability::Reliable {
-            max_blocking_time: rustdds::Duration::ZERO,
-        })
-        .build();
-    let subscriber = domain_participant.create_subscriber(&qos).unwrap();
-    let piccolo_internal_topic = domain_participant
-        .create_topic(
-            "piccolo_internal_topic".to_string(),
-            "PiccoloInternalDdsType".to_string(),
-            &qos,
-            TopicKind::NoKey,
-        )
-        .unwrap();
-    #[derive(Serialize, Deserialize, Debug)]
-    struct PiccoloInternalDdsType {
-        msg: String,
-    }
-    let mut reader: no_key::DataReader<PiccoloInternalDdsType> = subscriber
-        .create_datareader_no_key::<PiccoloInternalDdsType, CDRDeserializerAdapter<PiccoloInternalDdsType>>(&piccolo_internal_topic, None)
-        .unwrap();
-    loop {
-        let msg_struct = if let Ok(Some(value)) = reader.take_next_sample() {
-            value
-        } else {
-            // no data has arrived
-            continue;
-        };
-        let received_msg = &msg_struct.value().msg;
-        let cmd = Command::new(String::from(received_msg));
-        tx.send(cmd).unwrap();
-        thread::sleep(std::time::Duration::from_millis(500));
-    }
-}
+#[derive(Default)]
+pub struct PiccoloGrpcServer {}
 
-fn handle_msgq(rx: mpsc::Receiver<Command>) {
-    for received in rx {
-        println!("{}\n", received);
+#[tonic::async_trait]
+impl Command for PiccoloGrpcServer {
+    async fn send(&self, request: Request<SendRequest>) -> Result<Response<SendReply>, Status> {
+        println!("Got a request from {:?}", request.remote_addr());
 
-        let cmd: Vec<&str> = received.cmd_name.split("/").collect();
-        let result = match cmd.len() {
-            1 => method_controller::handle_cmd(cmd),
-            2 => method_node::handle_cmd(cmd),
-            3 => method_unit::handle_cmd(cmd),
-            _ => Err("support only 1 ~ 3 parameters".into()),
-        };
+        let request = request.into_inner();
+        let msg = request.cmd;
 
-        match result {
-            Ok(v) => println!("{}", v),
-            Err(e) => println!("Error : {}", e.to_string()),
+        match send_dbus_to_bluechi(msg).await {
+            Ok(v) => Ok(Response::new(SendReply { ans: true, desc: v })),
+            Err(e) => Err(Status::new(tonic::Code::Unavailable, e.to_string())),
         }
     }
 }
 
-pub fn run() {
-    let (tx, rx) = mpsc::channel();
+async fn send_dbus_to_bluechi(msg: String) -> Result<String, Box<dyn std::error::Error>> {
+    println!("recv msg: {}\n", msg);
+    let cmd: Vec<&str> = msg.split("/").collect();
+    match cmd.len() {
+        1 => method_controller::handle_cmd(cmd),
+        2 => method_node::handle_cmd(cmd),
+        3 => method_unit::handle_cmd(cmd),
+        _ => Err("support only 1 ~ 3 parameters".into()),
+    }
+}
 
-    let mpsc_receiver = thread::spawn(move || {
-        handle_msgq(rx);
-    });
+pub async fn run() {
+    let addr = "[::1]:50101".parse().unwrap();
+    let piccolo_grpc_server = PiccoloGrpcServer::default();
 
-    let mpsc_sender = thread::spawn(move || {
-        ddsmsg_to_msgq(tx);
-    });
+    println!("Test Server listening on {}", addr);
 
-    mpsc_receiver.join().unwrap();
-    mpsc_sender.join().unwrap();
+    let _ = Server::builder()
+        .add_service(CommandServer::new(piccolo_grpc_server))
+        .serve(addr)
+        .await;
 }

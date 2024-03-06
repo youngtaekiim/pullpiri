@@ -36,11 +36,13 @@ fn unit_lifecycle(
     let (job_path,): (Path,) =
         node_proxy.method_call("org.eclipse.bluechi.Node", method, (unit_name, "replace"))?;
 
-    Ok(format!("{method} '{unit_name}' on node '{node_name}': {job_path}\n"))
+    Ok(format!(
+        "{method} '{unit_name}' on node '{node_name}': {job_path}\n"
+    ))
 }
 
 fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let unit_vector = vec![unit_name.to_string()];
+    let unit_vector = vec![unit_name.to_owned()];
     let conn = Connection::new_system()?;
 
     let bluechi = conn.with_proxy(
@@ -80,7 +82,7 @@ fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::
 }
 
 fn disable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let unit_vector = vec![unit_name.to_string()];
+    let unit_vector = vec![unit_name.to_owned()];
     let conn = Connection::new_system()?;
 
     let bluechi = conn.with_proxy(
