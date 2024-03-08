@@ -16,7 +16,7 @@ async fn main() {
         println!("{}", err);
         process::exit(1);
     });
-    println!("sending msg - '{config}'");
+    println!("sending msg - '{config}'\n");
 
     let mut client = CommandClient::connect("http://[::1]:50101")
         .await
@@ -27,7 +27,7 @@ async fn main() {
     let request = tonic::Request::new(SendRequest { cmd: config });
     let response = client.send(request).await;
     match response {
-        Ok(t) => println!("SUCCESS - {:?}", t.into_inner()),
-        Err(t) => println!("FAIL - {:?}", t),
+        Ok(t) => println!("- SUCCESS -\n{}", t.into_inner().desc),
+        Err(t) => println!("FAIL - {:#?}", t),
     }
 }

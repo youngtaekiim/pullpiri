@@ -63,12 +63,10 @@ fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::
             (unit_vector, false, false),
         )?;
 
-    let mut result = String::new();
-    if carries_install_info {
-        result = result + "The unit files included enablement information\n";
-    } else {
-        result = result + "The unit files did not include any enablement information\n";
-    }
+    let mut result: String = match carries_install_info {
+        true => format!("The unit files included enablement information\n"),
+        false => format!("The unit files did not include any enablement information\n"),
+    };
 
     for (op_type, file_name, file_dest) in changes {
         if op_type == "symlink" {

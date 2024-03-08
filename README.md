@@ -39,7 +39,7 @@ Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/
 | GetUnitProperty   | X       | Get one named property              |
 | SetUnitProperties | X       | Set named properties                |
 | ListUnits         | O       | Returns all loaded units on node    |
-| Reload            | X       | Reload all unit files               |
+| Reload            | O       | Reload all unit files               |
 | SetLogLevel       | X       | Set log level for bluechi-agent     |
 
 Set the new log level for bluechi-agent by invoking the internal bluechi-agent API.
