@@ -12,7 +12,7 @@ fmt:
 
 .PHONY: clean
 clean: fmt
-	rm -rf target/
+	rm -rf target/ && rm -rf default.etcd/
 
 .PHONY: d
 d:

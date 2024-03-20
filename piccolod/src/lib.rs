@@ -1,3 +1,4 @@
+mod etcd;
 mod method_controller;
 mod method_node;
 mod method_unit;
@@ -20,25 +21,33 @@ impl Command for PiccoloGrpcServer {
         let request = request.into_inner();
         let msg = request.cmd;
 
-        match send_dbus_to_bluechi(msg).await {
+        match send_dbus_to_bluechi(&msg).await {
             Ok(v) => Ok(Response::new(SendReply { ans: true, desc: v })),
             Err(e) => Err(Status::new(tonic::Code::Unavailable, e.to_string())),
         }
     }
 }
 
-async fn send_dbus_to_bluechi(msg: String) -> Result<String, Box<dyn std::error::Error>> {
+async fn send_dbus_to_bluechi(msg: &str) -> Result<String, Box<dyn std::error::Error>> {
     println!("recv msg: {}\n", msg);
     let cmd: Vec<&str> = msg.split("/").collect();
+    etcd::put(msg, msg).await?;
+    etcd::get(msg).await?;
+
     match cmd.len() {
         1 => method_controller::handle_cmd(cmd),
         2 => method_node::handle_cmd(cmd),
         3 => method_unit::handle_cmd(cmd),
-        _ => Err("support only 1 ~ 3 parameters".into()),
+        _ => {
+            etcd::delete(msg).await?;
+            Err("support only 1 ~ 3 parameters".into())
+        }
     }
 }
 
 pub async fn run() {
+    etcd::init_server();
+
     let addr = "[::1]:50101".parse().unwrap();
     let piccolo_grpc_server = PiccoloGrpcServer::default();
 
