@@ -30,15 +30,20 @@ fn reload_all_nodes() -> Result<String, Box<dyn std::error::Error>> {
         Duration::from_millis(5000),
     );
 
-    let node_name = "nuc-cent";
+    let mut result = String::new();
+    let (nodes,): (Vec<(String, dbus::Path, String)>,) =
+        bluechi.method_call("org.eclipse.bluechi.Controller", "ListNodes", ())?;
 
-    let (node,): (Path,) =
-        bluechi.method_call("org.eclipse.bluechi.Controller", "GetNode", (node_name,))?;
+    for (node_name, _, _) in nodes {
+        let (node,): (Path,) =
+            bluechi.method_call("org.eclipse.bluechi.Controller", "GetNode", (&node_name,))?;
 
-    let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
-    node_proxy.method_call("org.eclipse.bluechi.Node", "Reload", ())?;
+        let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
+        node_proxy.method_call("org.eclipse.bluechi.Node", "Reload", ())?;
 
-    Ok(format!("reload node '{}'\n", node_name))
+        result.push_str(&format!("Node - {} is reloaded.\n", &node_name));
+    }
+    Ok(result)
 }
 
 pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn std::error::Error>> {

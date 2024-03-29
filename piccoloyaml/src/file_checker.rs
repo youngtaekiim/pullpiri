@@ -39,7 +39,17 @@ fn check_src_file(name: &str) -> Result<String> {
 fn create_dst_file(name: &str) -> Result<()> {
     let kube_file_path = Path::new(name).with_extension("kube");
     let mut file = File::create(kube_file_path)?;
+
     file.write_all(format!("{}{}", CONTENTS_HEADER, name).as_bytes())?;
+    Ok(())
+}
+
+fn delete_dst_files(name: &str) -> Result<()> {
+    let yaml_file_path = Path::new(name);
+    let kube_file_path = Path::new(name).with_extension("kube");
+
+    fs::remove_file(yaml_file_path)?;
+    fs::remove_file(kube_file_path)?;
     Ok(())
 }
 
@@ -47,17 +57,19 @@ fn create_dst_file(name: &str) -> Result<()> {
 /// output example : /etc/containers/systemd/my_pod.yaml
 ///                  /etc/containers/systemd/my_pod.kube
 pub fn process(cmd: &str, file_path: &str) -> Result<()> {
-    if cmd == "apply" {
-        let src = check_src_file(file_path)?;
-        let file_name = Path::new(&src).file_name().unwrap().to_str().unwrap();
-        let dst = format!("{}{}", SYSTEMD_FILE_PATH, file_name);
+    let src = check_src_file(file_path)?;
+    let file_name = Path::new(&src).file_name().unwrap().to_str().unwrap();
+    let dst = format!("{}{}", SYSTEMD_FILE_PATH, file_name);
 
+    if cmd == "apply" {
         fs::copy(&src, &dst)?;
         create_dst_file(&dst)?;
 
         Ok(())
     } else if cmd == "delete" {
-        Err!("Currently 'delete' is not support")
+        delete_dst_files(&dst)?;
+
+        Ok(())
     } else {
         Err!(format!("{} is not support", cmd))
     }

@@ -6,7 +6,9 @@ Piccolo for bluechi.
 cargo build
 cargo run --bin piccolod
 cargo run --bin piccoloctl
+cargo run --bin piccoloyaml
 ```
+Also refer to `Makefile`.
 
 ## API
 Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/main/doc/docs/api/description.md).
