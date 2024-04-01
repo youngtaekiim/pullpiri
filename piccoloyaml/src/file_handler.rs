@@ -22,7 +22,7 @@ WantedBy=multi-user.target default.target
 [Kube]
 Yaml="#;
 
-fn check_src_file(name: &str) -> Result<String> {
+fn get_absolute_file_path(name: &str) -> Result<String> {
     let file = Path::new(name);
     if !file.is_file() {
         return Err!(format!("Not found or invalid - {}", name));
@@ -53,8 +53,8 @@ fn delete_dst_files(dst_yaml_path: &str) -> Result<()> {
 /// input example  : ./my_pod.yaml
 /// output example : /etc/containers/systemd/my_pod.yaml
 ///                  /etc/containers/systemd/my_pod.kube
-pub fn handle(cmd: &str, file_path: &str) -> Result<()> {
-    let src = check_src_file(file_path)?;
+pub fn handle(cmd: &str, src_file_path: &str) -> Result<()> {
+    let src = get_absolute_file_path(src_file_path)?;
     let file_name = Path::new(&src).file_name().unwrap().to_str().unwrap();
     let dst = format!("{}{}", SYSTEMD_FILE_PATH, file_name);
 
