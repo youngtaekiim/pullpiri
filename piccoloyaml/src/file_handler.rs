@@ -36,41 +36,34 @@ fn check_src_file(name: &str) -> Result<String> {
     }
 }
 
-fn create_dst_file(name: &str) -> Result<()> {
-    let kube_file_path = Path::new(name).with_extension("kube");
-    let mut file = File::create(kube_file_path)?;
+fn create_dst_file(src_yaml_path: &str, dst_yaml_path: &str) -> Result<()> {
+    let mut file = File::create(Path::new(dst_yaml_path).with_extension("kube"))?;
 
-    file.write_all(format!("{}{}", CONTENTS_HEADER, name).as_bytes())?;
+    file.write_all(format!("{}{}", CONTENTS_HEADER, dst_yaml_path).as_bytes())?;
+    fs::copy(src_yaml_path, dst_yaml_path)?;
     Ok(())
 }
 
-fn delete_dst_files(name: &str) -> Result<()> {
-    let yaml_file_path = Path::new(name);
-    let kube_file_path = Path::new(name).with_extension("kube");
-
-    fs::remove_file(yaml_file_path)?;
-    fs::remove_file(kube_file_path)?;
+fn delete_dst_files(dst_yaml_path: &str) -> Result<()> {
+    fs::remove_file(Path::new(dst_yaml_path))?;
+    fs::remove_file(Path::new(dst_yaml_path).with_extension("kube"))?;
     Ok(())
 }
 
 /// input example  : ./my_pod.yaml
 /// output example : /etc/containers/systemd/my_pod.yaml
 ///                  /etc/containers/systemd/my_pod.kube
-pub fn process(cmd: &str, file_path: &str) -> Result<()> {
+pub fn handle(cmd: &str, file_path: &str) -> Result<()> {
     let src = check_src_file(file_path)?;
     let file_name = Path::new(&src).file_name().unwrap().to_str().unwrap();
     let dst = format!("{}{}", SYSTEMD_FILE_PATH, file_name);
 
     if cmd == "apply" {
-        fs::copy(&src, &dst)?;
-        create_dst_file(&dst)?;
-
-        Ok(())
+        create_dst_file(&src, &dst)?;
     } else if cmd == "delete" {
         delete_dst_files(&dst)?;
-
-        Ok(())
     } else {
-        Err!(format!("{} is not support", cmd))
+        return Err!(format!("{} is not support", cmd));
     }
+    Ok(())
 }
