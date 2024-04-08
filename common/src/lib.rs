@@ -1,7 +1,10 @@
+pub const HOST_IP: &str = "10.159.57.33";
+
 pub mod apiserver {
     pub use api::proto::apiserver::*;
-    pub const API_SERVER_OPEN: &str = "[::1]:50101";
-    pub const API_SERVER_CONNECT: &str = "http://[::1]:50101";
+    pub const API_SERVER_OPEN: &str = const_format::concatcp!(crate::HOST_IP, ":50101");
+    pub const API_SERVER_CONNECT: &str =
+        const_format::concatcp!("http://", crate::HOST_IP, ":50101");
 
     /** Followings are defined in api::proto::apiserver module.
     pub enum UpdateMethod {
@@ -80,12 +83,18 @@ pub mod apiserver {
 
 pub mod statemanager {
     pub use api::proto::statemanager::*;
-    pub const STATE_MANAGER_OPEN: &str = "[::1]:50010";
-    pub const STATE_MANAGER_CONNECT: &str = "http://[::1]:50010";
+    pub const STATE_MANAGER_OPEN: &str = const_format::concatcp!(crate::HOST_IP, ":50010");
+    pub const STATE_MANAGER_CONNECT: &str =
+        const_format::concatcp!("http://", crate::HOST_IP, ":50010");
 }
 
 pub mod etcd {
-    pub const ETCD_ENDPOINT: &str = "127.0.0.1:2379";
+    pub const ETCD_ENDPOINT: &str = const_format::concatcp!(crate::HOST_IP, ":2379");
+    pub const LISTEN_PEER_URLS: &str = const_format::concatcp!("http://", crate::HOST_IP, ":2380");
+    pub const LISTEN_CLIENT_URLS: &str =
+        const_format::concatcp!("http://", crate::HOST_IP, ":2379");
+    pub const ADVERTISE_CLIENT_URLS: &str =
+        const_format::concatcp!("http://", crate::HOST_IP, ":2379");
 
     use etcd_client::{Client, Error};
 

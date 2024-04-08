@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 api = { path = "../api" }
+const_format = "0.2.32"
 etcd-client = "0.12"
