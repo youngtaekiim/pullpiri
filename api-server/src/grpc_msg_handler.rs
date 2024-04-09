@@ -1,5 +1,5 @@
 use common::apiserver::connection_server::Connection;
-use common::apiserver::request::RequestContent::{ControllerRequest, NodeRequest};
+use common::apiserver::request::request::RequestContent::{ControllerRequest, NodeRequest};
 use common::apiserver::to_server::ToServerContent::{Request, UpdateWorkload};
 use common::apiserver::{FromServer, ToServer};
 use common::etcd;

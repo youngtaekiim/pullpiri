@@ -2,8 +2,8 @@ mod cli_parser;
 mod msg_sender;
 
 use clap::Parser;
+use common::apiserver::{NodeCommand, UpdateMethod, ControllerCommand};
 use common::apiserver::{get_controller_command, get_node_command, get_unit_command};
-use common::apiserver::{ControllerCommand, NodeCommand, UpdateMethod};
 
 #[tokio::main]
 async fn main() {
@@ -11,7 +11,9 @@ async fn main() {
     println!("{:?}", args);
 
     let req = match &args.command {
-        cli_parser::Command::ListNode => get_controller_command(ControllerCommand::ListNode),
+        cli_parser::Command::ListNode => {
+            get_controller_command(ControllerCommand::ListNode)
+        }
         cli_parser::Command::DaemonReload => {
             get_controller_command(ControllerCommand::DaemonReload)
         }

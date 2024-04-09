@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package apiserver.request;
+
+message Request {
+  oneof RequestContent {
+    ControllerRequest controllerRequest = 1;
+    NodeRequest nodeRequest = 2;
+  }
+}
+
+message ControllerRequest {
+  ControllerCommand controllerCommand = 1;
+}
+
+enum ControllerCommand {
+  LIST_NODE = 0;
+  DAEMON_RELOAD = 1;
+}
+
+message NodeRequest {
+  NodeCommand nodeCommand = 1;
+  string node_name = 2;
+}
+
+enum NodeCommand {
+  LIST_UNIT = 0;
+}

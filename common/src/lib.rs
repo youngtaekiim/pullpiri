@@ -6,14 +6,14 @@ pub mod apiserver {
     pub const API_SERVER_CONNECT: &str =
         const_format::concatcp!("http://", crate::HOST_IP, ":50101");
 
-    /** Followings are defined in api::proto::apiserver module.
+    // Following enums are defined in api::proto::apiserver module.
     pub enum UpdateMethod {
-        START = 0,
-        STOP = 1,
-        RESTART = 2,
-        RELOAD = 3,
-        ENABLE = 4,
-        DISABLE = 5,
+        Start = 0,
+        Stop = 1,
+        Restart = 2,
+        Reload = 3,
+        Enable = 4,
+        Disable = 5,
     }
     pub enum ControllerCommand {
         ListNode = 0,
@@ -22,61 +22,57 @@ pub mod apiserver {
     pub enum NodeCommand {
         ListUnit = 0,
     }
-    **/
 
-    pub fn get_controller_command(
-        cmd: api::proto::apiserver::ControllerCommand,
-    ) -> api::proto::apiserver::ToServer {
-        api::proto::apiserver::ToServer {
-            to_server_content: Some(api::proto::apiserver::to_server::ToServerContent::Request(
-                api::proto::apiserver::Request {
-                    request_content: Some(
-                        api::proto::apiserver::request::RequestContent::ControllerRequest(
-                            api::proto::apiserver::ControllerRequest {
-                                controller_command: cmd.into(),
-                            },
-                        ),
-                    ),
-                },
-            )),
-        }
-    }
-
-    pub fn get_node_command(
-        cmd: api::proto::apiserver::NodeCommand,
-        node_name: &str,
-    ) -> api::proto::apiserver::ToServer {
-        api::proto::apiserver::ToServer {
-            to_server_content: Some(api::proto::apiserver::to_server::ToServerContent::Request(
-                api::proto::apiserver::Request {
-                    request_content: Some(
-                        api::proto::apiserver::request::RequestContent::NodeRequest(
-                            api::proto::apiserver::NodeRequest {
-                                node_command: cmd.into(),
-                                node_name: node_name.to_owned(),
-                            },
-                        ),
-                    ),
-                },
-            )),
-        }
-    }
-
-    pub fn get_unit_command(
-        cmd: api::proto::apiserver::UpdateMethod,
-        node_name: &str,
-        unit_name: &str,
-    ) -> api::proto::apiserver::ToServer {
-        api::proto::apiserver::ToServer {
-            to_server_content: Some(
-                api::proto::apiserver::to_server::ToServerContent::UpdateWorkload(
-                    api::proto::apiserver::UpdateWorkload {
-                        update_method: cmd.into(),
-                        node_name: node_name.to_owned(),
-                        unit_name: unit_name.to_owned(),
+    pub fn get_controller_command(cmd: ControllerCommand) -> ToServer {
+        ToServer {
+            to_server_content: Some(to_server::ToServerContent::Request(request::Request {
+                request_content: Some(request::request::RequestContent::ControllerRequest(
+                    request::ControllerRequest {
+                        controller_command: match cmd {
+                            ControllerCommand::ListNode => {
+                                request::ControllerCommand::ListNode.into()
+                            }
+                            ControllerCommand::DaemonReload => {
+                                request::ControllerCommand::DaemonReload.into()
+                            }
+                        },
                     },
-                ),
-            ),
+                )),
+            })),
+        }
+    }
+
+    pub fn get_node_command(cmd: NodeCommand, node_name: &str) -> ToServer {
+        ToServer {
+            to_server_content: Some(to_server::ToServerContent::Request(request::Request {
+                request_content: Some(request::request::RequestContent::NodeRequest(
+                    request::NodeRequest {
+                        node_command: match cmd {
+                            NodeCommand::ListUnit => request::NodeCommand::ListUnit.into(),
+                        },
+                        node_name: node_name.to_owned(),
+                    },
+                )),
+            })),
+        }
+    }
+
+    pub fn get_unit_command(cmd: UpdateMethod, node_name: &str, unit_name: &str) -> ToServer {
+        ToServer {
+            to_server_content: Some(to_server::ToServerContent::UpdateWorkload(
+                updateworkload::UpdateWorkload {
+                    update_method: match cmd {
+                        UpdateMethod::Start => updateworkload::UpdateMethod::Start.into(),
+                        UpdateMethod::Stop => updateworkload::UpdateMethod::Stop.into(),
+                        UpdateMethod::Restart => updateworkload::UpdateMethod::Restart.into(),
+                        UpdateMethod::Reload => updateworkload::UpdateMethod::Reload.into(),
+                        UpdateMethod::Enable => updateworkload::UpdateMethod::Enable.into(),
+                        UpdateMethod::Disable => updateworkload::UpdateMethod::Disable.into(),
+                    },
+                    node_name: node_name.to_owned(),
+                    unit_name: unit_name.to_owned(),
+                },
+            )),
         }
     }
 }

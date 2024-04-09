@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package apiserver.updateworkload;
+
+message UpdateWorkload {
+  UpdateMethod updateMethod = 1;
+  string node_name = 2;
+  string unit_name = 3;
+}
+
+enum UpdateMethod {
+  START = 0;
+  STOP = 1;
+  RESTART = 2;
+  RELOAD = 3;
+  ENABLE = 4;
+  DISABLE = 5;
+}
