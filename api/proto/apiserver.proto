@@ -5,17 +5,14 @@ package apiserver;
 import "apiserver/request.proto";
 import "apiserver/updateworkload.proto";
 
-service Connection {
-  rpc Send (ToServer) returns (FromServer);
+service RequestConnection {
+  rpc Send (request.Request) returns (Response);
 }
 
-message FromServer {
-  string response = 1;
+service UpdateWorkloadConnection {
+  rpc Send (updateworkload.UpdateWorkload) returns (Response);
 }
 
-message ToServer {
-  oneof ToServerContent {
-    request.Request request = 1;
-    updateworkload.UpdateWorkload updateWorkload = 2;
-  }
+message Response {
+  string resp = 1;
 }

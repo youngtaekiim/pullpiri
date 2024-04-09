@@ -20,8 +20,8 @@ async fn main() {
 
     let req = get_controller_command(ControllerCommand::DaemonReload);
 
-    match msg_sender::send_grpc_msg(req).await {
-        Ok(t) => println!("- SUCCESS -\n{}", t.into_inner().response),
+    match msg_sender::send_request_msg(req).await {
+        Ok(t) => println!("- SUCCESS -\n{}", t.into_inner().resp),
         Err(t) => println!("- FAIL -\n{:#?}", t),
     }
 }
