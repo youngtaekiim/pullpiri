@@ -4,7 +4,9 @@ metadata:
   name: update-sample
 spec:
   conditions:
-    express: '$gear_state == "parking"'
+    express: Equal
+    #USE Equal, NotEqual, Greater, GreaterOrEqual, Smaller, SmallerOrEqual
+    value: "parking"
     operands:
     - type: DDS
       name: gear_state
