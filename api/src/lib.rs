@@ -8,6 +8,9 @@ pub mod proto {
             tonic::include_proto!("apiserver.updateworkload");
         }
     }
+    pub mod gateway {
+        tonic::include_proto!("gateway");
+    }
     pub mod statemanager {
         tonic::include_proto!("statemanager");
     }

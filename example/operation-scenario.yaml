@@ -8,7 +8,7 @@ spec:
   - step:     
     order: 1
     conditions:
-    express: '$power_state == "on" && $power_state != "parking"  && $speed == 0'
+    express: '$power_state == "on" && $power_state != "parking" && $speed == 0'
         operands:
       - type: DDS
         name: power_state

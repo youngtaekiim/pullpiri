@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package gateway;
+
+service PiccoloGateway {
+  rpc EnableEvent (EventName) returns (Reply);
+  rpc DisableEvent (EventName) returns (Reply);
+}
+
+message EventName {
+  string name = 1;
+  Target target = 2;
+}
+
+enum Target {
+  StateManager = 0;
+}
+
+message Reply {
+  bool isOk = 1;
+}
