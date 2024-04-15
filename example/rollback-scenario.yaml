@@ -4,7 +4,9 @@ metadata:
   name: rollback-sample
 spec:
   conditions:
-    express: '$gear_state == "reverse"'
+    express: Equal
+    #USE Equal, NotEqual, Greater, GreaterOrEqual, Smaller, SmallerOrEqual
+    value: "reverse"
     operands:
     - type: DDS
       name: gear_state
