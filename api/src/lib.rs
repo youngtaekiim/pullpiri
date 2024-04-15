@@ -9,7 +9,7 @@ pub mod proto {
         }
     }
     pub mod gateway {
-        tonic::include_proto!("gateway");
+        tonic::include_proto!("piccologatewaypackage");
     }
     pub mod statemanager {
         tonic::include_proto!("statemanager");

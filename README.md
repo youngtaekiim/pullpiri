@@ -3,12 +3,18 @@ Piccolo for bluechi.
 
 ## Getting started
 ```sh
-cargo build
-cargo run --bin piccolod
-cargo run --bin piccoloctl
-cargo run --bin piccoloyaml
+make build
 ```
-Also refer to `Makefile`.
+Also refer to [Makefile](/Makefile).
+
+## Using Ports
+```
+api-server : 47001
+gateway : 47002
+statemanager: 47003
+yamlparser : 47004
+etcd : 2379
+```
 
 ## API
 Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/main/doc/docs/api/description.md).

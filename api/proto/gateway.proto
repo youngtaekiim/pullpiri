@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package gateway;
+package piccologatewaypackage;
 
-service PiccoloGateway {
+service PiccoloGatewayService {
   rpc EnableEvent (EventName) returns (Reply);
   rpc DisableEvent (EventName) returns (Reply);
 }
