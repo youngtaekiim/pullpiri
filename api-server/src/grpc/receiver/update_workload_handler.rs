@@ -30,7 +30,7 @@ fn parse_to_server_command(req: &UpdateWorkload) -> String {
     format!(
         "{}/{}/{}",
         req.update_method().as_str_name(),
-        &req.node_name,
-        &req.unit_name
+        req.node_name,
+        req.unit_name
     )
 }

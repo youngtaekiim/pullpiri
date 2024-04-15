@@ -1,0 +1,57 @@
+apiVersion: v1 
+kind: Scenario
+metadata: 
+  labels: 
+    app: testAppScenario
+spec:
+  stagings:
+  - step:     
+    order: 1
+    conditions:
+    express: '$power_state == "on" && $power_state != "parking"  && $speed == 0'
+        operands:
+      - type: DDS
+        name: power_state
+      value: 'rt/piccolo/power_state'
+      - type: DDS
+        name: gear_state
+      value: 'rt/piccolo/gear_state'
+      - type: DDS
+        name: speed
+      value: 'rt/piccolo/speed'
+      selector:
+        matchLabels:
+          app: testAppScenario
+      template: 
+        metadata:
+          labels: 
+            app: testAppScenario
+        spec:
+         containers:
+         - name: vehiclePod
+           image: vehiclePod:v1
+  - step : 
+    order: 2
+      conditions:
+    express: '$power_state == "on" && $power_state == "parking"  && $speed == 0'
+        operands:
+      - type: DDS
+        name: power_state
+      value: 'rt/piccolo/power_state'
+      - type: DDS
+        name: gear_state
+      value: 'rt/piccolo/gear_state'
+      - type: DDS
+        name: speed
+      value: 'rt/piccolo/speed'
+      selector:
+        matchLabels:
+          app: testAppScenario
+      template: 
+        metadata:
+          labels: 
+            app: testAppScenario
+        spec:
+         containers:
+         - name: vehiclePod
+           image: vehiclePod:v2

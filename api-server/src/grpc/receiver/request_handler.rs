@@ -38,7 +38,7 @@ fn parse_to_server_command(req: &Request) -> String {
                 ret = format!(
                     "{}/{}",
                     node_request.node_command().as_str_name(),
-                    &node_request.node_name
+                    node_request.node_name
                 );
             }
         }
