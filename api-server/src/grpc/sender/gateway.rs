@@ -22,11 +22,12 @@ pub async fn send_msg_to_gateway(
         };
 
     let event_name = gateway::EventName {
-        name: scenario.name,
+        is_enable: true,
+        name: format!("scenario/{}", &scenario.name),
         target: gateway::Target::StateManager.into(),
     };
 
-    client.enable_event(tonic::Request::new(event_name)).await
+    client.request_event(tonic::Request::new(event_name)).await
 }
 
 async fn write_etcd(scenario: &Scenario) -> Result<(), etcd::Error> {

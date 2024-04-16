@@ -25,7 +25,7 @@ impl Connection for StateManagerGrpcServer {
                 Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
             }
         } else if from == common::constants::PiccoloModuleName::Gateway.into() {
-            match update_application().await {
+            match update_application(&command).await {
                 Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
                 Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
             }
@@ -50,7 +50,8 @@ async fn send_dbus_to_bluechi(msg: &str) -> Result<String, Box<dyn std::error::E
     }
 }
 
-async fn update_application() -> Result<String, Box<dyn std::error::Error>> {
-    _ = etcd::put("asd", "asd");
-    Err("support only 1 ~ 3 parameters".into())
+async fn update_application(key: &str) -> Result<String, Box<dyn std::error::Error>> {
+    // TODO - manage symbolic link
+    let value = etcd::get(key).await?;
+    Err(value.into())
 }

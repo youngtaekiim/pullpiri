@@ -3,13 +3,13 @@ syntax = "proto3";
 package piccologatewaypackage;
 
 service PiccoloGatewayService {
-  rpc EnableEvent (EventName) returns (Reply);
-  rpc DisableEvent (EventName) returns (Reply);
+  rpc RequestEvent (EventName) returns (Reply);
 }
 
 message EventName {
-  string name = 1;
-  Target target = 2;
+  bool isEnable = 1;
+  string name = 2;
+  Target target = 3;
 }
 
 enum Target {

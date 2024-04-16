@@ -15,10 +15,15 @@ pub async fn put(key: &str, value: &str) -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn get(key: &str) -> Result<(), Error> {
+pub async fn get(key: &str) -> Result<String, Error> {
     let mut client = get_client().await?;
-    client.get(key, None).await?;
-    Ok(())
+    let resp = client.get(key, None).await?;
+
+    if let Some(kv) = resp.clone().kvs().first() {
+        Ok(kv.value_str()?.to_owned())
+    } else {
+        Err(etcd_client::Error::InvalidArgs("".to_owned()))
+    }
 }
 
 pub async fn delete(key: &str) -> Result<(), Error> {
