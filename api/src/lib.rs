@@ -7,11 +7,17 @@ pub mod proto {
         pub mod updateworkload {
             tonic::include_proto!("apiserver.updateworkload");
         }
+        pub mod scenario {
+            tonic::include_proto!("apiserver.scenario");
+        }
     }
     pub mod gateway {
         tonic::include_proto!("piccologatewaypackage");
     }
     pub mod statemanager {
         tonic::include_proto!("statemanager");
+    }
+    pub mod constants {
+        tonic::include_proto!("constants");
     }
 }

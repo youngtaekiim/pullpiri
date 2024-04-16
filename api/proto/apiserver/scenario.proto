@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package apiserver.scenario;
+
+message Scenario {
+  string name = 1;
+  string conditions = 2;
+  string actions = 3;
+}

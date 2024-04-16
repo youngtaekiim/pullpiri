@@ -3,7 +3,7 @@ pub const LISTEN_PEER_URLS: &str = const_format::concatcp!("http://", crate::HOS
 pub const LISTEN_CLIENT_URLS: &str = const_format::concatcp!("http://", crate::HOST_IP, ":2379");
 pub const ADVERTISE_CLIENT_URLS: &str = const_format::concatcp!("http://", crate::HOST_IP, ":2379");
 
-use etcd_client::{Client, Error};
+pub use etcd_client::{Client, Error};
 
 async fn get_client() -> Result<Client, Error> {
     Client::connect([ETCD_ENDPOINT], None).await

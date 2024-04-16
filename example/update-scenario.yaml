@@ -20,11 +20,11 @@ spec:
 scenario/update-sample
 
 --value--
-category: string
+category: PiccoloEvent
+action: scenario/action/update-sample
 conditions:
   express: '$gear_state == "parking"'
   operands:
   - type: DDS
     name: gear_state
     value: "rt/piccolo/gear_state"
-action: aslkdjfkdlsajfl

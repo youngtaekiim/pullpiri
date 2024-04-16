@@ -19,9 +19,21 @@ impl Connection for StateManagerGrpcServer {
         let command = req.request;
         println!("{}/{}", from, command);
 
-        match send_dbus_to_bluechi(&command).await {
-            Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
-            Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+        if from == common::constants::PiccoloModuleName::Apiserver.into() {
+            match send_dbus_to_bluechi(&command).await {
+                Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
+                Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+            }
+        } else if from == common::constants::PiccoloModuleName::Gateway.into() {
+            match update_application().await {
+                Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
+                Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+            }
+        } else {
+            Err(tonic::Status::new(
+                tonic::Code::Unavailable,
+                "unsupported 'from' module",
+            ))
         }
     }
 }
@@ -29,17 +41,16 @@ impl Connection for StateManagerGrpcServer {
 async fn send_dbus_to_bluechi(msg: &str) -> Result<String, Box<dyn std::error::Error>> {
     println!("recv msg: {}\n", msg);
     let cmd: Vec<&str> = msg.split("/").collect();
-    // put-get test command for etcd operation
-    etcd::put(msg, msg).await?;
-    etcd::get(msg).await?;
 
     match cmd.len() {
         1 => method_controller::handle_cmd(cmd),
         2 => method_node::handle_cmd(cmd),
         3 => method_unit::handle_cmd(cmd),
-        _ => {
-            etcd::delete(msg).await?;
-            Err("support only 1 ~ 3 parameters".into())
-        }
+        _ => Err("support only 1 ~ 3 parameters".into()),
     }
+}
+
+async fn update_application() -> Result<String, Box<dyn std::error::Error>> {
+    _ = etcd::put("asd", "asd");
+    Err("support only 1 ~ 3 parameters".into())
 }

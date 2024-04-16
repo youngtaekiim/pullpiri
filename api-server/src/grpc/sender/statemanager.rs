@@ -9,18 +9,18 @@ pub async fn send_msg_to_statemanager(
     let _ = etcd::get("asdf").await;
     let _ = etcd::delete("asdf").await;
 
-    let mut client = statemanager::connection_client::ConnectionClient::connect(
+    let mut client = match statemanager::connection_client::ConnectionClient::connect(
         statemanager::STATE_MANAGER_CONNECT,
     )
     .await
-    .unwrap_or_else(|err| {
-        println!("FAIL - {}\ncannot connect to gRPC server", err);
-        std::process::exit(1);
-    });
+    {
+        Ok(c) => c,
+        Err(e) => return Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+    };
 
     client
         .send(tonic::Request::new(statemanager::SendRequest {
-            from: "api-server".to_owned(),
+            from: common::constants::PiccoloModuleName::Apiserver.into(),
             request: msg.to_owned(),
         }))
         .await

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package constants;
+
+enum PiccoloModuleName {
+  gateway = 0;
+  apiserver = 1;
+  yamlparser = 2;
+  statemanager = 3;
+}
