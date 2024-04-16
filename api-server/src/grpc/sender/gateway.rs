@@ -22,7 +22,7 @@ pub async fn send_msg_to_gateway(
         };
 
     let event_name = gateway::EventName {
-        is_enable: true,
+        id: gateway::FuncId::Enable.into(),
         name: format!("scenario/{}", &scenario.name),
         target: gateway::Target::StateManager.into(),
     };

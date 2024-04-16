@@ -7,9 +7,14 @@ service PiccoloGatewayService {
 }
 
 message EventName {
-  bool isEnable = 1;
+  FuncId id = 1;
   string name = 2;
   Target target = 3;
+}
+
+enum FuncId {
+  Enable = 0;
+  Disable = 1;
 }
 
 enum Target {
