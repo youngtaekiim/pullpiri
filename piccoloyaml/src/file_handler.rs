@@ -1,7 +1,7 @@
 use std::ffi::OsStr;
 use std::fs;
 use std::io::{Error, ErrorKind, Result, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 macro_rules! Err {
     ($x:expr) => {
@@ -21,31 +21,31 @@ WantedBy=multi-user.target default.target
 [Kube]
 Yaml="#;
 
-fn get_absolute_file_path(name: &str) -> Result<String> {
+fn get_absolute_file_path(name: &str) -> Result<PathBuf> {
     let file = Path::new(name);
     if !file.is_file() {
         return Err!(format!("Not found or invalid path - {}", name));
     }
 
     if matches!(file.extension(), Some(x) if x == OsStr::new("yaml")) {
-        let absolute_path = fs::canonicalize(file)?;
-        Ok(absolute_path.into_os_string().into_string().unwrap())
+        Ok(fs::canonicalize(file)?)
     } else {
         Err!("Unsupported file extension")
     }
 }
 
-fn create_dst_file(src_yaml_path: &str, dst_yaml_path: &str) -> Result<()> {
-    let mut file = fs::File::create(Path::new(dst_yaml_path).with_extension("kube"))?;
+fn create_dst_file(src: &PathBuf, dst: &PathBuf) -> Result<()> {
+    let mut file = fs::File::create(dst.with_extension("kube"))?;
+    let dst_str = dst.clone().into_os_string().into_string().unwrap();
 
-    file.write_all(format!("{}{}", CONTENTS_HEADER, dst_yaml_path).as_bytes())?;
-    fs::copy(src_yaml_path, dst_yaml_path)?;
+    file.write_all(format!("{}{}", CONTENTS_HEADER, dst_str).as_bytes())?;
+    fs::copy(src, dst)?;
     Ok(())
 }
 
-fn delete_dst_files(dst_yaml_path: &str) -> Result<()> {
-    fs::remove_file(Path::new(dst_yaml_path))?;
-    fs::remove_file(Path::new(dst_yaml_path).with_extension("kube"))?;
+fn delete_dst_files(dst: &PathBuf) -> Result<()> {
+    fs::remove_file(dst)?;
+    fs::remove_file(dst.with_extension("kube"))?;
     Ok(())
 }
 
@@ -54,8 +54,8 @@ fn delete_dst_files(dst_yaml_path: &str) -> Result<()> {
 ///                  /etc/containers/systemd/my_pod.kube
 pub fn handle(cmd: &str, src_file_path: &str) -> Result<()> {
     let src = get_absolute_file_path(src_file_path)?;
-    let file_name = Path::new(&src).file_name().unwrap().to_str().unwrap();
-    let dst = format!("{}{}", SYSTEMD_FILE_PATH, file_name);
+    let file_name = Path::new(&src).file_name().unwrap();
+    let dst = Path::new(SYSTEMD_FILE_PATH).join(file_name);
 
     if cmd == "apply" {
         create_dst_file(&src, &dst)?;
