@@ -10,7 +10,8 @@ use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() {
-    let _ = parser::parser("/home/seunghwanbang/workspace/yaml_file/rollback-scenario.yaml");
+    let _ =
+        parser::parser("/root/work/projects-rust/piccolo-bluechi/bin/update-scenario.yaml").await;
 
     let addr = common::yamlparser::YAML_PARSER_OPEN.parse().unwrap();
     let piccoloyaml_grpc_server = YamlparserGrpcServer::default();

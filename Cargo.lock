@@ -1447,7 +1447,6 @@ dependencies = [
 name = "yamlparser"
 version = "0.1.0"
 dependencies = [
- "clap",
  "common",
  "prost",
  "tokio",

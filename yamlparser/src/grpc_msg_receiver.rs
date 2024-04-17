@@ -18,16 +18,16 @@ impl Connection for YamlparserGrpcServer {
         let command = req.request;
         println!("{}", command);
 
-        match send_yamlpath_to_parser(&command) {
+        match send_yamlpath_to_parser(&command).await {
             Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
             Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
         }
     }
 }
 
-fn send_yamlpath_to_parser(msg: &str) -> Result<String, Box<dyn std::error::Error>> {
+async fn send_yamlpath_to_parser(msg: &str) -> Result<String, Box<dyn std::error::Error>> {
     println!("recv msg: {}\n", msg);
     let file_path = file_handler::get_absolute_file_path(msg)?;
-    parser::parser(&file_path)?;
+    parser::parser(&file_path).await?;
     Ok("Success".to_string())
 }
