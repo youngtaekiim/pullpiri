@@ -7,6 +7,7 @@ use yaml_rust::YamlLoader;
 
 use apiserver::scenario::Scenario;
 
+use crate::file_handler;
 use crate::msg_sender::send_grpc_msg;
 
 pub async fn parser(name: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -27,11 +28,27 @@ pub async fn parser(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Access parts of the document
     let metadata = doc["metadata"]["name"].as_str().unwrap();
     let action = doc["spec"]["action"][0].as_hash().unwrap();
+    let image = doc["spec"]["action"][0]["image"].as_str().unwrap();
     let condition = doc["spec"]["conditions"].as_hash().unwrap();
+    let operation = doc["spec"]["action"][0]["operation"].as_str().unwrap();
+    let version = image.split(':').collect::<Vec<&str>>()[1];
+
+    //for file name
+    let parts: Vec<&str> = image.split('/').collect();
+    let image_name_parts: Vec<&str> = parts[2].split(':').collect();
+    let file_name = image_name_parts[0];
 
     println!("Metadata: {}", metadata);
     println!("Action: {:#?}", action);
     println!("Condition: {:#?}", condition);
+
+    match operation {
+        "update" => {
+            let _ = file_handler::update_yaml_file(image, file_name, version);
+        }
+        "rollback" => {}
+        _ => {}
+    }
 
     let mut out_str = String::new();
     {
@@ -40,7 +57,7 @@ pub async fn parser(name: &str) -> Result<(), Box<dyn std::error::Error>> {
         emitter.dump(&Yaml::Hash(condition.clone())).unwrap(); // Dump the YAML object to a String
     }
 
-    let mut out_str2 = String::new();
+    let mut out_str2: String = String::new();
     {
         let mut emitter2 = YamlEmitter::new(&mut out_str2);
         emitter2.compact(true);
