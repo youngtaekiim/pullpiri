@@ -17,6 +17,9 @@ pub mod proto {
     pub mod statemanager {
         tonic::include_proto!("statemanager");
     }
+    pub mod yamlparser {
+        tonic::include_proto!("yamlparser");
+    }
     pub mod constants {
         tonic::include_proto!("constants");
     }

@@ -9,4 +9,5 @@ members = [
     "statemanager",
     "api",
     "common",
+    "yamlparser",
 ]
