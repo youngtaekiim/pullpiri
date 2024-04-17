@@ -2,6 +2,7 @@ use crate::method_bluechi::{method_controller, method_node, method_unit};
 use common::etcd;
 use common::statemanager::connection_server::Connection;
 use common::statemanager::{SendRequest, SendResponse};
+use yaml_rust::YamlLoader;
 
 #[derive(Default)]
 pub struct StateManagerGrpcServer {}
@@ -50,8 +51,19 @@ async fn send_dbus_to_bluechi(msg: &str) -> Result<String, Box<dyn std::error::E
     }
 }
 
-async fn update_application(key: &str) -> Result<String, Box<dyn std::error::Error>> {
+pub async fn update_application(key: &str) -> Result<String, Box<dyn std::error::Error>> {
     // TODO - manage symbolic link
     let value = etcd::get(key).await?;
+    /*    let value =
+    r#"action:
+      - operation: update
+        image: sdv.lge.com/smart_trailer:0.2"#;*/
+    let docs = YamlLoader::load_from_str(&value).unwrap();
+    let doc = &docs[0]["action"][0];
+
+    let action = doc["operation"].as_str().unwrap();
+    let image = doc["image"].as_str().unwrap();
+
+    println!("action : {}\nimage: {}", action, image);
     Err(value.into())
 }

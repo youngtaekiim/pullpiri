@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 common = { path = "../common" }
+yaml-rust = "0.4.5"
 dbus = "0.9.7"
 tonic = "0.11.0"
 prost = "0.12.3"

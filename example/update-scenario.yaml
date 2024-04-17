@@ -8,11 +8,12 @@ spec:
     #USE Equal, NotEqual, Greater, GreaterOrEqual, Smaller, SmallerOrEqual
     value: "parking"
     operands:
-    - type: DDS
+      type: DDS
       name: gear_state
       value: "rt/piccolo/gear_state"
-  action: update
-  - image: "sdv.lge.com/smart_trailer:0.2"
+  action:
+    - operation: update
+      image: sdv.lge.com/smart_trailer:0.2
 
 --------------------
 
@@ -23,7 +24,8 @@ scenario/update-sample
 category: PiccoloEvent
 action: scenario/action/update-sample
 conditions:
-  express: '$gear_state == "parking"'
+  express: Equal
+  value: "parking"
   operands:
   - type: DDS
     name: gear_state

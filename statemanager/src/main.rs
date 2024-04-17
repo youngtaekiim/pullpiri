@@ -7,6 +7,10 @@ use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() {
+    // for test
+    let _ = grpc_msg_handler::update_application("scenario/action/update-sample").await;
+    // for test
+
     let addr = common::statemanager::STATE_MANAGER_OPEN.parse().unwrap();
     let state_manager_grpc_server = StateManagerGrpcServer::default();
 
