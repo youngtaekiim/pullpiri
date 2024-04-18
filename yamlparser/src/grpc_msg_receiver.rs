@@ -2,16 +2,14 @@ use crate::file_handler;
 use crate::parser;
 use common::yamlparser::connection_server::Connection;
 use common::yamlparser::{SendRequest, SendResponse};
+use tonic::{Code, Request, Response, Status};
 
 #[derive(Default)]
 pub struct YamlparserGrpcServer {}
 
 #[tonic::async_trait]
 impl Connection for YamlparserGrpcServer {
-    async fn send(
-        &self,
-        request: tonic::Request<SendRequest>,
-    ) -> Result<tonic::Response<SendResponse>, tonic::Status> {
+    async fn send(&self, request: Request<SendRequest>) -> Result<Response<SendResponse>, Status> {
         println!("Got a request from {:?}", request.remote_addr());
 
         let req = request.into_inner();
@@ -19,8 +17,8 @@ impl Connection for YamlparserGrpcServer {
         println!("{}", command);
 
         match handle_msg(&command).await {
-            Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
-            Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+            Ok(s) => Ok(Response::new(SendResponse { response: s })),
+            Err(e) => Err(Status::new(Code::Unavailable, e.to_string())),
         }
     }
 }

@@ -68,7 +68,7 @@ pub fn update_yaml_file(new_image: &str, file_name: &str, version: &str) -> Resu
             lines.push(line);
         }
     }
-    
+
     for line in &lines {
         writeln!(writer, "{}", line).expect("Failed to write line");
     }
@@ -76,6 +76,7 @@ pub fn update_yaml_file(new_image: &str, file_name: &str, version: &str) -> Resu
     Ok(())
 }
 
+#[allow(dead_code)]
 fn delete_dst_files(dst_yaml_path: &str) -> Result<()> {
     fs::remove_file(Path::new(dst_yaml_path))?;
     fs::remove_file(Path::new(dst_yaml_path).with_extension("kube"))?;
