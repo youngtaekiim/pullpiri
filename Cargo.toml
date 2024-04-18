@@ -10,4 +10,5 @@ members = [
     "api",
     "common",
     "yamlparser",
+    "test-grpc-sender",
 ]

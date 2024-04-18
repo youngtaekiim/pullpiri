@@ -1,15 +1,16 @@
 apiVersion: v1
 kind: Scenario
 metadata:
-  name: rollback-sample
+  name: testrollback
 spec:
   conditions:
     express: Equal
     #USE Equal, NotEqual, Greater, GreaterOrEqual, Smaller, SmallerOrEqual
     value: "reverse"
     operands:
-    - type: DDS
+      type: DDS
       name: gear_state
       value: "rt/piccolo/gear_state"
-  action: rollback
-  - image: "sdv.lge.com/smart_trailer:0.1"
+  action:
+    - operation: update
+      image: sdv.lge.com/library/passive-redundant-pong:0.1
