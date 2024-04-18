@@ -7,7 +7,9 @@ use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() {
-    let addr = common::apiserver::API_SERVER_OPEN.parse().unwrap();
+    let addr = common::apiserver::API_SERVER_OPEN
+        .parse()
+        .expect("api-server address parsing error");
     let request_server = grpc::receiver::request_handler::GrpcRequestServer::default();
     let update_server = grpc::receiver::update_workload_handler::GrpcUpdateServer::default();
     let scenario_server = grpc::receiver::scenario_handler::GrpcUpdateServer::default();

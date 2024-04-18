@@ -5,13 +5,11 @@ use common::apiserver::{request::Request, updateworkload::UpdateWorkload, Respon
 pub async fn send_request_msg(send: Request) -> Result<tonic::Response<Response>, tonic::Status> {
     println!("sending msg - '{:?}'\n", send);
 
-    let mut client = RequestConnectionClient::connect(common::apiserver::API_SERVER_CONNECT)
-        .await
-        .unwrap_or_else(|err| {
-            println!("FAIL - {}\ncannot connect to gRPC server", err);
-            std::process::exit(1);
-        });
-
+    let mut client =
+        match RequestConnectionClient::connect(common::apiserver::API_SERVER_CONNECT).await {
+            Ok(c) => c,
+            Err(e) => return Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+        };
     client.send(tonic::Request::new(send)).await
 }
 
@@ -20,12 +18,13 @@ pub async fn send_update_msg(
 ) -> Result<tonic::Response<Response>, tonic::Status> {
     println!("sending msg - '{:?}'\n", send);
 
-    let mut client = UpdateWorkloadConnectionClient::connect(common::apiserver::API_SERVER_CONNECT)
-        .await
-        .unwrap_or_else(|err| {
-            println!("FAIL - {}\ncannot connect to gRPC server", err);
-            std::process::exit(1);
-        });
-
+    let mut client = match UpdateWorkloadConnectionClient::connect(
+        common::apiserver::API_SERVER_CONNECT,
+    )
+    .await
+    {
+        Ok(c) => c,
+        Err(e) => return Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+    };
     client.send(tonic::Request::new(send)).await
 }

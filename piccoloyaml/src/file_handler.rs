@@ -36,7 +36,11 @@ fn get_absolute_file_path(name: &str) -> Result<PathBuf> {
 
 fn create_dst_file(src: &PathBuf, dst: &PathBuf) -> Result<()> {
     let mut file = fs::File::create(dst.with_extension("kube"))?;
-    let dst_str = dst.clone().into_os_string().into_string().unwrap();
+    let dst_str = dst.clone().into_os_string().into_string();
+    let dst_str = match dst_str {
+        Ok(str) => str,
+        Err(_) => return Err!("cannot determine yaml path string"),
+    };
 
     file.write_all(format!("{}{}", CONTENTS_HEADER, dst_str).as_bytes())?;
     fs::copy(src, dst)?;
@@ -54,7 +58,9 @@ fn delete_dst_files(dst: &PathBuf) -> Result<()> {
 ///                  /etc/containers/systemd/my_pod.kube
 pub fn handle(cmd: &str, src_file_path: &str) -> Result<()> {
     let src = get_absolute_file_path(src_file_path)?;
-    let file_name = Path::new(&src).file_name().unwrap();
+    let file_name = Path::new(&src)
+        .file_name()
+        .ok_or::<Error>(Error::new(ErrorKind::Other, "cannot determine file name"))?;
     let dst = Path::new(SYSTEMD_FILE_PATH).join(file_name);
 
     if cmd == "apply" {

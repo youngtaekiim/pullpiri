@@ -21,15 +21,14 @@ WantedBy=multi-user.target default.target
 [Kube]
 Yaml="#;
 
-pub fn get_absolute_file_path(name: &str) -> Result<String> {
+pub fn get_absolute_file_path(name: &str) -> Result<PathBuf> {
     let file = Path::new(name);
     if !file.is_file() {
         return Err!(format!("Not found or invalid path - {}", name));
     }
 
     if matches!(file.extension(), Some(x) if x == OsStr::new("yaml")) {
-        let absolute_path = fs::canonicalize(file)?;
-        Ok(absolute_path.into_os_string().into_string().unwrap())
+        Ok(fs::canonicalize(file)?)
     } else {
         Err!("Unsupported file extension")
     }
@@ -54,7 +53,7 @@ pub fn update_yaml_file(new_image: &str, file_name: &str, version: &str) -> Resu
     new_path.push(format!("{}_{}.yaml", file_name, version));
     println!("{}", new_path.display());
 
-    let src_file = fs::File::open(src_path).unwrap();
+    let src_file = fs::File::open(src_path)?;
     let dst_file = fs::File::create(&new_path).expect("Failed to open file in write mode");
     let reader = io::BufReader::new(src_file);
     let mut writer = io::BufWriter::new(dst_file);
