@@ -1,6 +1,6 @@
 #!/bin/bash
 BINARY_FOLDER=$(pwd)/target/debug
-BINARY="api-server etcd piccoloctl piccoloyaml statemanager yamlparser"
+BINARY="api-server etcd piccoloctl piccoloyaml statemanager yamlparser test-grpc-sender"
 LINK_FOLDER=$(pwd)/bin
 
 if [ ! -d "$LINK_FOLDER" ]; then

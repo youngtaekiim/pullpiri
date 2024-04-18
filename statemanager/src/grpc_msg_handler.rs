@@ -1,4 +1,4 @@
-use crate::method_bluechi::{method_controller, method_node, method_unit};
+use crate::method_bluechi;
 use common::etcd;
 use common::statemanager::connection_server::Connection;
 use common::statemanager::{SendRequest, SendResponse};
@@ -21,12 +21,12 @@ impl Connection for StateManagerGrpcServer {
         println!("{}/{}", from, command);
 
         if from == common::constants::PiccoloModuleName::Apiserver.into() {
-            match send_dbus_to_bluechi(&command).await {
+            match method_bluechi::send_dbus(&command).await {
                 Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
                 Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
             }
         } else if from == common::constants::PiccoloModuleName::Gateway.into() {
-            match update_application(&command).await {
+            match make_action_for_scenario(&command).await {
                 Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
                 Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
             }
@@ -39,31 +39,21 @@ impl Connection for StateManagerGrpcServer {
     }
 }
 
-async fn send_dbus_to_bluechi(msg: &str) -> Result<String, Box<dyn std::error::Error>> {
-    println!("recv msg: {}\n", msg);
-    let cmd: Vec<&str> = msg.split("/").collect();
-
-    match cmd.len() {
-        1 => method_controller::handle_cmd(cmd),
-        2 => method_node::handle_cmd(cmd),
-        3 => method_unit::handle_cmd(cmd),
-        _ => Err("support only 1 ~ 3 parameters".into()),
-    }
-}
-
-pub async fn update_application(key: &str) -> Result<String, Box<dyn std::error::Error>> {
+pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::error::Error>> {
     // TODO - manage symbolic link
     let value = etcd::get(key).await?;
     /*    let value =
-    r#"action:
-      - operation: update
-        image: sdv.lge.com/smart_trailer:0.2"#;*/
+    r#"---
+operation: update
+image: "sdv.lge.com/library/passive-redundant-pong:0.2""#;*/
+
     let docs = YamlLoader::load_from_str(&value).unwrap();
     let doc = &docs[0]["action"][0];
 
+    let name = key.split('/').collect::<Vec<&str>>().last().copied().unwrap();
     let action = doc["operation"].as_str().unwrap();
     let image = doc["image"].as_str().unwrap();
 
-    println!("action : {}\nimage: {}", action, image);
+    println!("name : {}\naction : {}\nimage: {}", name, action, image);
     Err(value.into())
 }

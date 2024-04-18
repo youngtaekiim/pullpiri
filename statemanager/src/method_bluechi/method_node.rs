@@ -27,7 +27,8 @@ fn list_node_units(node_name: &str) -> Result<String, Box<dyn std::error::Error>
 
     Ok(result)
 }
-/*
+
+#[allow(dead_code)]
 fn node_daemon_reload(node_name: &str) -> Result<String, Box<dyn std::error::Error>> {
     let conn = Connection::new_system()?;
 
@@ -45,7 +46,7 @@ fn node_daemon_reload(node_name: &str) -> Result<String, Box<dyn std::error::Err
 
     Ok(format!("reload node '{}'\n", node_name))
 }
-*/
+
 pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn std::error::Error>> {
     match c[0] {
         "LIST_UNIT" => list_node_units(c[1]),

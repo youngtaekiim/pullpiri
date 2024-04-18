@@ -1,11 +1,13 @@
 use common::yamlparser::connection_client::ConnectionClient;
 use common::yamlparser::SendRequest;
+use std::env;
 
 #[tokio::main]
 async fn main() {
+    let args: Vec<String> = env::args().collect();
+    let path = &args[1];
     let send: SendRequest = SendRequest {
-        request: "/root/work/projects-rust/piccolo-bluechi/example/rollback-scenario.yaml"
-            .to_owned(),
+        request: path.to_string(),
     };
 
     let mut client = ConnectionClient::connect(common::yamlparser::YAML_PARSER_CONNECT)
