@@ -2,9 +2,11 @@
 BINARY_FOLDER=$(pwd)/target/debug
 BINARY="api-server etcd piccoloctl piccoloyaml statemanager yamlparser test-grpc-sender"
 LINK_FOLDER=$(pwd)/bin
+EXAMPLE_FOLDER=$(pwd)/example
 
 if [ ! -d "$LINK_FOLDER" ]; then
 	mkdir bin
+	cp -r $EXAMPLE_FOLDER $LINK_FOLDER
 fi
 
 for exe in $BINARY

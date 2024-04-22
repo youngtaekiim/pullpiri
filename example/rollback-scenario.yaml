@@ -1,16 +1,15 @@
 apiVersion: v1
 kind: Scenario
 metadata:
-  name: testrollback
+  name: test-pong
 spec:
   conditions:
     express: Equal
-    #USE Equal, NotEqual, Greater, GreaterOrEqual, Smaller, SmallerOrEqual
     value: "reverse"
     operands:
       type: DDS
       name: gear_state
       value: "rt/piccolo/gear_state"
   action:
-    - operation: update
+    - operation: rollback
       image: sdv.lge.com/library/passive-redundant-pong:0.1

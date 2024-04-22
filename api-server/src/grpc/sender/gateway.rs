@@ -5,8 +5,6 @@ use common::gateway;
 pub async fn send_msg_to_gateway(
     scenario: Scenario,
 ) -> Result<tonic::Response<gateway::Reply>, tonic::Status> {
-    let _ = etcd::put(&("scenario/".to_owned() + &scenario.name), "asdf").await;
-
     if let Err(e) = write_etcd(&scenario).await {
         return Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string()));
     }
@@ -35,17 +33,11 @@ async fn write_etcd(scenario: &Scenario) -> Result<(), etcd::Error> {
     let conditions = &scenario.conditions;
     let actions = &scenario.actions;
 
-    let condition_key = format!("scenario/{}", name);
-    let action_key = format!("scenario/action/{}", name);
+    let condition_key = format!("scenario/{}/conditions", name);
+    let action_key = format!("scenario/{}/action", name);
 
-    let condition_value = format!(
-        "category: PiccoloEvent\naction: {}\n{}",
-        action_key, conditions
-    );
-    let action_value = actions;
-
-    etcd::put(&action_key, &action_value).await?;
-    etcd::put(&condition_key, &condition_value).await?;
+    etcd::put(&action_key, &actions).await?;
+    etcd::put(&condition_key, &conditions).await?;
 
     Ok(())
 }

@@ -1,11 +1,10 @@
 apiVersion: v1
 kind: Scenario
 metadata:
-  name: test
+  name: test-pong
 spec:
   conditions:
     express: Equal
-    #USE Equal, NotEqual, Greater, GreaterOrEqual, Smaller, SmallerOrEqual
     value: "parking"
     operands:
       type: DDS
@@ -14,19 +13,3 @@ spec:
   action:
     - operation: update
       image: sdv.lge.com/library/passive-redundant-pong:0.2
-
---------------------
-
---key--
-scenario/update-sample
-
---value--
-category: PiccoloEvent
-action: scenario/action/update-sample
-conditions:
-  express: Equal
-  value: "parking"
-  operands:
-  - type: DDS
-    name: gear_state
-    value: "rt/piccolo/gear_state"
