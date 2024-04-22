@@ -1,11 +1,7 @@
-use common::apiserver;
+use common::apiserver::scenario::Scenario;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
-use yaml_rust::YamlEmitter;
-use yaml_rust::YamlLoader;
-
-use apiserver::scenario::Scenario;
 
 use crate::file_handler;
 use crate::msg_sender::send_grpc_msg;
@@ -16,23 +12,18 @@ pub async fn parser(path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
 
-    let docs = YamlLoader::load_from_str(&contents)?;
-    let doc = &docs[0];
+    let yaml_map: serde_yaml::Mapping = serde_yaml::from_str(&contents)?;
 
-    // Debugging
-    //println!("{:#?}", doc);
-
-    // Access parts of the document
-    let name = doc["metadata"]["name"]
+    let name = yaml_map["metadata"]["name"]
         .as_str()
-        .ok_or("metadata-name is None")?;
-    let action = &doc["spec"]["action"][0];
-    let condition = &doc["spec"]["conditions"];
+        .ok_or("None - metadata.name")?;
+    let action = &yaml_map["spec"]["action"][0];
+    let condition = &yaml_map["spec"]["conditions"];
 
     let operation = action["operation"]
         .as_str()
-        .ok_or("action-operation is None")?;
-    let image = action["image"].as_str().ok_or("action-image is None")?;
+        .ok_or("None - action.operation")?;
+    let image = action["image"].as_str().ok_or("None - action.image")?;
     let version = image
         .split(':')
         .collect::<Vec<&str>>()
@@ -48,22 +39,10 @@ pub async fn parser(path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
         _ => {}
     }
 
-    let mut str_condition = String::new();
-    {
-        let mut emitter = YamlEmitter::new(&mut str_condition);
-        emitter.dump(condition)?;
-    }
-
-    let mut str_action: String = String::new();
-    {
-        let mut emitter = YamlEmitter::new(&mut str_action);
-        emitter.dump(action)?;
-    }
-
     let scenario: Scenario = Scenario {
         name: name.to_string(),
-        conditions: str_condition,
-        actions: str_action,
+        conditions: serde_yaml::to_string(condition)?,
+        actions: serde_yaml::to_string(action)?,
     };
 
     match send_grpc_msg(scenario).await {
