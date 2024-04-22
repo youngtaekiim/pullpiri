@@ -1,6 +1,6 @@
 mod file_handler;
 mod grpc_msg_receiver;
-mod msg_sender;
+mod grpc_msg_sender;
 mod parser;
 
 use common::yamlparser::connection_server::ConnectionServer;

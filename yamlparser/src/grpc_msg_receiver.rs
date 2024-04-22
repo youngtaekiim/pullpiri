@@ -1,4 +1,5 @@
 use crate::file_handler;
+use crate::grpc_msg_sender;
 use crate::parser;
 use common::yamlparser::connection_server::Connection;
 use common::yamlparser::{SendRequest, SendResponse};
@@ -23,9 +24,11 @@ impl Connection for YamlparserGrpcServer {
     }
 }
 
-async fn handle_msg(msg: &str) -> Result<String, Box<dyn std::error::Error>> {
-    println!("recv msg: {}\n", msg);
-    let file_path = file_handler::get_absolute_file_path(msg)?;
-    parser::parser(&file_path).await?;
+async fn handle_msg(path: &str) -> Result<String, Box<dyn std::error::Error>> {
+    println!("recv msg: {}\n", path);
+    let absolute_path = file_handler::get_absolute_file_path(path)?;
+    let scenario = parser::parse(&absolute_path).await?;
+
+    grpc_msg_sender::send_grpc_msg(scenario).await?;
     Ok("Success".to_string())
 }
