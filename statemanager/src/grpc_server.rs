@@ -2,7 +2,13 @@ use crate::method_bluechi::{method_controller, method_node, method_unit};
 use common::etcd;
 use common::statemanager::connection_server::Connection;
 use common::statemanager::{SendRequest, SendResponse};
-use yaml_rust::YamlLoader;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+struct Action {
+    operation: String,
+    image: String,
+}
 
 #[derive(Default)]
 pub struct StateManagerGrpcServer {}
@@ -58,19 +64,19 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
     operation: update
     image: "sdv.lge.com/library/passive-redundant-pong:0.2""#;*/
 
-    let docs = YamlLoader::load_from_str(&value)?;
-    //let doc = &docs[0]["action"][0];
-    let doc = &docs[0];
-
+    let action: Action = serde_yaml::from_str(&value)?;
     let name = key
         .split('/')
         .collect::<Vec<&str>>()
         .last()
         .copied()
         .ok_or("name is None")?;
-    let action = doc["operation"].as_str().ok_or("action is None")?;
-    let image = doc["image"].as_str().ok_or("image is None")?;
+    let operation = action.operation;
+    let image = action.image;
 
-    println!("name : {}\naction : {}\nimage: {}", name, action, image);
+    println!(
+        "name : {}\noperation : {}\nimage: {}",
+        name, operation, image
+    );
     Ok("".into())
 }
