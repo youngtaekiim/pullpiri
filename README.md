@@ -72,3 +72,6 @@ Currently not supported.
 Currently not supported.
 ### interface org.eclipse.bluechi.internal.Agent.Metrics
 Currently not supported.
+
+## License
+The LICENSES directory contains all the licenses used by the PICCOLO Project.
