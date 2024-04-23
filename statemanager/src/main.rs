@@ -7,13 +7,6 @@ use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() {
-    // for test
-    /*match grpc_server::make_action_for_scenario("scenario/test-pong/action").await {
-        Ok(_) => println!("Good parsing job"),
-        Err(e) => println!("{:?}", e.to_string()),
-    };*/
-    // for test
-
     let addr = common::statemanager::STATE_MANAGER_OPEN
         .parse()
         .expect("statemanager address parsing error");
@@ -25,4 +18,15 @@ async fn main() {
         .add_service(ConnectionServer::new(state_manager_grpc_server))
         .serve(addr)
         .await;
+}
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn test_parsing() {
+        let result =
+            crate::grpc_server::make_action_for_scenario("scenario/test-pong/action").await;
+        println!("{:?}", result);
+        assert!(result.is_ok());
+    }
 }

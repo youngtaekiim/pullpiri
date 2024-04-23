@@ -10,6 +10,10 @@ release: fmt
 fmt:
 	cargo fmt
 
+.PHONY: test
+test:
+	cargo test
+
 .PHONY: clean
 clean: fmt
 	rm -rf target \

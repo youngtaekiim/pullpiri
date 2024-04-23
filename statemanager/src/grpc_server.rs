@@ -70,6 +70,7 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
 
     match operation {
         "deploy" => {
+            delete_symlink_and_reload(name)?;
             make_and_start_new_symlink(name, image)?;
         }
         "update" | "rollback" => {
@@ -85,9 +86,9 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
 }
 
 fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    method_unit::handle_cmd(vec!["STOP", "nuc-cent", &format!("{}.service", name)])?;
+    let _ = method_unit::handle_cmd(vec!["STOP", "nuc-cent", &format!("{}.service", name)]);
     let kube_symlink_path = format!("{}{}.kube", SYSTEMD_PATH, name);
-    std::fs::remove_file(&kube_symlink_path)?;
+    let _ = std::fs::remove_file(&kube_symlink_path);
     method_controller::handle_cmd(vec!["DAEMON_RELOAD"])?;
     Ok(())
 }
