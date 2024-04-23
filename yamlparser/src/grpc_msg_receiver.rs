@@ -15,7 +15,6 @@ impl Connection for YamlparserGrpcServer {
 
         let req = request.into_inner();
         let command = req.request;
-        println!("{}", command);
 
         match handle_msg(&command).await {
             Ok(s) => Ok(Response::new(SendResponse { response: s })),
