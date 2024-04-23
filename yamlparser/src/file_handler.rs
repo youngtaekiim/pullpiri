@@ -9,8 +9,6 @@ macro_rules! Err {
     };
 }
 
-const SYSTEMD_FILE_PATH: &str = r#"/etc/containers/systemd/"#;
-
 pub fn get_absolute_file_path(path: &str) -> Result<PathBuf> {
     let file = Path::new(path);
     if !file.is_file() {
@@ -70,7 +68,7 @@ spec:
 }
 
 pub fn perform(name: &str, image: &str) -> Result<()> {
-    let directory = format!("{}{}", SYSTEMD_FILE_PATH, name);
+    let directory = format!("{}{}", common::YAML_STORAGE, name);
     fs::create_dir_all(&directory)?;
 
     let version = image

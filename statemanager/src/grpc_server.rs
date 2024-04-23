@@ -3,6 +3,8 @@ use common::etcd;
 use common::statemanager::connection_server::Connection;
 use common::statemanager::{SendRequest, SendResponse};
 
+const SYSTEMD_PATH: &str = "/etc/containers/systemd/";
+
 #[derive(Default)]
 pub struct StateManagerGrpcServer {}
 
@@ -51,25 +53,59 @@ async fn send_dbus(msg: &str) -> Result<String, Box<dyn std::error::Error>> {
 }
 
 pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::error::Error>> {
-    // TODO - manage symbolic link
     let value = etcd::get(key).await?;
     /*let value = r#"---
     operation: update
     image: "sdv.lge.com/library/passive-redundant-pong:0.2""#;*/
 
     let action: serde_yaml::Mapping = serde_yaml::from_str(&value)?;
-    let name = key
-        .split('/')
-        .collect::<Vec<&str>>()
-        .last()
-        .copied()
-        .ok_or("name is None")?;
+    let name = key.split('/').collect::<Vec<&str>>()[1];
     let operation = action["operation"].as_str().ok_or("None - operation")?;
     let image = action["image"].as_str().ok_or("None - image")?;
 
     println!(
-        "name : {}\noperation : {}\nimage: {}",
+        "name : {}\noperation : {}\nimage: {}\n",
         name, operation, image
     );
+
+    match operation {
+        "deploy" => {
+            make_and_start_new_symlink(name, image)?;
+        }
+        "update" | "rollback" => {
+            delete_symlink_and_reload(name)?;
+            make_and_start_new_symlink(name, image)?;
+        }
+        _ => {
+            return Err("not supported operation".into());
+        }
+    }
+
     Ok("".into())
+}
+
+fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    method_unit::handle_cmd(vec!["STOP", "nuc-cent", &format!("{}.service", name)])?;
+    let kube_symlink_path = format!("{}{}.kube", SYSTEMD_PATH, name);
+    std::fs::remove_file(&kube_symlink_path)?;
+    method_controller::handle_cmd(vec!["DAEMON_RELOAD"])?;
+    Ok(())
+}
+
+fn make_and_start_new_symlink(name: &str, image: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let version = image
+        .split(':')
+        .collect::<Vec<&str>>()
+        .last()
+        .copied()
+        .unwrap();
+
+    let original = format!("{0}{1}/{1}_{2}.kube", common::YAML_STORAGE, name, version);
+    let link = format!("{}{}.kube", SYSTEMD_PATH, name);
+    std::os::unix::fs::symlink(original, link)?;
+
+    method_controller::handle_cmd(vec!["DAEMON_RELOAD"])?;
+    method_unit::handle_cmd(vec!["START", "nuc-cent", &format!("{}.service", name)])?;
+
+    Ok(())
 }

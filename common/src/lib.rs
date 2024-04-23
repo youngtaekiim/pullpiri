@@ -9,3 +9,4 @@ pub mod constants {
 }
 
 pub const HOST_IP: &str = "10.159.57.33";
+pub const YAML_STORAGE: &str = "/root/piccolo_yaml/";

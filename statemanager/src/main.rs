@@ -8,10 +8,10 @@ use tonic::transport::Server;
 #[tokio::main]
 async fn main() {
     // for test
-    match grpc_server::make_action_for_scenario("scenario/action/test").await {
+    /*match grpc_server::make_action_for_scenario("scenario/test-pong/action").await {
         Ok(_) => println!("Good parsing job"),
         Err(e) => println!("{:?}", e.to_string()),
-    };
+    };*/
     // for test
 
     let addr = common::statemanager::STATE_MANAGER_OPEN
