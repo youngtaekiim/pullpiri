@@ -1,0 +1,32 @@
+version: "3"
+services:
+  yamlparser:
+    network_mode: "host"
+    build: ./
+    command: /piccolo-bluechi/yamlparser
+    volumes:
+      - /root/piccolo_yaml:/root/piccolo_yaml
+      - ./example:/piccolo-bluechi/example
+  api-server:
+    network_mode: "host"
+    build: ./
+    command: /piccolo-bluechi/api-server
+  statemanager:
+    network_mode: "host"
+    build: ./
+    command: /piccolo-bluechi/statemanager
+    volumes:
+      - /root/piccolo_yaml:/root/piccolo_yaml
+      - /run/dbus:/run/dbus
+#  etcd:
+#    network_mode: "host"
+#    build: ./
+#    command: /piccolo-bluechi/etcd
+#    volumes:
+#      - /HOST_etcd_storage:/CONTAINER_etcd_storage
+#  gateway:
+#    network_mode: "host"
+#    image: sdv.lge.com/library/xxxxxxx:0.x
+#    command: /gateway
+#    volumes:
+#      - /etcd_storage:/etcd_storage
