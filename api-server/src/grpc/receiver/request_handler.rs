@@ -32,7 +32,10 @@ fn parse_to_server_command(req: &Request) -> String {
     if let Some(request_command) = &req.request_content {
         match request_command {
             ControllerRequest(controller_request) => {
-                ret = format!("{}", controller_request.controller_command().as_str_name());
+                ret = controller_request
+                    .controller_command()
+                    .as_str_name()
+                    .to_string();
             }
             NodeRequest(node_request) => {
                 ret = format!(

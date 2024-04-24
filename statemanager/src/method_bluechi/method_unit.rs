@@ -64,8 +64,8 @@ fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::
         )?;
 
     let mut result: String = match carries_install_info {
-        true => format!("The unit files included enablement information\n"),
-        false => format!("The unit files did not include any enablement information\n"),
+        true => "The unit files included enablement information\n".to_string(),
+        false => "The unit files did not include any enablement information\n".to_string(),
     };
 
     for (op_type, file_name, file_dest) in changes {

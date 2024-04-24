@@ -36,8 +36,8 @@ async fn write_etcd(scenario: &Scenario) -> Result<(), etcd::Error> {
     let condition_key = format!("scenario/{}/conditions", name);
     let action_key = format!("scenario/{}/action", name);
 
-    etcd::put(&action_key, &actions).await?;
-    etcd::put(&condition_key, &conditions).await?;
+    etcd::put(&action_key, actions).await?;
+    etcd::put(&condition_key, conditions).await?;
 
     Ok(())
 }

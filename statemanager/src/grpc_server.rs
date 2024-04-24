@@ -42,7 +42,7 @@ impl Connection for StateManagerGrpcServer {
 
 async fn send_dbus(msg: &str) -> Result<String, Box<dyn std::error::Error>> {
     println!("recv msg: {}\n", msg);
-    let cmd: Vec<&str> = msg.split("/").collect();
+    let cmd: Vec<&str> = msg.split('/').collect();
 
     match cmd.len() {
         1 => method_controller::handle_cmd(cmd),
@@ -88,7 +88,7 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
 fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let _ = method_unit::handle_cmd(vec!["STOP", "nuc-cent", &format!("{}.service", name)]);
     let kube_symlink_path = format!("{}{}.kube", SYSTEMD_PATH, name);
-    let _ = std::fs::remove_file(&kube_symlink_path);
+    let _ = std::fs::remove_file(kube_symlink_path);
     method_controller::handle_cmd(vec!["DAEMON_RELOAD"])?;
     Ok(())
 }

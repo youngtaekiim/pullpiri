@@ -48,7 +48,7 @@ Yaml={}
 
 fn make_yaml_file(directory: &str, name: &str, image: &str, version: &str) -> Result<()> {
     let yaml_file_path = format!("{}/{}_{}.yaml", directory, name, version);
-    let mut yaml_file = fs::File::create(&yaml_file_path)?;
+    let mut yaml_file = fs::File::create(yaml_file_path)?;
 
     let yaml_contents = format!(
         r#"apiVersion: v1
