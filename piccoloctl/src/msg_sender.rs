@@ -8,7 +8,12 @@ pub async fn send_request_msg(send: Request) -> Result<tonic::Response<Response>
     let mut client =
         match RequestConnectionClient::connect(common::apiserver::API_SERVER_CONNECT).await {
             Ok(c) => c,
-            Err(e) => return Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+            Err(_) => {
+                return Err(tonic::Status::new(
+                    tonic::Code::Unavailable,
+                    "cannot connect api-server",
+                ))
+            }
         };
     client.send(tonic::Request::new(send)).await
 }
@@ -24,7 +29,12 @@ pub async fn send_update_msg(
     .await
     {
         Ok(c) => c,
-        Err(e) => return Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+        Err(_) => {
+            return Err(tonic::Status::new(
+                tonic::Code::Unavailable,
+                "cannot connect api-server",
+            ))
+        }
     };
     client.send(tonic::Request::new(send)).await
 }

@@ -16,7 +16,12 @@ pub async fn send_msg_to_gateway(
         .await
         {
             Ok(c) => c,
-            Err(e) => return Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+            Err(_) => {
+                return Err(tonic::Status::new(
+                    tonic::Code::Unavailable,
+                    "cannot connect gateway",
+                ))
+            }
         };
 
     let event_name = gateway::EventName {

@@ -7,7 +7,12 @@ pub async fn send_grpc_msg(send: Scenario) -> Result<tonic::Response<Response>, 
     let mut client =
         match ScenarioConnectionClient::connect(common::apiserver::API_SERVER_CONNECT).await {
             Ok(c) => c,
-            Err(e) => return Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
+            Err(_) => {
+                return Err(tonic::Status::new(
+                    tonic::Code::Unavailable,
+                    "cannot connect api-server",
+                ))
+            }
         };
 
     client.send(tonic::Request::new(send)).await

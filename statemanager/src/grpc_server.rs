@@ -2,6 +2,7 @@ use crate::method_bluechi::{method_controller, method_node, method_unit};
 use common::etcd;
 use common::statemanager::connection_server::Connection;
 use common::statemanager::{SendRequest, SendResponse};
+use std::io::{Error, ErrorKind};
 
 const SYSTEMD_PATH: &str = "/etc/containers/systemd/";
 
@@ -99,7 +100,7 @@ fn make_and_start_new_symlink(name: &str, image: &str) -> Result<(), Box<dyn std
         .collect::<Vec<&str>>()
         .last()
         .copied()
-        .unwrap();
+        .ok_or(Error::new(ErrorKind::NotFound, "cannot find image version"))?;
 
     let original = format!("{0}{1}/{1}_{2}.kube", common::YAML_STORAGE, name, version);
     let link = format!("{}{}.kube", SYSTEMD_PATH, name);
