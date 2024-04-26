@@ -11,4 +11,5 @@ members = [
     "common",
     "yamlparser",
     "test-grpc-sender",
+    "workloadconverter",
 ]
