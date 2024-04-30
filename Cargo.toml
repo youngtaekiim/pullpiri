@@ -2,14 +2,14 @@
 resolver = "2"
 
 members = [
-    "piccoloctl",
     "api-server",
-    "piccoloyaml",
     "etcd",
     "statemanager",
     "api",
     "common",
     "yamlparser",
-    "test-grpc-sender",
-    "workloadconverter",
+]
+
+exclude = [
+    "tools",
 ]

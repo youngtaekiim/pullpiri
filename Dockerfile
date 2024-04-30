@@ -8,12 +8,8 @@ COPY ./api ./api
 COPY ./api-server ./api-server
 COPY ./common ./common
 COPY ./etcd ./etcd
-COPY ./piccoloctl ./piccoloctl
-COPY ./piccoloyaml ./piccoloyaml
 COPY ./statemanager ./statemanager
 COPY ./yamlparser ./yamlparser
-COPY ./test-grpc-sender ./test-grpc-sender
-COPY ./workloadconverter ./workloadconverter
 
 RUN apt update -y && \
     apt upgrade -y && \

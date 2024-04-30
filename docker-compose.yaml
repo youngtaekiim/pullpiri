@@ -6,7 +6,7 @@ services:
     command: /piccolo-bluechi/yamlparser
     volumes:
       - /root/piccolo_yaml:/root/piccolo_yaml
-      - ./example:/piccolo-bluechi/example
+      - ./doc/examples/scenario:/piccolo-bluechi/example
   api-server:
     network_mode: "host"
     build: ./

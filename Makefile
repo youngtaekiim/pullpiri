@@ -6,6 +6,10 @@ build: fmt
 release: fmt
 	cargo build --release
 
+.PHONY: tool
+tool:
+	cargo build --manifest-path=tools/Cargo.toml
+
 .PHONY: fmt
 fmt:
 	cargo fmt
@@ -16,10 +20,11 @@ test:
 
 .PHONY: clean
 clean: fmt
-	rm -rf target \
-	rm -rf default.etcd \
-	rm -rf bin
+	cargo clean && \
+	cargo clean --manifest-path=tools/Cargo.toml && \
+	rm -rf default.etcd && \
+	rm -rf bin \
 
 .PHONY: link
-link: build
+link: build tool
 	$(shell ./script/link.sh)
