@@ -18,6 +18,7 @@ services:
     volumes:
       - /root/piccolo_yaml:/root/piccolo_yaml
       - /run/dbus:/run/dbus
+      - /etc/containers/systemd:/etc/containers/systemd
 #  etcd:
 #    network_mode: "host"
 #    build: ./
