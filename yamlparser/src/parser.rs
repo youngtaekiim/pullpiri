@@ -9,21 +9,18 @@ pub async fn parse(path: &PathBuf) -> Result<Scenario, Box<dyn std::error::Error
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
 
-    let yaml_map: serde_yaml::Mapping = serde_yaml::from_str(&contents)?;
+    let scene: common::Scenario = serde_yaml::from_str(&contents)?;
+    println!("{:#?}", &scene);
 
-    let name = yaml_map["metadata"]["name"]
-        .as_str()
-        .ok_or("None - metadata.name")?;
-    let action = &yaml_map["spec"]["action"][0];
-    let condition = &yaml_map["spec"]["conditions"];
+    let name = scene.get_name();
+    let conditions = &scene.get_conditions();
+    let actions = &scene.get_actions()[0];
 
-    let image = action["image"].as_str().ok_or("None - action.image")?;
-
-    file_handler::perform(name, image)?;
+    file_handler::perform(&name, actions)?;
 
     Ok(Scenario {
-        name: name.to_string(),
-        conditions: serde_yaml::to_string(condition)?,
-        actions: serde_yaml::to_string(action)?,
+        name: scene.get_name(),
+        conditions: serde_yaml::to_string(conditions)?,
+        actions: serde_yaml::to_string(actions)?,
     })
 }

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Scenario
+metadata:
+  name: test-old
+spec:
+  conditions:
+  actions:
+    - operation: deploy
+      podSpec:
+        containers:
+        - name: old-container
+          image: sdv.lge.com/library/passive-redundant-pong:0.1
