@@ -63,6 +63,10 @@ impl Action {
     pub fn get_image(&self) -> String {
         self.podSpec.containers[0].image.clone()
     }
+
+    pub fn get_operation(&self) -> String {
+        self.operation.clone()
+    }
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]

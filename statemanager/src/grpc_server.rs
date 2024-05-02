@@ -59,10 +59,10 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
     operation: update
     image: "sdv.lge.com/library/passive-redundant-pong:0.2""#;*/
 
-    let action: serde_yaml::Mapping = serde_yaml::from_str(&value)?;
+    let action: common::Action = serde_yaml::from_str(&value)?;
     let name = key.split('/').collect::<Vec<&str>>()[1];
-    let operation = action["operation"].as_str().ok_or("None - operation")?;
-    let image = action["image"].as_str().ok_or("None - image")?;
+    let operation = &*action.get_operation();
+    let image = action.get_image();
 
     println!(
         "name : {}\noperation : {}\nimage: {}\n",
@@ -72,11 +72,11 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
     match operation {
         "deploy" => {
             delete_symlink_and_reload(name)?;
-            make_and_start_new_symlink(name, image)?;
+            make_and_start_new_symlink(name, &image)?;
         }
         "update" | "rollback" => {
             delete_symlink_and_reload(name)?;
-            make_and_start_new_symlink(name, image)?;
+            make_and_start_new_symlink(name, &image)?;
         }
         _ => {
             return Err("not supported operation".into());
