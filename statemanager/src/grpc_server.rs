@@ -83,7 +83,7 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
         }
     }
 
-    Ok("".into())
+    Ok(format!("Done : {}\n", operation))
 }
 
 fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error::Error>> {
