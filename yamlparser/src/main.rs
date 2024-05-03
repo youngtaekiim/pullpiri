@@ -22,37 +22,37 @@ async fn main() {
 }
 
 #[cfg(test)]
-#[tokio::test]
-async fn parsing_update_scenario() {
-    let path = std::path::PathBuf::from(
-        "/root/work/projects-rust/piccolo-bluechi/doc/examples/scenario/update-scenario.yaml",
-    );
+mod tests {
+    #[tokio::test]
+    async fn parsing_update_scenario() {
+        let path = std::path::PathBuf::from(
+            "/root/work/projects-rust/piccolo-bluechi/doc/examples/scenario/update-scenario.yaml",
+        );
 
-    let result = crate::parser::parse(&path).await;
-    println!("{:#?}", result);
-    assert!(result.is_ok());
-}
+        let result = crate::parser::parse(&path).await;
+        println!("{:#?}", result);
+        assert!(result.is_ok());
+    }
 
-#[cfg(test)]
-#[tokio::test]
-async fn parsing_rollback_scenario() {
-    let path = std::path::PathBuf::from(
-        "/root/work/projects-rust/piccolo-bluechi/doc/examples/scenario/rollback-scenario.yaml",
-    );
+    #[tokio::test]
+    async fn parsing_rollback_scenario() {
+        let path = std::path::PathBuf::from(
+            "/root/work/projects-rust/piccolo-bluechi/doc/examples/scenario/rollback-scenario.yaml",
+        );
 
-    let result = crate::parser::parse(&path).await;
-    println!("{:#?}", result);
-    assert!(result.is_ok());
-}
+        let result = crate::parser::parse(&path).await;
+        println!("{:#?}", result);
+        assert!(result.is_ok());
+    }
 
-#[cfg(test)]
-#[tokio::test]
-async fn parsing_omitted_scenario() {
-    let path = std::path::PathBuf::from(
-        "/root/work/projects-rust/piccolo-bluechi/doc/examples/scenario/omitted-scenario.yaml",
-    );
+    #[tokio::test]
+    async fn parsing_omitted_scenario() {
+        let path = std::path::PathBuf::from(
+            "/root/work/projects-rust/piccolo-bluechi/doc/examples/scenario/omitted-scenario.yaml",
+        );
 
-    let result = crate::parser::parse(&path).await;
-    println!("{:#?}", result);
-    assert!(result.is_ok());
+        let result = crate::parser::parse(&path).await;
+        println!("{:#?}", result);
+        assert!(result.is_ok());
+    }
 }

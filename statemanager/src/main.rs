@@ -25,7 +25,7 @@ mod tests {
     #[tokio::test]
     async fn test_parsing() {
         let result =
-            crate::grpc_server::make_action_for_scenario("scenario/test-pong/action").await;
+            crate::grpc_server::make_action_for_scenario("scenario/version-display/action").await;
         println!("{:?}", result);
         assert!(result.is_ok());
     }

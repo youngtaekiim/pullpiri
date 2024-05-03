@@ -1,8 +1,9 @@
 use dbus::blocking::Connection;
 use dbus::Path;
+use std::error::Error;
 use std::time::Duration;
 
-fn list_node_units(node_name: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn list_node_units(node_name: &str) -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
     let bluechi = conn.with_proxy(
@@ -29,7 +30,7 @@ fn list_node_units(node_name: &str) -> Result<String, Box<dyn std::error::Error>
 }
 
 #[allow(dead_code)]
-fn node_daemon_reload(node_name: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn node_daemon_reload(node_name: &str) -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
     let bluechi = conn.with_proxy(
@@ -47,7 +48,7 @@ fn node_daemon_reload(node_name: &str) -> Result<String, Box<dyn std::error::Err
     Ok(format!("reload node '{}'\n", node_name))
 }
 
-pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn std::error::Error>> {
+pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn Error>> {
     match c[0] {
         "LIST_UNIT" => list_node_units(c[1]),
         //"daemon-reload" => node_daemon_reload(c[1]),

@@ -1,10 +1,11 @@
 use common::{Action, KubePod};
+use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-pub fn get_absolute_file_path(path: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
+pub fn get_absolute_file_path(path: &str) -> Result<PathBuf, Box<dyn Error>> {
     let file = Path::new(path);
     if !file.is_file() {
         return Err(format!("Not found or invalid path - {path}").into());
@@ -17,7 +18,7 @@ pub fn get_absolute_file_path(path: &str) -> Result<PathBuf, Box<dyn std::error:
     }
 }
 
-fn make_kube_file(dir: &str, name: &str, version: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn make_kube_file(dir: &str, name: &str, version: &str) -> Result<(), Box<dyn Error>> {
     let kube_file_path = format!("{}/{}_{}.kube", dir, name, version);
     let yaml_file_path = format!("{}/{}_{}.yaml", dir, name, version);
     let mut kube_file = fs::File::create(kube_file_path)?;
@@ -46,7 +47,7 @@ fn make_yaml_file(
     name: &str,
     version: &str,
     action: &Action,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let yaml_file_path = format!("{}/{}_{}.yaml", dir, name, version);
     let mut yaml_file = fs::File::create(yaml_file_path)?;
 
@@ -58,7 +59,7 @@ fn make_yaml_file(
     Ok(())
 }
 
-pub fn perform(name: &str, action: &Action) -> Result<(), Box<dyn std::error::Error>> {
+pub fn perform(name: &str, action: &Action) -> Result<(), Box<dyn Error>> {
     let directory = format!("{}{}", common::YAML_STORAGE, name);
     fs::create_dir_all(&directory)?;
 

@@ -1,5 +1,6 @@
 use dbus::blocking::Connection;
 use dbus::Path;
+use std::error::Error;
 use std::time::Duration;
 
 enum Lifecycle {
@@ -13,7 +14,7 @@ fn unit_lifecycle(
     life_cycle: Lifecycle,
     node_name: &str,
     unit_name: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn Error>> {
     let method: &str = match life_cycle {
         Lifecycle::Start => "StartUnit",
         Lifecycle::Stop => "StopUnit",
@@ -41,7 +42,7 @@ fn unit_lifecycle(
     ))
 }
 
-fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn Error>> {
     let unit_vector = vec![unit_name.to_owned()];
     let conn = Connection::new_system()?;
 
@@ -79,7 +80,7 @@ fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::
     Ok(result)
 }
 
-fn disable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn disable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn Error>> {
     let unit_vector = vec![unit_name.to_owned()];
     let conn = Connection::new_system()?;
 
@@ -111,7 +112,7 @@ fn disable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn std:
     Ok(result)
 }
 
-pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn std::error::Error>> {
+pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn Error>> {
     match c[0] {
         "START" => unit_lifecycle(Lifecycle::Start, c[1], c[2]),
         "STOP" => unit_lifecycle(Lifecycle::Stop, c[1], c[2]),

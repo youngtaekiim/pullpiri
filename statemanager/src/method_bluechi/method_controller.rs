@@ -1,8 +1,9 @@
 use dbus::blocking::Connection;
 use dbus::Path;
+use std::error::Error;
 use std::time::Duration;
 
-fn list_nodes() -> Result<String, Box<dyn std::error::Error>> {
+fn list_nodes() -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
     let bluechi = conn.with_proxy(
@@ -21,7 +22,7 @@ fn list_nodes() -> Result<String, Box<dyn std::error::Error>> {
     Ok(result)
 }
 
-fn reload_all_nodes() -> Result<String, Box<dyn std::error::Error>> {
+fn reload_all_nodes() -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
     let bluechi = conn.with_proxy(
@@ -46,7 +47,7 @@ fn reload_all_nodes() -> Result<String, Box<dyn std::error::Error>> {
     Ok(result)
 }
 
-pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn std::error::Error>> {
+pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn Error>> {
     match c[0] {
         "LIST_NODE" => list_nodes(),
         "DAEMON_RELOAD" => reload_all_nodes(),
