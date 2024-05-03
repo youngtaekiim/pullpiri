@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram name="Page-1" id="c7558073-3199-34d8-9f00-42111426c3f3">
-        <mxGraphModel dx="1057" dy="407" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="826" pageHeight="1169" background="#ffffff" math="0" shadow="0">
+        <mxGraphModel dx="604" dy="233" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="826" pageHeight="1169" background="#ffffff" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -52,7 +52,7 @@
                 <mxCell id="84" value="send request" style="text;spacingTop=-5;align=center" parent="1" vertex="1">
                     <mxGeometry x="620.0000000000002" y="610.0000000000002" width="30" height="20" as="geometry"/>
                 </mxCell>
-                <mxCell id="89" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2" parent="1" edge="1">
+                <mxCell id="89" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;dashed=1;dashPattern=1 1;" parent="1" edge="1">
                     <mxGeometry width="100" height="100" relative="1" as="geometry">
                         <mxPoint x="573" y="510" as="sourcePoint"/>
                         <mxPoint x="573" y="441" as="targetPoint"/>
@@ -61,8 +61,8 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="91" value="gRPC - result" style="text;spacingTop=-5;align=center" parent="1" vertex="1">
-                    <mxGeometry x="530" y="461" width="90" height="30" as="geometry"/>
+                <mxCell id="91" value="gRPC - result&#10;(not yet)" style="text;spacingTop=-5;align=center" parent="1" vertex="1">
+                    <mxGeometry x="570" y="461" width="90" height="30" as="geometry"/>
                 </mxCell>
                 <mxCell id="92" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="5" target="10" edge="1">
                     <mxGeometry width="100" height="100" relative="1" as="geometry">
