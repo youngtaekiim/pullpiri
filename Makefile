@@ -24,10 +24,6 @@ clean: fmt
 	cargo clean --manifest-path=tools/Cargo.toml && \
 	rm -rf bin
 
-.PHONY: link
-link: build tool
-	$(shell ./script/link.sh)
-
 .PHONY: up
 up:
 	docker compose up -d
