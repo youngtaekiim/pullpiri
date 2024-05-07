@@ -1,4 +1,3 @@
-version: "3"
 services:
   dds-sender:
     network_mode: "host"
