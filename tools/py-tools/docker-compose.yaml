@@ -1,0 +1,17 @@
+version: "3"
+services:
+  dds-sender:
+    network_mode: "host"
+    build: ./pyqt-dds-sender
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    environment:
+      DISPLAY: ${DISPLAY}
+  grpc-sender:
+    network_mode: "host"
+    build: ./pyqt-grpc-sender
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    environment:
+      DISPLAY: ${DISPLAY}
+

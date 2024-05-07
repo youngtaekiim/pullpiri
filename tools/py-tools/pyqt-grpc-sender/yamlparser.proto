@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package yamlparser;
+
+service Connection {
+  rpc Send (SendRequest) returns (SendResponse);
+}
+
+message SendRequest {
+  string request = 1;
+}
+
+message SendResponse {
+  string response = 1;
+}
+

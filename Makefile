@@ -27,3 +27,19 @@ clean: fmt
 .PHONY: link
 link: build tool
 	$(shell ./script/link.sh)
+
+.PHONY: up
+up:
+	docker compose up -d
+
+.PHONY: tup
+tup:
+	docker compose -f tools/py-tools/docker-compose.yaml up -d
+
+.PHONY: down
+down:
+	docker compose down
+
+.PHONY: tdown
+tdown:
+	docker compose -f tools/py-tools/docker-compose.yaml down

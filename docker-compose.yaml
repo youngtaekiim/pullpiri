@@ -30,9 +30,8 @@ services:
         --listen-client-urls http://10.159.57.33:2379
     volumes:
       - ./etcd-data:/etcd-data
-#  gateway:
-#    network_mode: "host"
-#    image: sdv.lge.com/library/xxxxxxx:0.x
-#    command: /gateway
-#    volumes:
-#      - /etcd_storage:/etcd_storage
+  gateway:
+    network_mode: "host"
+    image: sdv.lge.com/library/gateway:bluechi_0.6
+    environment:
+      - HOST_IP=10.159.57.33
