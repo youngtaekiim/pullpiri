@@ -16,6 +16,3 @@ pub fn create_parsed_file(file_path: &PathBuf, yaml_contents: String) -> Result<
     output_file.write_all(yaml_contents.as_bytes())?;
     Ok(())
 }
-
-
-

@@ -1,7 +1,10 @@
 pub const ETCD_ENDPOINT: &str = const_format::concatcp!(crate::HOST_IP, ":2379");
+/*
 pub const LISTEN_PEER_URLS: &str = const_format::concatcp!("http://", crate::HOST_IP, ":2380");
 pub const LISTEN_CLIENT_URLS: &str = const_format::concatcp!("http://", crate::HOST_IP, ":2379");
 pub const ADVERTISE_CLIENT_URLS: &str = const_format::concatcp!("http://", crate::HOST_IP, ":2379");
+pub const ETCD_DATA_DIR: &str = "/etcd-data";
+*/
 
 pub use etcd_client::{Client, Error};
 

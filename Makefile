@@ -22,8 +22,7 @@ test:
 clean: fmt
 	cargo clean && \
 	cargo clean --manifest-path=tools/Cargo.toml && \
-	rm -rf default.etcd && \
-	rm -rf bin \
+	rm -rf bin
 
 .PHONY: link
 link: build tool

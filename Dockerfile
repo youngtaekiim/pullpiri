@@ -7,7 +7,6 @@ COPY ./Cargo.lock ./Cargo.lock
 COPY ./api ./api
 COPY ./api-server ./api-server
 COPY ./common ./common
-COPY ./etcd ./etcd
 COPY ./statemanager ./statemanager
 COPY ./yamlparser ./yamlparser
 

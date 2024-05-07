@@ -19,12 +19,17 @@ services:
       - /root/piccolo_yaml:/root/piccolo_yaml
       - /run/dbus:/run/dbus
       - /etc/containers/systemd:/etc/containers/systemd
-#  etcd:
-#    network_mode: "host"
-#    build: ./
-#    command: /piccolo-bluechi/etcd
-#    volumes:
-#      - /HOST_etcd_storage:/CONTAINER_etcd_storage
+  etcd:
+    network_mode: "host"
+    image: gcr.io/etcd-development/etcd:v3.5.11
+    command: >
+        /usr/local/bin/etcd
+        --data-dir=/etcd-data
+        --listen-peer-urls http://10.159.57.33:2380
+        --advertise-client-urls http://10.159.57.33:2379
+        --listen-client-urls http://10.159.57.33:2379
+    volumes:
+      - ./etcd-data:/etcd-data
 #  gateway:
 #    network_mode: "host"
 #    image: sdv.lge.com/library/xxxxxxx:0.x
