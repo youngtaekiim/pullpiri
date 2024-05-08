@@ -9,6 +9,7 @@ COPY ./api-server ./api-server
 COPY ./common ./common
 COPY ./statemanager ./statemanager
 COPY ./yamlparser ./yamlparser
+COPY ./gateway ./gateway
 
 RUN apt update -y && \
     apt upgrade -y && \

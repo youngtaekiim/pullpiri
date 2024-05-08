@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: piccolo
+spec:
+  hostNetwork: true
+  containers:
+  - name: yamlparser
+    image: localhost/piccolo:1.0
+    command: ["/piccolo-bluechi/yamlparser"]
+    volumeMounts:
+    - name: piccolo-yaml
+      mountPath: /root/piccolo_yaml
+    - name: yaml-example
+      mountPath: /piccolo-bluechi/example
+  - name: api-server
+    image: localhost/piccolo:1.0
+    command: ["/piccolo-bluechi/api-server"]
+  - name: statemanager
+    image: localhost/piccolo:1.0
+    command: ["/piccolo-bluechi/statemanager"]
+    volumeMounts:
+    - name: piccolo-yaml
+      mountPath: /root/piccolo_yaml
+    - name: dbus
+      mountPath: /run/dbus
+    - name: systemd
+      mountPath: /etc/containers/systemd
+  - name: etcd
+    image: gcr.io/etcd-development/etcd:v3.5.11
+    command: ["/usr/local/bin/etcd"]
+    args: ["--data-dir=/etcd-data", "--listen-peer-urls", "http://10.159.57.33:2380", "--advertise-client-urls", "http://10.159.57.33:2379", "--listen-client-urls", "http://10.159.57.33:2379"]
+    volumeMounts:
+    - name: etcd-data
+      mountPath: /etcd-data
+  - name: gateway
+    image: sdv.lge.com/library/gateway:bluechi_0.6
+    env:
+    - name: HOST_IP
+      value: "10.159.57.33"
+  volumes:
+  - name: piccolo-yaml
+    hostPath:
+      path: /root/piccolo_yaml
+  - name: dbus
+    hostPath:
+      path: /run/dbus
+  - name: systemd
+    hostPath:
+      path: /etc/containers/systemd
+  - name: yaml-example
+    hostPath:
+      path: /etc/containers/systemd/piccolo/example
+  - name: etcd-data
+    hostPath:
+      path: /etc/containers/systemd/piccolo/etcd-data

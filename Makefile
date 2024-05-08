@@ -1,29 +1,41 @@
 .PHONY: default build
-build: fmt
+build:
 	cargo build
 
 .PHONY: release
-release: fmt
+release:
 	cargo build --release
 
 .PHONY: tool
 tool:
 	cargo build --manifest-path=tools/Cargo.toml
 
-.PHONY: fmt
-fmt:
-	cargo fmt
-
-.PHONY: test
-test:
-	cargo test
-
 .PHONY: clean
-clean: fmt
+clean:
 	cargo clean && \
-	cargo clean --manifest-path=tools/Cargo.toml && \
-	rm -rf bin
+	cargo clean --manifest-path=tools/Cargo.toml
 
+# Section for podman-kube workload - START
+.PHONY: image
+image:
+	podman build -t piccolo:1.0 .
+
+.PHONY: install
+install:
+	cp -r ./containers /etc/containers/systemd/piccolo/ && \
+	cp -r ./etcd-data /etc/containers/systemd/piccolo/etcd-data/ && \
+	cp -r ./doc/examples/scenario /etc/containers/systemd/piccolo/example/ && \
+	systemctl daemon-reload && \
+	systemctl start piccolo
+
+.PHONY: uninstall
+uninstall:
+	systemctl stop piccolo && \
+	rm -rf /etc/containers/systemd/piccolo/ && \
+	systemctl daemon-reload
+# Section for podman-kube workload - END
+
+# Section for docker-compose - START
 .PHONY: up
 up:
 	docker compose up -d
@@ -39,3 +51,4 @@ down:
 .PHONY: tdown
 tdown:
 	docker compose -f tools/py-tools/docker-compose.yaml down
+# Section for docker-compose - END
