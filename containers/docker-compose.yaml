@@ -42,6 +42,9 @@ services:
   gateway:
     network_mode: "host"
     container_name: piccolo-gateway
-    image: sdv.lge.com/library/gateway:bluechi_0.6
+    build:
+      context: ../
+      dockerfile: ./containers/Dockerfile-gateway
+    command: /root/gateway_for_bluechi/build/PiccoloGateway
     environment:
       - HOST_IP=10.159.57.33
