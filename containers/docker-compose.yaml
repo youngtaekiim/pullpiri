@@ -1,18 +1,27 @@
 services:
   yamlparser:
     network_mode: "host"
-    build: ./
+    container_name: piccolo-yamlparser
+    build:
+      context: ../
+      dockerfile: ./containers/Dockerfile
     command: /piccolo-bluechi/yamlparser
     volumes:
       - /root/piccolo_yaml:/root/piccolo_yaml
-      - ./doc/examples/scenario:/piccolo-bluechi/example
+      - ../doc/examples/scenario:/piccolo-bluechi/example
   api-server:
     network_mode: "host"
-    build: ./
+    container_name: piccolo-apiserver
+    build:
+      context: ../
+      dockerfile: ./containers/Dockerfile
     command: /piccolo-bluechi/api-server
   statemanager:
     network_mode: "host"
-    build: ./
+    container_name: piccolo-statemanager
+    build:
+      context: ../
+      dockerfile: ./containers/Dockerfile
     command: /piccolo-bluechi/statemanager
     volumes:
       - /root/piccolo_yaml:/root/piccolo_yaml
@@ -20,6 +29,7 @@ services:
       - /etc/containers/systemd:/etc/containers/systemd
   etcd:
     network_mode: "host"
+    container_name: piccolo-etcd
     image: gcr.io/etcd-development/etcd:v3.5.11
     command: >
         /usr/local/bin/etcd
@@ -28,9 +38,10 @@ services:
         --advertise-client-urls http://10.159.57.33:2379
         --listen-client-urls http://10.159.57.33:2379
     volumes:
-      - ./etcd-data:/etcd-data
+      - ../etcd-data:/etcd-data
   gateway:
     network_mode: "host"
+    container_name: piccolo-gateway
     image: sdv.lge.com/library/gateway:bluechi_0.6
     environment:
       - HOST_IP=10.159.57.33

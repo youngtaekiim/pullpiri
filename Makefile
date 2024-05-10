@@ -18,7 +18,7 @@ clean:
 # Section for podman-kube workload - START
 .PHONY: image
 image:
-	podman build -t piccolo:1.0 .
+	podman build -t piccolo:1.0 -f containers/Dockerfile .
 
 .PHONY: install
 install:
@@ -38,7 +38,7 @@ uninstall:
 # Section for docker-compose - START
 .PHONY: up
 up:
-	docker compose up -d
+	docker compose -f containers/docker-compose.yaml up -d
 
 .PHONY: tup
 tup:
@@ -46,7 +46,7 @@ tup:
 
 .PHONY: down
 down:
-	docker compose down
+	docker compose -f containers/docker-compose.yaml down
 
 .PHONY: tdown
 tdown:

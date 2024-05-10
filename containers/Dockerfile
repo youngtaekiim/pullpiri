@@ -1,15 +1,15 @@
 FROM rust:1.77.2-slim AS builder
 WORKDIR /piccolo-bluechi
 
-COPY ./Cargo.toml ./Cargo.toml
-COPY ./Cargo.lock ./Cargo.lock
+COPY ../Cargo.toml ./Cargo.toml
+COPY ../Cargo.lock ./Cargo.lock
 
-COPY ./api ./api
-COPY ./api-server ./api-server
-COPY ./common ./common
-COPY ./statemanager ./statemanager
-COPY ./yamlparser ./yamlparser
-COPY ./gateway ./gateway
+COPY ../api ./api
+COPY ../api-server ./api-server
+COPY ../common ./common
+COPY ../statemanager ./statemanager
+COPY ../yamlparser ./yamlparser
+COPY ../gateway ./gateway
 
 RUN apt update -y && \
     apt upgrade -y && \
