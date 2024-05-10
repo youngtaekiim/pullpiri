@@ -1,4 +1,4 @@
-use crate::method_bluechi::{method_controller, method_node, method_unit};
+use crate::method_bluechi;
 use common::etcd;
 use common::statemanager::connection_server::Connection;
 use common::statemanager::{SendRequest, SendResponse};
@@ -23,7 +23,8 @@ impl Connection for StateManagerGrpcServer {
         println!("{}/{}", from, command);
 
         if from == common::constants::PiccoloModuleName::Apiserver.into() {
-            match send_dbus(&command).await {
+            let cmd: Vec<&str> = command.split('/').collect();
+            match method_bluechi::send_dbus(cmd).await {
                 Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
                 Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
             }
@@ -38,18 +39,6 @@ impl Connection for StateManagerGrpcServer {
                 "unsupported 'from' module",
             ))
         }
-    }
-}
-
-async fn send_dbus(msg: &str) -> Result<String, Box<dyn std::error::Error>> {
-    println!("recv msg: {}\n", msg);
-    let cmd: Vec<&str> = msg.split('/').collect();
-
-    match cmd.len() {
-        1 => method_controller::handle_cmd(cmd),
-        2 => method_node::handle_cmd(cmd),
-        3 => method_unit::handle_cmd(cmd),
-        _ => Err("support only 1 ~ 3 parameters".into()),
     }
 }
 
@@ -71,12 +60,12 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
 
     match operation {
         "deploy" => {
-            delete_symlink_and_reload(name)?;
-            make_and_start_new_symlink(name, &image)?;
+            delete_symlink_and_reload(name).await?;
+            make_and_start_new_symlink(name, &image).await?;
         }
         "update" | "rollback" => {
-            delete_symlink_and_reload(name)?;
-            make_and_start_new_symlink(name, &image)?;
+            delete_symlink_and_reload(name).await?;
+            make_and_start_new_symlink(name, &image).await?;
         }
         _ => {
             return Err("not supported operation".into());
@@ -86,15 +75,19 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
     Ok(format!("Done : {}\n", operation))
 }
 
-fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let _ = method_unit::handle_cmd(vec!["STOP", "nuc-cent", &format!("{}.service", name)]);
+async fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let _ =
+        method_bluechi::send_dbus(vec!["STOP", "nuc-cent", &format!("{}.service", name)]).await?;
     let kube_symlink_path = format!("{}{}.kube", SYSTEMD_PATH, name);
     let _ = std::fs::remove_file(kube_symlink_path);
-    method_controller::handle_cmd(vec!["DAEMON_RELOAD"])?;
+    method_bluechi::send_dbus(vec!["DAEMON_RELOAD"]).await?;
     Ok(())
 }
 
-fn make_and_start_new_symlink(name: &str, image: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn make_and_start_new_symlink(
+    name: &str,
+    image: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let version = image
         .split(':')
         .collect::<Vec<&str>>()
@@ -106,8 +99,8 @@ fn make_and_start_new_symlink(name: &str, image: &str) -> Result<(), Box<dyn std
     let link = format!("{}{}.kube", SYSTEMD_PATH, name);
     std::os::unix::fs::symlink(original, link)?;
 
-    method_controller::handle_cmd(vec!["DAEMON_RELOAD"])?;
-    method_unit::handle_cmd(vec!["START", "nuc-cent", &format!("{}.service", name)])?;
+    method_bluechi::send_dbus(vec!["DAEMON_RELOAD"]).await?;
+    method_bluechi::send_dbus(vec!["START", "nuc-cent", &format!("{}.service", name)]).await?;
 
     Ok(())
 }

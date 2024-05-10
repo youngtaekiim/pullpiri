@@ -3,24 +3,11 @@ use dbus::Path;
 use std::error::Error;
 use std::time::Duration;
 
-enum Lifecycle {
-    Start,
-    Stop,
-    Restart,
-    Reload,
-}
-
 fn unit_lifecycle(
-    life_cycle: Lifecycle,
+    method: &str,
     node_name: &str,
     unit_name: &str,
 ) -> Result<String, Box<dyn Error>> {
-    let method: &str = match life_cycle {
-        Lifecycle::Start => "StartUnit",
-        Lifecycle::Stop => "StopUnit",
-        Lifecycle::Restart => "RestartUnit",
-        Lifecycle::Reload => "ReloadUnit",
-    };
     let conn = Connection::new_system()?;
 
     let bluechi = conn.with_proxy(
@@ -114,10 +101,10 @@ fn disable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn Erro
 
 pub fn handle_cmd(c: Vec<&str>) -> Result<String, Box<dyn Error>> {
     match c[0] {
-        "START" => unit_lifecycle(Lifecycle::Start, c[1], c[2]),
-        "STOP" => unit_lifecycle(Lifecycle::Stop, c[1], c[2]),
-        "RESTART" => unit_lifecycle(Lifecycle::Restart, c[1], c[2]),
-        "RELOAD" => unit_lifecycle(Lifecycle::Reload, c[1], c[2]),
+        "START" => unit_lifecycle("StartUnit", c[1], c[2]),
+        "STOP" => unit_lifecycle("StopUnit", c[1], c[2]),
+        "RESTART" => unit_lifecycle("RestartUnit", c[1], c[2]),
+        "RELOAD" => unit_lifecycle("ReloadUnit", c[1], c[2]),
         "ENABLE" => enable_unit(c[1], c[2]),
         "DISABLE" => disable_unit(c[1], c[2]),
         _ => Err("cannot find command".into()),
