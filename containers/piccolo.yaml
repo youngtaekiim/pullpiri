@@ -34,7 +34,7 @@ spec:
     - name: etcd-data
       mountPath: /etcd-data
   - name: gateway
-    image: localhost/piccoloGateway:1.0
+    image: localhost/piccologateway:1.0
     env:
     - name: HOST_IP
       value: "10.159.57.33"
