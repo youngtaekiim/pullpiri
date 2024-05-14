@@ -9,11 +9,14 @@ RUN apt update -y && \
     cargo build --release
 
 
-FROM rust:1.77.2-slim
+FROM alpine:3.19.1
 WORKDIR /piccolo-bluechi
-RUN apt update -y && \
-    apt upgrade -y && \
-    apt install -y libdbus-1-dev pkg-config protobuf-compiler
-COPY --from=builder /piccolo-bluechi/target/release ./
+
+COPY --from=builder /piccolo-bluechi/target/release/api-server ./
+COPY --from=builder /piccolo-bluechi/target/release/gateway ./
+COPY --from=builder /piccolo-bluechi/target/release/statemanager ./
+COPY --from=builder /piccolo-bluechi/target/release/yamlparser ./
+COPY --from=builder /lib /lib
+COPY --from=builder /lib64 /lib64
 
 CMD sh

@@ -37,6 +37,11 @@ uninstall:
 # Section for podman-kube workload - END
 
 # Section for docker-compose - START
+.PHONY: cleanup
+cleanup:
+	docker compose -f containers/docker-compose.yaml build --no-cache && \
+	docker compose -f containers/docker-compose.yaml up --build -d
+
 .PHONY: up
 up:
 	docker compose -f containers/docker-compose.yaml up -d
