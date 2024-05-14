@@ -3,6 +3,7 @@ pub mod etcd;
 pub mod gateway;
 pub mod statemanager;
 pub mod yamlparser;
+pub mod spec;
 
 pub mod constants {
     pub use api::proto::constants::*;

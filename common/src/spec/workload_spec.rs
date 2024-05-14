@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Pod {
     apiVersion: String,
@@ -8,11 +9,13 @@ pub struct Pod {
     spec: Spec,
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Metadata {
     name: String,
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Spec {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -29,6 +32,7 @@ pub struct Spec {
     runtimeClassName: Option<String>,
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Container {
     image: Option<String>,
@@ -47,6 +51,7 @@ pub struct Container {
     resources: Option<Resources>,
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Port {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -55,6 +60,7 @@ pub struct Port {
     hostPort: Option<i32>,
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Env {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -63,6 +69,7 @@ pub struct Env {
     value: Option<String>,
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VolumeMount {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -71,12 +78,14 @@ pub struct VolumeMount {
     name: Option<String>,
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Resources {
     #[serde(skip_serializing_if = "Option::is_none")]
     requests: Option<Requests>,
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Requests {
     #[serde(skip_serializing_if = "Option::is_none")]

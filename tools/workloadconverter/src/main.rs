@@ -1,9 +1,8 @@
 use clap::Parser;
 use std::path::PathBuf;
 
-use crate::definition::Pod;
+use common::spec::workload_spec::Pod;
 mod cli_parser;
-mod definition;
 mod file_handler;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
