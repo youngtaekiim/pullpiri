@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 <img src="doc/images/Piccolo.jpg" 
 width="50%"
 height="50%"
