@@ -14,20 +14,7 @@ All applications with test app will start in container.
 If you are familiar with container, you will find it easy to use.  
 Although it supports `docker compose`, `Bluechi` uses podman as its container runtime, so `Piccolo` also uses `podman-kube` by default.
 
-### 1. Docker compose
-For starting,
-```sh
-make up
-make tup
-```
-
-For stoping,
-```sh
-make down
-make tdown
-```
-
-### 2. Podman-kube
+### 1. Podman-kube
 Before starting, you must build container image,
 ```sh
 make image
@@ -41,6 +28,17 @@ make install
 For stoping,
 ```sh
 make uninstall
+```
+
+### 2. Docker compose
+For starting,
+```sh
+make up
+```
+
+For stoping,
+```sh
+make down
 ```
 
 Also refer to [Makefile](/Makefile).
