@@ -6,10 +6,11 @@ WORKDIR /root
 
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y libboost-all-dev libssl-dev git cmake gcc g++
-RUN git clone http://mod.lge.com/hub/piccolo/gateway_for_bluechi_thirdlib.git
-RUN git clone http://mod.lge.com/hub/piccolo/gateway_for_bluechi.git
+COPY ./gateway .
+
 WORKDIR /root/gateway_for_bluechi
 RUN mkdir build
+
 WORKDIR /root/gateway_for_bluechi/build
 RUN cmake ../ && \
     make -j$(grep ^processor /proc/cpuinfo | wc -l)
