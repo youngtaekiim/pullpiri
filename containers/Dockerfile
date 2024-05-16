@@ -16,7 +16,7 @@ FROM alpine:3.19.1
 WORKDIR /piccolo-bluechi
 
 COPY --from=builder /piccolo-bluechi/target/release/api-server ./
-COPY --from=builder /piccolo-bluechi/target/release/gateway ./
+#COPY --from=builder /piccolo-bluechi/target/release/gateway ./
 COPY --from=builder /piccolo-bluechi/target/release/statemanager ./
 COPY --from=builder /piccolo-bluechi/target/release/yamlparser ./
 COPY --from=builder /lib /lib

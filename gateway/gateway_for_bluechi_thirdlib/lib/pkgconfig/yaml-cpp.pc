@@ -1,0 +1,11 @@
+prefix=/root/gateway_for_bluechi_thirdlib
+exec_prefix=${prefix}
+includedir=/root/gateway_for_bluechi_thirdlib/include
+libdir=/root/gateway_for_bluechi_thirdlib/lib
+
+Name: Yaml-cpp
+Description: A YAML parser and emitter for C++
+Version: 0.8.0
+Requires:
+Libs: -L${libdir} -lyaml-cpp
+Cflags: -I${includedir}
