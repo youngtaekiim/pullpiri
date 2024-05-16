@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 use common::apiserver::request_connection_client::RequestConnectionClient;
 use common::apiserver::update_workload_connection_client::UpdateWorkloadConnectionClient;
 use common::apiserver::{request::Request, updateworkload::UpdateWorkload, Response};

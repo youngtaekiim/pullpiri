@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 .PHONY: default build
 build:
 	cargo build
@@ -19,7 +22,7 @@ clean:
 .PHONY: image
 image:
 	podman build -t piccolo:1.0 -f containers/Dockerfile .
-	podman build -t piccologateway:1.0 -f containers/Dockerfile-gateway .
+	podman build -t piccolo-gateway:1.0 -f containers/Dockerfile-gateway .
 
 .PHONY: install
 install:

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 FROM ubuntu:20.04 AS gateway-builder
 WORKDIR /root
 

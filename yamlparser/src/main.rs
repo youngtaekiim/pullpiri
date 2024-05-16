@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 mod file_handler;
 mod grpc_msg_receiver;
 mod grpc_msg_sender;

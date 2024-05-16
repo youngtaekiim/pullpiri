@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 FROM rust:1.77.2-slim AS builder
 WORKDIR /piccolo-bluechi
 

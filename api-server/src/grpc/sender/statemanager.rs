@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 use common::statemanager;
 
 pub async fn send_msg_to_statemanager(

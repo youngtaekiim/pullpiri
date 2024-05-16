@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 use crate::grpc::sender::statemanager;
 use common::apiserver::update_workload_connection_server::UpdateWorkloadConnection;
 use common::apiserver::updateworkload::UpdateWorkload;

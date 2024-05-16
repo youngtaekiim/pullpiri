@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 use crate::grpc::sender::gateway;
 use common::apiserver::scenario::Scenario;
 use common::apiserver::scenario_connection_server::ScenarioConnection;

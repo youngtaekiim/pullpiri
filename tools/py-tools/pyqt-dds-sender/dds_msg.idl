@@ -1,6 +1,5 @@
-// generated from rosidl_adapter/resource/msg.idl.em
-// with input from sdv_vss/msg/Seat.msg
-// generated code does not contain a copyright notice
+// SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+// SPDX-License-Identifier: Apache-2.0
 
 module gearState {
   @final 

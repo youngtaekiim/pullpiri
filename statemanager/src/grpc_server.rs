@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 use crate::method_bluechi;
 use common::etcd;
 use common::statemanager::connection_server::Connection;
