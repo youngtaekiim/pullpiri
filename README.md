@@ -35,23 +35,22 @@ The [LICENSES](/LICENSES) directory contains all the licenses used by the PICCOL
 Piccolo itself uses the [Apache-2.0](/LICENSES/Apache-2.0.txt) license.
 
 The following packages (Rust Crate) use the [MIT](/LICENSES/MIT.txt) license.
+- clap
+- dbus
+- etcd-client
+- serde
+- serde_yaml
+- tokio
 - tonic
 - tonic-build
-- tokio
-- dbus
-- etcd-client
-- serde
-- serde_yaml
-- clap
 
 The following packages (Rust Crate) use the [Apache-2.0](/LICENSES/Apache-2.0.txt) license.
-- prost
+- clap
 - dbus
 - etcd-client
+- prost
 - serde
 - serde_yaml
-- clap
-
 
 The following packages (Rust Crate) use the [zlib](/LICENSES/zlib.txt) license.
 - const_format
