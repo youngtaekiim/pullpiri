@@ -16,4 +16,5 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
     environment:
       DISPLAY: ${DISPLAY}
+      HOST_IP: "10.157.19.218"
 

@@ -15,8 +15,7 @@ async fn main() {
         request: path.to_string(),
     };
 
-    //let mut client = ConnectionClient::connect(common::yamlparser::connect_server())
-    let mut client = ConnectionClient::connect("http://10.157.19.218:47004")
+    let mut client = ConnectionClient::connect(common::yamlparser::connect_server())
         .await
         .expect("- FAIL - \ncannot connect to yamlparser server");
 
