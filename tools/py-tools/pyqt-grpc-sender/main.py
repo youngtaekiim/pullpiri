@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout, QVBoxLayout, QRa
 
 class SendClient(object):
     def __init__(self):
-        self.host = '10.159.57.33'
+        self.host = '10.157.19.218'
         self.server_port = 47004
 
         self.channel = grpc.insecure_channel(

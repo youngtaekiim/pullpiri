@@ -14,7 +14,7 @@ pub mod constants {
     pub use api::proto::constants::*;
 }
 
-pub const HOST_IP: &str = "10.159.57.33";
+pub const HOST_IP: &str = "10.157.19.218";
 pub const YAML_STORAGE: &str = "/root/piccolo_yaml/";
 
 #[allow(non_snake_case)]

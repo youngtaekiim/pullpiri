@@ -1,2 +1,0 @@
-gateway_for_bluechi : d2a7f23409553f2970fa2b0b13b60336cf9921c1
-gateway_for_bluechi_thirdlib : 0dfe51e867472d3c0cd5c0ba76ac9ce0b20d7283

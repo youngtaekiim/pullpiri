@@ -6,7 +6,7 @@
 #include <sstream>
 #include "PiccoloGatewayParser.h"
 
-std::string const& etcdAddr = "http://10.159.57.33:2379";
+std::string const& etcdAddr = "http://10.157.19.218:2379";
 
 void PiccoloGatewayParser::parse(PiccoloEvent* pe)
 {

@@ -36,6 +36,7 @@ Piccolo itself uses the [Apache-2.0](/LICENSES/Apache-2.0.txt) license.
 
 The following packages (Rust Crate) use the [MIT](/LICENSES/MIT.txt) license.
 - clap
+- config
 - dbus
 - etcd-client
 - serde
@@ -46,6 +47,7 @@ The following packages (Rust Crate) use the [MIT](/LICENSES/MIT.txt) license.
 
 The following packages (Rust Crate) use the [Apache-2.0](/LICENSES/Apache-2.0.txt) license.
 - clap
+- config
 - dbus
 - etcd-client
 - prost

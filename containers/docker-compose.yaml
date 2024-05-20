@@ -37,9 +37,9 @@ services:
     command: >
         /usr/local/bin/etcd
         --data-dir=/etcd-data
-        --listen-peer-urls http://10.159.57.33:2380
-        --advertise-client-urls http://10.159.57.33:2379
-        --listen-client-urls http://10.159.57.33:2379
+        --listen-peer-urls http://10.157.19.218:2380
+        --advertise-client-urls http://10.157.19.218:2379
+        --listen-client-urls http://10.157.19.218:2379
     volumes:
       - ../etcd-data:/etcd-data
   gateway:
@@ -50,4 +50,4 @@ services:
       dockerfile: ./containers/Dockerfile-gateway
     command: /root/gateway_for_bluechi/build/PiccoloGateway
     environment:
-      - HOST_IP=10.159.57.33
+      - HOST_IP=10.157.19.218
