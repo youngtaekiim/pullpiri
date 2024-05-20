@@ -14,10 +14,17 @@ pub mod constants {
     pub use api::proto::constants::*;
 }
 
-pub fn get_conf(key: &str) -> String {
-    let conf = config::Config::builder()
+use std::sync::OnceLock;
+static CONFIG: OnceLock<config::Config> = OnceLock::new();
+
+fn init_conf() -> config::Config {
+    config::Config::builder()
         .add_source(config::File::with_name("piccolo"))
         .build()
-        .unwrap();
+        .unwrap()
+}
+
+pub fn get_conf(key: &str) -> String {
+    let conf = CONFIG.get_or_init(|| init_conf());
     conf.get_string(key).unwrap()
 }
