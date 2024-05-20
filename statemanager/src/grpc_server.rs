@@ -53,7 +53,7 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
     operation: update
     image: "sdv.lge.com/library/passive-redundant-pong:0.2""#;*/
 
-    let action: common::Action = serde_yaml::from_str(&value)?;
+    let action: common::spec::scenario::Action = serde_yaml::from_str(&value)?;
     let name = key.split('/').collect::<Vec<&str>>()[1];
     let operation = &*action.get_operation();
     let image = action.get_image();

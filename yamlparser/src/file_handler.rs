@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use common::{Action, KubePod};
+use common::spec::scenario::{Action, KubePod};
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;

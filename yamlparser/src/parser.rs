@@ -14,7 +14,7 @@ pub async fn parse(path: &PathBuf) -> Result<Scenario, Box<dyn std::error::Error
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
 
-    let scene: common::Scenario = serde_yaml::from_str(&contents)?;
+    let scene: common::spec::scenario::Scenario = serde_yaml::from_str(&contents)?;
     println!("{:#?}", &scene);
 
     let name = scene.get_name();

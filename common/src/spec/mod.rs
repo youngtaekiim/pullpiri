@@ -4,3 +4,4 @@
  */
 
 pub mod workload_spec;
+pub mod scenario;
