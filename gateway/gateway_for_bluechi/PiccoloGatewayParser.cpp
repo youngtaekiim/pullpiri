@@ -4,13 +4,23 @@
 
 #include <iostream>
 #include <sstream>
+#include <cstdlib>
 #include "PiccoloGatewayParser.h"
-
-std::string const& etcdAddr = "http://10.157.19.218:2379";
 
 void PiccoloGatewayParser::parse(PiccoloEvent* pe)
 {
 	std::cout << "parser start" << std::endl;
+
+	const char* env_ip = std::getenv("HOST_IP");
+
+	std::string etcdAddr;
+	if(env_ip == nullptr)
+	{
+		etcdAddr = std::string("0.0.0.0").append(":2379");
+	}else
+	{
+		etcdAddr = std::string(env_ip).append(":2379");
+	}
 
 	etcd::Client etcd(etcdAddr);
 	std::string conditions = std::string(pe->name).append("/conditions");
