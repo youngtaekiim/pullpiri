@@ -4,4 +4,7 @@
  */
 
 pub use api::proto::gateway::*;
-pub const GATEWAY_CONNECT: &str = const_format::concatcp!("http://", crate::HOST_IP, ":47002");
+
+pub fn connect_server() -> String {
+    format!("http://{}:47002", crate::get_ip())
+}

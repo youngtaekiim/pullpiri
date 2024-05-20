@@ -12,7 +12,7 @@ use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() {
-    let addr = common::apiserver::API_SERVER_OPEN
+    let addr = common::apiserver::open_server()
         .parse()
         .expect("api-server address parsing error");
     let request_server = grpc::receiver::request_handler::GrpcRequestServer::default();

@@ -11,7 +11,8 @@ pub async fn send_request_msg(send: Request) -> Result<tonic::Response<Response>
     println!("sending msg - '{:?}'\n", send);
 
     let mut client =
-        match RequestConnectionClient::connect(common::apiserver::API_SERVER_CONNECT).await {
+        //match RequestConnectionClient::connect(common::apiserver::connect_server()).await {
+        match RequestConnectionClient::connect("http://10.157.19.218:47001").await {
             Ok(c) => c,
             Err(_) => {
                 return Err(tonic::Status::new(
@@ -29,7 +30,7 @@ pub async fn send_update_msg(
     println!("sending msg - '{:?}'\n", send);
 
     let mut client = match UpdateWorkloadConnectionClient::connect(
-        common::apiserver::API_SERVER_CONNECT,
+        common::apiserver::connect_server(),
     )
     .await
     {

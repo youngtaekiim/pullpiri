@@ -11,7 +11,7 @@ pub async fn send_msg_to_statemanager(
     println!("sending msg - '{}'\n", msg);
 
     let mut client = match statemanager::connection_client::ConnectionClient::connect(
-        statemanager::STATE_MANAGER_CONNECT,
+        statemanager::connect_server(),
     )
     .await
     {

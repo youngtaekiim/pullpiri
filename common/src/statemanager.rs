@@ -4,6 +4,11 @@
  */
 
 pub use api::proto::statemanager::*;
-pub const STATE_MANAGER_OPEN: &str = const_format::concatcp!(crate::HOST_IP, ":47003");
-pub const STATE_MANAGER_CONNECT: &str =
-    const_format::concatcp!("http://", crate::HOST_IP, ":47003");
+
+pub fn open_server() -> String {
+    format!("{}:47003", crate::get_ip())
+}
+
+pub fn connect_server() -> String {
+    format!("http://{}:47003", crate::get_ip())
+}

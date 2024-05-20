@@ -16,7 +16,7 @@ pub async fn send_msg_to_gateway(
 
     let mut client =
         match gateway::piccolo_gateway_service_client::PiccoloGatewayServiceClient::connect(
-            gateway::GATEWAY_CONNECT,
+            gateway::connect_server(),
         )
         .await
         {

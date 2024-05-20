@@ -10,7 +10,7 @@ pub async fn send_request_msg(send: Request) -> Result<tonic::Response<Response>
     println!("sending msg - '{:?}'\n", send);
 
     let mut client =
-        match RequestConnectionClient::connect(common::apiserver::API_SERVER_CONNECT).await {
+        match RequestConnectionClient::connect(common::apiserver::connect_server()).await {
             Ok(c) => c,
             Err(_) => {
                 return Err(tonic::Status::new(

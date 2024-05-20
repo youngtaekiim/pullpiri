@@ -4,11 +4,11 @@
  */
 
 pub use api::proto::yamlparser::*;
-pub const YAML_PARSER_OPEN: &str = const_format::concatcp!(crate::HOST_IP, ":47004");
-pub const YAML_PARSER_CONNECT: &str = const_format::concatcp!("http://", crate::HOST_IP, ":47004");
 
 pub fn open_server() -> String {
-
+    format!("{}:47004", crate::get_ip())
 }
 
-pub fn connect_server()
+pub fn connect_server() -> String {
+    format!("http://{}:47004", crate::get_ip())
+}

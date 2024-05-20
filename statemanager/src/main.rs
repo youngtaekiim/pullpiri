@@ -12,7 +12,7 @@ use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() {
-    let addr = common::statemanager::STATE_MANAGER_OPEN
+    let addr = common::statemanager::open_server()
         .parse()
         .expect("statemanager address parsing error");
     let state_manager_grpc_server = StateManagerGrpcServer::default();

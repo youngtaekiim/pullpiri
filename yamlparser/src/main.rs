@@ -14,7 +14,7 @@ use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() {
-    let addr = common::yamlparser::YAML_PARSER_OPEN
+    let addr = common::yamlparser::open_server()
         .parse()
         .expect("yamlparser address parsing error");
     let piccoloyaml_grpc_server = YamlparserGrpcServer::default();

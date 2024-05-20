@@ -4,8 +4,14 @@
  */
 
 pub use api::proto::apiserver::*;
-pub const API_SERVER_OPEN: &str = const_format::concatcp!(crate::HOST_IP, ":47001");
-pub const API_SERVER_CONNECT: &str = const_format::concatcp!("http://", crate::HOST_IP, ":47001");
+
+pub fn open_server() -> String {
+    format!("{}:47001", crate::get_ip())
+}
+
+pub fn connect_server() -> String {
+    format!("http://{}:47001", crate::get_ip())
+}
 
 // Following enums are defined in api::proto::apiserver module.
 pub enum UpdateMethod {

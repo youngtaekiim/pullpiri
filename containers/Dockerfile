@@ -15,6 +15,8 @@ RUN apt update -y && \
 FROM alpine:3.19.1
 WORKDIR /piccolo-bluechi
 
+COPY ./piccolo.ini .
+
 COPY --from=builder \
     /piccolo-bluechi/target/release/api-server \
     /piccolo-bluechi/target/release/statemanager \
