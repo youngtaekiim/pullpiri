@@ -65,7 +65,7 @@ fn make_yaml_file(
 }
 
 pub fn perform(name: &str, action: &Action) -> Result<(), Box<dyn Error>> {
-    let directory = format!("{}{}", common::YAML_STORAGE, name);
+    let directory = format!("{}{}", common::get_conf("YAML_STORAGE"), name);
     fs::create_dir_all(&directory)?;
 
     let image = action.get_image();

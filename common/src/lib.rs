@@ -14,12 +14,10 @@ pub mod constants {
     pub use api::proto::constants::*;
 }
 
-pub const YAML_STORAGE: &str = "/root/piccolo_yaml/";
-
-pub fn get_ip() -> String {
+pub fn get_conf(key: &str) -> String {
     let conf = config::Config::builder()
         .add_source(config::File::with_name("piccolo"))
         .build()
         .unwrap();
-    conf.get_string("HOST_IP").unwrap()
+    conf.get_string(key).unwrap()
 }

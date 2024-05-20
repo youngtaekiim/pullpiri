@@ -81,8 +81,12 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
 }
 
 async fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let _ =
-        method_bluechi::send_dbus(vec!["STOP", "nuc-cent", &format!("{}.service", name)]).await?;
+    let _ = method_bluechi::send_dbus(vec![
+        "STOP",
+        &common::get_conf("BLUECHI_HOST_NODE"),
+        &format!("{}.service", name),
+    ])
+    .await?;
     let kube_symlink_path = format!("{}{}.kube", SYSTEMD_PATH, name);
     let _ = std::fs::remove_file(kube_symlink_path);
     method_bluechi::send_dbus(vec!["DAEMON_RELOAD"]).await?;
@@ -100,12 +104,22 @@ async fn make_and_start_new_symlink(
         .copied()
         .ok_or(Error::new(ErrorKind::NotFound, "cannot find image version"))?;
 
-    let original = format!("{0}{1}/{1}_{2}.kube", common::YAML_STORAGE, name, version);
+    let original = format!(
+        "{0}{1}/{1}_{2}.kube",
+        common::get_conf("YAML_STORAGE"),
+        name,
+        version
+    );
     let link = format!("{}{}.kube", SYSTEMD_PATH, name);
     std::os::unix::fs::symlink(original, link)?;
 
     method_bluechi::send_dbus(vec!["DAEMON_RELOAD"]).await?;
-    method_bluechi::send_dbus(vec!["START", "nuc-cent", &format!("{}.service", name)]).await?;
+    method_bluechi::send_dbus(vec![
+        "START",
+        &common::get_conf("BLUECHI_HOST_NODE"),
+        &format!("{}.service", name),
+    ])
+    .await?;
 
     Ok(())
 }

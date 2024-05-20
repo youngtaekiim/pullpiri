@@ -3,5 +3,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-pub mod workload_spec;
 pub mod scenario;
+pub mod workload_spec;

@@ -6,9 +6,9 @@
 pub use api::proto::yamlparser::*;
 
 pub fn open_server() -> String {
-    format!("{}:47004", crate::get_ip())
+    format!("{}:47004", crate::get_conf("HOST_IP"))
 }
 
 pub fn connect_server() -> String {
-    format!("http://{}:47004", crate::get_ip())
+    format!("http://{}:47004", crate::get_conf("HOST_IP"))
 }

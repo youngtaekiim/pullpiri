@@ -20,7 +20,7 @@ impl Connection for YamlparserGrpcServer {
 
         let req = request.into_inner();
         let command = req.request;
-        
+
         match handle_msg(&command).await {
             Ok(s) => Ok(Response::new(SendResponse { response: s })),
             Err(e) => Err(Status::new(Code::Unavailable, e.to_string())),
