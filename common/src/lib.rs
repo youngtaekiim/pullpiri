@@ -25,6 +25,6 @@ fn init_conf() -> config::Config {
 }
 
 pub fn get_conf(key: &str) -> String {
-    let conf = CONFIG.get_or_init(|| init_conf());
+    let conf = CONFIG.get_or_init(init_conf);
     conf.get_string(key).unwrap()
 }

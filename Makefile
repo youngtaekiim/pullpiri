@@ -63,15 +63,7 @@ cleanup:
 up:
 	docker compose -f containers/docker-compose.yaml up -d
 
-.PHONY: tup
-tup:
-	docker compose -f doc/examples/version-display/py-tools/docker-compose.yaml up -d
-
 .PHONY: down
 down:
 	docker compose -f containers/docker-compose.yaml down
-
-.PHONY: tdown
-tdown:
-	docker compose -f doc/examples/version-display/py-tools/docker-compose.yaml down
 # [DEBUGGING ONLY] Section for docker-compose - END

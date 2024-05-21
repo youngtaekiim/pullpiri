@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::{fs::File, io::Read};
 
 pub fn read_file(file_path: &PathBuf) -> Result<String> {
-    let mut file = File::open(&file_path)?;
+    let mut file = File::open(file_path)?;
     let mut contents: String = String::new();
     file.read_to_string(&mut contents)?;
     Ok(contents)
