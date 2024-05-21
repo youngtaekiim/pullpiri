@@ -19,6 +19,7 @@ Also, [Rust](https://www.rust-lang.org) is required for development.
 All applications with test app will start in container.  
 If you are familiar with container, you will find it easy to use.  
 Although it supports `docker compose`, `Bluechi` uses podman as its container runtime, so `Piccolo` also uses `podman-kube` by default.
+If this is your first time, I recommend following [Example](/doc/examples/version-display/README.md) first.
 
 ### 1. Podman-kube
 Before starting, you must build container image,
@@ -36,7 +37,7 @@ For stoping,
 make uninstall
 ```
 
-### 2. Docker compose
+### 2. Docker compose (debugging only)
 For starting,
 ```sh
 make up

@@ -11,7 +11,3 @@ members = [
     "test-grpc-sender",
     "workloadconverter",
 ]
-
-exclude = [
-    "py-tools",
-]

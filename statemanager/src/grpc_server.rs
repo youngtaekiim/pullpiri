@@ -86,7 +86,7 @@ async fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error:
         &common::get_conf("BLUECHI_HOST_NODE"),
         &format!("{}.service", name),
     ])
-    .await?;
+    .await;
     let kube_symlink_path = format!("{}{}.kube", SYSTEMD_PATH, name);
     let _ = std::fs::remove_file(kube_symlink_path);
     method_bluechi::send_dbus(vec!["DAEMON_RELOAD"]).await?;

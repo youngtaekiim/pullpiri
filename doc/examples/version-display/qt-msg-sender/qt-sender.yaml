@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: qt-sender
+spec:
+  hostNetwork: true
+  containers:
+  - name: pyqt-dds-sender
+    image: localhost/pyqt-dds-sender:1.0
+    volumeMounts:
+    - name: x11
+      mountPath: /tmp/.X11-unix
+    env:
+    - name: DISPLAY
+      value: :0
+  - name: pyqt-grpc-sender
+    image: localhost/pyqt-grpc-sender:1.0
+    volumeMounts:
+    - name: x11
+      mountPath: /tmp/.X11-unix
+    env:
+    - name: HOST_IP
+      value: "10.157.19.218"
+    - name: DISPLAY
+      value: :0
+  volumes:
+  - name: x11
+    hostPath:
+      path: /tmp/.X11-unix
