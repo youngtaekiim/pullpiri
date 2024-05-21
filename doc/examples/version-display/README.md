@@ -96,6 +96,7 @@ Now, if you press the following buttons sequentially, the color of buttons are c
 2. parking (in Qt button Example...)
 
 And, you can see version-display container window.
+
 <img src="../../images/ver-display-2.png"
 width="60%"
 height="60%"
