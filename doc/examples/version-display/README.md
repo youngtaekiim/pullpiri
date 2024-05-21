@@ -98,8 +98,8 @@ Now, if you press the following buttons sequentially, the color of buttons are c
 And, you can see version-display container window.
 
 <img src="../../images/ver-display-2.png"
-width="60%"
-height="60%"
+width="40%"
+height="40%"
 />
 
 Simillary, if you press the following buttons sequentially, the color of buttons are changed to green.
@@ -107,8 +107,8 @@ Simillary, if you press the following buttons sequentially, the color of buttons
 2. reverse (in Qt button Example...)
 
 <img src="../../images/ver-display-1.png"
-width="60%"
-height="60%"
+width="40%"
+height="40%"
 />
 
 ## Clean up
