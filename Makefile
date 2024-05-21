@@ -26,9 +26,10 @@ image:
 
 .PHONY: install
 install:
-	cp -r ./containers /etc/containers/systemd/piccolo/ && \
+	mkdir /etc/containers/systemd/piccolo/ && \
+	mkdir /etc/containers/systemd/piccolo/example && \
+	cp -r ./containers/piccolo.* /etc/containers/systemd/piccolo/ && \
 	cp -r ./etcd-data /etc/containers/systemd/piccolo/etcd-data/ && \
-	cp -r ./doc/examples/version-display/scenario /etc/containers/systemd/piccolo/example/ && \
 	systemctl daemon-reload && \
 	systemctl start piccolo
 
@@ -41,6 +42,7 @@ uninstall:
 .PHONY: tinstall
 tinstall:
 	mkdir /etc/containers/systemd/piccolo-test/ && \
+	cp -r ./doc/examples/version-display/scenario/* /etc/containers/systemd/piccolo/example/ && \
 	cp -r ./doc/examples/version-display/qt-msg-sender/qt-sender.* /etc/containers/systemd/piccolo-test/ && \
 	systemctl daemon-reload && \
 	systemctl start qt-sender

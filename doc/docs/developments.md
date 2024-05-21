@@ -67,7 +67,7 @@ height="50%"
 - `statemanager` : asdf
 
 ### Build
-
+The first priority is to use Containers, but direct build is also possible. (However, build errors may occur depending on the system.)  
 The project is using [cargo](https://doc.rust-lang.org/cargo/) as its build system and command is wrapped in [Makefile](/Makefile).
 
 The binaries and other artifacts (such as the man pages) can be built via:
@@ -89,6 +89,7 @@ make install
 # docker compose
 make up
 ```
+For more details, refer to the [Getting started](/doc/docs/getting-started.md)
 
 ### Static Code Analysis
 TBD
