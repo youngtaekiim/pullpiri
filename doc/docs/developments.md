@@ -7,8 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 # Piccolo-Bluechi
 - [Development](#development)
   - [Environment Setup](#environment-setup)
-    - [Prerequisites](#prerequisites)
-    - [Dependencies Installation](#dependencies-installation)
   - [Code Style](#code-style)
   - [Linting](#linting)
   - [Structure](#structure)
@@ -23,23 +21,7 @@ SPDX-License-Identifier: Apache-2.0
 ## Development
 
 ### Environment Setup
-
-#### Prerequisites
-
-To build the project on CentOS Stream 9 you need `BlueChi` and `Rust`.  
-Refer to [BlueChi Dev](https://github.com/eclipse-bluechi/bluechi/blob/main/README.developer.md) and [Rust](https://www.rust-lang.org/).
-
-
-
-#### Dependencies installation
-
-Most dependencies are installed during the BlueChi installation process.  
-Additionally, following packages is required. (UNDER CONSTRUCTION)
-
-```bash
-sudo dnf install \
-    dbus-devel
-```
+For detail, refer to [installation](/doc/docs/getting-started.md#installation).
 
 ### Code Style
 
