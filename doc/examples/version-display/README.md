@@ -34,6 +34,7 @@ localhost/pyqt-dds-sender    1.0   7a9e5b7a6580  7 hours ago    917 MB
 ```
 
 ## Running Piccolo
+If you have some problems during this section, refer to [Getting started - installation](/doc/docs/getting-started.md#installation).
 ```bash
 # in top folder,
 make image

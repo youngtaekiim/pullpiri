@@ -56,15 +56,15 @@ cargo clippy
 ```
 
 ### Structure
-<img src="../images/piccolo-bluechi.png" 
-width="50%"
-height="50%"
+<img src="../images/diagram.png" 
+width="75%"
+height="75%"
 />
-- `yamlparser` : asdf
-- `api-server` : asdf
-- `etcd` : asdf
-- `gateway` : asdf
-- `statemanager` : asdf
+- `yamlparser` : TBD
+- `api-server` : TBD
+- `etcd` : TBD
+- `gateway` : TBD
+- `statemanager` : TBD
 
 ### Build
 The first priority is to use Containers, but direct build is also possible. (However, build errors may occur depending on the system.)  

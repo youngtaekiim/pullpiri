@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 Piccolo with Bluechi has been tested with CentOS Stream 9.  
 [Bluechi](https://github.com/eclipse-bluechi/bluechi/tree/main) is required for Piccolo.  
 [Podman](https://podman.io/) needs to be installed as this is used as container runtime (see Podman installation instructions).  
-Also, [Rust](https://www.rust-lang.org) is required for development.
+Also, [Rust](https://www.rust-lang.org) is required to build without using a container.
 
 ## Preliminary Info
 There is a [piccolo.ini](/piccolo.ini) for configuration.
@@ -33,16 +33,31 @@ For each modules, refer to [Structure](/doc/docs/developments.md#structure).
 - `/etc/containers/systemd` folder is used for piccolo systemd service files. This cannot be changed.
 
 ## Installation
+
+### Before installation
+need some packages, disable firewall, disable selinux
+```bash
+# disable firewall
+systemctl stop firewalld
+systemctl disable firewalld
+# install package
+dnf install git-all make gcc -y
+# disable selinux
+setenforce 0
+```
+
+### Install process
 All Piccolo applications with test app will start in container.  
 If you are familiar with container, you will find it easy to use.  
 Although it supports `docker compose`, `podman play via Bluechi` uses podman as its container runtime, so `Piccolo` also uses `podman play` by default.
 If this is your first time, I recommend following [Example](/doc/examples/version-display/README.md) first.
 
-### Podman-kube
+#### Podman-kube
 Before starting, you must build Piccolo container image,
 ```sh
 make image
 ```
+If you have errors during `apt update`, then check dns nameserver.
 
 For starting,
 ```sh
@@ -54,7 +69,7 @@ For stoping,
 make uninstall
 ```
 
-### (Optional) Docker compose
+#### (Optional) Docker compose
 For starting,
 ```sh
 make up
@@ -66,3 +81,27 @@ make down
 ```
 
 Also refer to [Makefile](/Makefile).
+
+### After Installation
+need to modify `HOST_IP` address in `yaml` file.
+```
+# in containers/piccolo.yaml, there are 2 host IP env like below.
+...
+value: "192.168.50.239"
+...
+
+# in doc/examples/version-display/qt-msg-sender/qt-sender.yaml,
+...
+value: "192.168.50.239"
+...
+```
+
+Also, to modify [piccolo.ini](/piccolo.ini) is required.
+```ini
+HOST_IP=192.168.50.239
+;if you fix YAML_STORAGE, to fix Makefile is also needed. (make install)
+YAML_STORAGE=/root/piccolo_yaml/
+BLUECHI_HOST_NODE=master
+;not used yet
+;BLUECHI_GUEST_NODE=worker1
+```
