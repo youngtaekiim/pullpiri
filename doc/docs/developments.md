@@ -42,11 +42,8 @@ cargo clippy
 width="75%"
 height="75%"
 />
-- `yamlparser` : TBD
-- `api-server` : TBD
-- `etcd` : TBD
-- `gateway` : TBD
-- `statemanager` : TBD
+
+For detail, refer to [Structure](/doc/docs/structure.md).
 
 ### Build
 The first priority is to use Containers, but direct build is also possible. (However, build errors may occur depending on the system.)  
