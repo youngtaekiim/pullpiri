@@ -25,6 +25,8 @@ BLUECHI_GUEST_NODE=worker1
 - YAML_STORAGE : For making systemd service with podman, we need `.kube` and `.yaml` files. yamlparser module makes these files in this directory.
 - BLUECHI_HOST_NAME : To deliver `bluechi` command, we need node name.
 
+For each modules, refer to [Structure](/doc/docs/developments.md#structure).
+
 ## Limitations
 - Multi-node system and the resulting node-selectors have not yet been fully considered.
 - For better operation, recommend operating with `root` user.
