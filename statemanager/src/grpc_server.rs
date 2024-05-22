@@ -8,6 +8,7 @@ use common::etcd;
 use common::statemanager::connection_server::Connection;
 use common::statemanager::{SendRequest, SendResponse};
 use std::io::{Error, ErrorKind};
+use std::{thread, time::Duration};
 
 const SYSTEMD_PATH: &str = "/etc/containers/systemd/";
 
@@ -87,9 +88,11 @@ async fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error:
         &format!("{}.service", name),
     ])
     .await;
+    thread::sleep(Duration::from_millis(100));
     let kube_symlink_path = format!("{}{}.kube", SYSTEMD_PATH, name);
     let _ = std::fs::remove_file(kube_symlink_path);
     method_bluechi::send_dbus(vec!["DAEMON_RELOAD"]).await?;
+    thread::sleep(Duration::from_millis(100));
     Ok(())
 }
 
@@ -114,12 +117,14 @@ async fn make_and_start_new_symlink(
     std::os::unix::fs::symlink(original, link)?;
 
     method_bluechi::send_dbus(vec!["DAEMON_RELOAD"]).await?;
+    thread::sleep(Duration::from_millis(100));
     method_bluechi::send_dbus(vec![
         "START",
         &common::get_conf("BLUECHI_HOST_NODE"),
         &format!("{}.service", name),
     ])
     .await?;
+    thread::sleep(Duration::from_millis(100));
 
     Ok(())
 }
