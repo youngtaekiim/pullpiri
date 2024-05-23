@@ -102,9 +102,7 @@ etcd : 2379
 
 ## Documentation (will be updated)
 
-Files for documentation of this project are located in the [docs](/doc/) directory comprising:
+Files for documentation of this project are located in the [doc](/doc/) directory comprising:
 
-- [api examples](./doc/api-examples/): directory containing source files for different programming languages that use
-the D-Bus API of BlueChi, e.g. for starting a systemd unit
-- readthedocs files for building the documentation website of BlueChi (see [the README](./doc/README.md) for further information)
-- [diagrams.drawio](./doc/diagrams.drawio) file containing all diagrams used for BlueChi
+- [Examples](/doc/examples/version-display/): directory containing all files and guides for performing example
+- [piccolo-bliechi.drawio](/doc/images/piccolo-bluechi.drawio) file containing all diagrams used for Piccolo

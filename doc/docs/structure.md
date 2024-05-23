@@ -5,6 +5,31 @@ width="75%"
 height="75%"
 />
 
+```bash
+.
+├── containers      # files for binary container
+├── doc
+│   ├── docs
+│   ├── examples
+│   └── images
+├── etcd-data       # dummy folder for etcd DB
+├── LICENSES
+└── src
+    ├── api         # gRPC proto files
+    ├── api-server
+    ├── common      # common library
+    ├── gateway
+    ├── statemanager
+    ├── target
+    ├── tools
+    │   ├── piccoloctl
+    │   ├── piccoloyaml
+    │   ├── target
+    │   ├── test-grpc-sender
+    │   └── workloadconverter
+    └── yamlparser
+```
+
 ## yamlparser
  Yamlparser is responsible for receiving the scenario file and parsing it into the necessary items for piccolo.
 
