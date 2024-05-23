@@ -81,7 +81,7 @@ WantedBy=multi-user.target default.target
 Yaml=/root/piccolo_yaml/version-display/version-display_2.0.yaml
 ```
 
-```sh
+```yaml
 # cat  /root/piccolo_yaml/version-display/version-display_2.0.yaml 
 apiVersion: v1
 kind: Pod
@@ -106,7 +106,7 @@ spec:
 ### Save action & condition in etcd
 Yamlparser sends the parsed actions, conditions, and names to the api-server in struct format via gRPC.
 api-server stores each data in etcd using scenario/{name}/conditions and scenario/{name}/action as keys.
-```bash
+```yaml
 # etcdctl --endpoints=10.157.19.218:2379 --prefix=true get "scenario/version"
 # scenario/version-display/action
 operation: update
