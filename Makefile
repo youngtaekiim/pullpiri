@@ -3,20 +3,20 @@
 
 .PHONY: default build
 build:
-	cargo build
+	cargo build --manifest-path=src/Cargo.toml
 
 .PHONY: release
 release:
-	cargo build --release
+	cargo build --manifest-path=src/Cargo.toml --release
 
 .PHONY: tool
 tool:
-	cargo build --manifest-path=tools/Cargo.toml
+	cargo build --manifest-path=src/tools/Cargo.toml
 
 .PHONY: clean
 clean:
-	cargo clean && \
-	cargo clean --manifest-path=tools/Cargo.toml
+	cargo clean --manifest-path=src/Cargo.toml
+	cargo clean --manifest-path=src/tools/Cargo.toml
 
 # Section for podman-kube workload - START
 .PHONY: image
@@ -56,18 +56,3 @@ tuninstall:
 	systemctl stop version-display.service
 	-rm -rf /etc/containers/systemd/version-display.kube
 # Section for podman-kube workload - END
-
-# [DEBUGGING ONLY] Section for docker-compose - START
-.PHONY: cleanup
-cleanup:
-	docker compose -f containers/docker-compose.yaml build --no-cache
-	docker compose -f containers/docker-compose.yaml up --build -d
-
-.PHONY: up
-up:
-	docker compose -f containers/docker-compose.yaml up -d
-
-.PHONY: down
-down:
-	docker compose -f containers/docker-compose.yaml down
-# [DEBUGGING ONLY] Section for docker-compose - END

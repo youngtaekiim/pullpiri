@@ -107,7 +107,7 @@ spec:
 Yamlparser sends the parsed actions, conditions, and names to the api-server in struct format via gRPC.
 api-server stores each data in etcd using scenario/{name}/conditions and scenario/{name}/action as keys.
 ```yaml
-# etcdctl --endpoints=10.157.19.218:2379 --prefix=true get "scenario/version"
+# etcdctl --endpoints=192.168.50.239:2379 --prefix=true get "scenario/version"
 # scenario/version-display/action
 operation: update
 podSpec:

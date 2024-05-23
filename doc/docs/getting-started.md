@@ -15,7 +15,7 @@ Also, [Rust](https://www.rust-lang.org) is required to build without using a con
 ## Preliminary Info
 There is a [piccolo.ini](/piccolo.ini) for configuration.
 ```bash
-HOST_IP=10.157.19.218
+HOST_IP=192.168.50.239
 YAML_STORAGE=/root/piccolo_yaml/
 BLUECHI_HOST_NODE=master
 BLUECHI_GUEST_NODE=worker1

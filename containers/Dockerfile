@@ -4,7 +4,7 @@
 FROM rust:1.77.2-slim AS builder
 WORKDIR /piccolo-bluechi
 
-COPY . .
+COPY ./src .
 
 RUN apt update -y && \
     apt upgrade -y && \

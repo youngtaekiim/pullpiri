@@ -6,7 +6,7 @@ WORKDIR /root
 
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y libboost-all-dev libssl-dev git cmake gcc g++
-COPY ./gateway .
+COPY ./src/gateway .
 
 WORKDIR /root/gateway_for_bluechi
 RUN mkdir build
