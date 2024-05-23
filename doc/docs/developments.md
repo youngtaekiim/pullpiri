@@ -27,6 +27,7 @@ For detail, refer to [installation](/doc/docs/getting-started.md#installation).
 
 [rustfmt](https://github.com/rust-lang/rustfmt) is used.
 ```bash
+# in src directory
 cargo fmt
 ```
 
@@ -34,6 +35,7 @@ cargo fmt
 
 [Clippy](https://doc.rust-lang.org/nightly/clippy/) is used.
 ```bash
+# in src directory
 cargo clippy
 ```
 
@@ -77,6 +79,7 @@ TBD
 ### Unit tests
 Unit tests can be executed using following commands:
 ```bash
+# in src directory
 cargo test
 ```
 
