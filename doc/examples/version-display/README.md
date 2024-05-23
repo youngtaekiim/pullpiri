@@ -151,6 +151,9 @@ Statemanager can extract the scenario name, image name, and version from here, f
 ```
 Now, send the systemd reload and start unit commands to bluechi and the entire process will be completed.
 
+<br>
+<br>
+
 ## Run the example
 
 ### Build test application
