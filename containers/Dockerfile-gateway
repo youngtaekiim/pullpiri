@@ -41,7 +41,7 @@ COPY --from=gateway-builder \
     /root/gateway_thirdlib/lib/libddscxx.so.0.11.0 \
     /root/gateway_thirdlib/lib/libddsc.so.0 \
     /root/gateway_thirdlib/lib/libddsc.so.0.11.0 \
-    /root/gateway_thirdlib/lib/libcpprest.so.2.10 /root/gateway_for_bluechi_thirdlib/lib/ 
+    /root/gateway_thirdlib/lib/libcpprest.so.2.10 /root/gateway_thirdlib/lib/ 
 COPY --from=gateway-builder /root/gateway_src/build/PiccoloGateway /root/gateway_src/build/
 
 ENTRYPOINT ["/root/gateway_src/build/PiccoloGateway"]
