@@ -12,7 +12,7 @@
 project(PiccoloGateway LANGUAGES C CXX)
 cmake_minimum_required(VERSION 3.8)
 
-SET(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/../gateway_for_bluechi_thirdlib/)
+SET(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/../gateway_thirdlib/)
 
 if(NOT TARGET CycloneDDS-CXX::ddscxx)
   find_package(CycloneDDS-CXX REQUIRED)

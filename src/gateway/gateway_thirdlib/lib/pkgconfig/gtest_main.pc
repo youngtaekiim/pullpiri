@@ -1,5 +1,5 @@
-libdir=/root/gateway_for_bluechi_thirdlib/lib
-includedir=/root/gateway_for_bluechi_thirdlib/include
+libdir=/root/gateway_thirdlib/lib
+includedir=/root/gateway_thirdlib/include
 
 Name: gtest_main
 Description: GoogleTest (with main() function)

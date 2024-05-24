@@ -62,7 +62,7 @@ add_library(etcd-cpp-api STATIC IMPORTED)
 
 set_target_properties(etcd-cpp-api PROPERTIES
   INTERFACE_COMPILE_FEATURES "cxx_std_11"
-  INTERFACE_LINK_LIBRARIES "cpprestsdk::cpprest;/root/gateway_for_bluechi_thirdlib/lib/libssl.a;/root/gateway_for_bluechi_thirdlib/lib/libcrypto.a;-lpthread;dl;gRPC::gpr;gRPC::grpc;gRPC::grpc++;protobuf::libprotobuf"
+  INTERFACE_LINK_LIBRARIES "cpprestsdk::cpprest;/root/gateway_thirdlib/lib/libssl.a;/root/gateway_thirdlib/lib/libcrypto.a;-lpthread;dl;gRPC::gpr;gRPC::grpc;gRPC::grpc++;protobuf::libprotobuf"
 )
 
 if(CMAKE_VERSION VERSION_LESS 3.0.0)

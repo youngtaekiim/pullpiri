@@ -1,4 +1,4 @@
-prefix=/root/gateway_for_bluechi_thirdlib
+prefix=/root/gateway_thirdlib
 exec_prefix=${prefix}
 includedir=${prefix}/include
 libdir=${exec_prefix}/lib

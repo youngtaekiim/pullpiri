@@ -1,7 +1,7 @@
-prefix=/root/gateway_for_bluechi_thirdlib
+prefix=/root/gateway_thirdlib
 exec_prefix=${prefix}
-libdir=/root/gateway_for_bluechi_thirdlib/lib
-includedir=/root/gateway_for_bluechi_thirdlib/include
+libdir=/root/gateway_thirdlib/lib
+includedir=/root/gateway_thirdlib/include
 
 Name: absl_raw_hash_set
 Description: Abseil raw_hash_set library

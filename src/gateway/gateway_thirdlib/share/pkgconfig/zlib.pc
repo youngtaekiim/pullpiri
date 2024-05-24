@@ -1,8 +1,8 @@
-prefix=/root/gateway_for_bluechi_thirdlib
-exec_prefix=/root/gateway_for_bluechi_thirdlib
-libdir=/root/gateway_for_bluechi_thirdlib/lib
-sharedlibdir=/root/gateway_for_bluechi_thirdlib/lib
-includedir=/root/gateway_for_bluechi_thirdlib/include
+prefix=/root/gateway_thirdlib
+exec_prefix=/root/gateway_thirdlib
+libdir=/root/gateway_thirdlib/lib
+sharedlibdir=/root/gateway_thirdlib/lib
+includedir=/root/gateway_thirdlib/include
 
 Name: zlib
 Description: zlib compression library

@@ -1,7 +1,7 @@
-prefix=/root/gateway_for_bluechi_thirdlib
+prefix=/root/gateway_thirdlib
 exec_prefix=${prefix}
-includedir=/root/gateway_for_bluechi_thirdlib/include
-libdir=/root/gateway_for_bluechi_thirdlib/lib
+includedir=/root/gateway_thirdlib/include
+libdir=/root/gateway_thirdlib/lib
 
 Name: Yaml-cpp
 Description: A YAML parser and emitter for C++
