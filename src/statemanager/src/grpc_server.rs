@@ -84,7 +84,7 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
 async fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let _ = send_dbus(vec![
         "STOP",
-        &common::get_conf("BLUECHI_HOST_NODE"),
+        &common::get_conf("HOST_NODE"),
         &format!("{}.service", name),
     ])
     .await;
@@ -120,7 +120,7 @@ async fn make_and_start_new_symlink(
     thread::sleep(Duration::from_millis(100));
     send_dbus(vec![
         "START",
-        &common::get_conf("BLUECHI_HOST_NODE"),
+        &common::get_conf("HOST_NODE"),
         &format!("{}.service", name),
     ])
     .await?;

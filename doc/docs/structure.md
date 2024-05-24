@@ -45,7 +45,7 @@ The gateway receives a vehicle message according to the condition received from 
 It is currently written in C++, but there are plans to rewrite it in Rust.
 
 ## statemanager
-The statemanager calls the other workload orchestrator (ex. Bluechi) API based on a message from the gateway or api-server.
+The statemanager calls the other workload orchestrator API based on a message from the gateway or api-server.
 Therefore, it is the destination that must be passed through in order to execute the workload.
 Specifically, when it receives a notification from the gateway that the condition has been satisfied, it pulls out the corresponding action from etcd and executes it.
 

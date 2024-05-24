@@ -7,10 +7,10 @@ SPDX-License-Identifier: Apache-2.0
 # API
 Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/main/doc/docs/api/description.md).
 
-## BlueChi public D-Bus API
+## Public D-Bus API
 
 ### interface org.eclipse.bluechi.Controller
-| Bluechi        | Piccolo | Description                               |
+| Command        | Piccolo | Description                               |
 | -------------- | :-----: | ----------------------------------------- |
 | ListUnits      | X       | Returns all loaded systemd units          |
 | CreateMonitor  | X       | Creates a new monitor object              |
@@ -23,7 +23,7 @@ Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/
 **Note** : (*) is used internally.
 
 ### interface org.eclipse.bluechi.Node
-| Bluechi           | Piccolo | Description                         |
+| Command           | Piccolo | Description                         |
 | ----------------- | :-----: | ----------------------------------- |
 | StartUnit         | O       | Start named unit                    |
 | StopUnit          | O       | Stop named unit                     |
@@ -36,27 +36,7 @@ Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/
 | SetUnitProperties | X       | Set named properties                |
 | ListUnits         | O       | Returns all loaded units on node    |
 | Reload            | O       | Reload all unit files               |
-| SetLogLevel       | X       | Set log level for bluechi-agent     |
+| SetLogLevel       | X       | Set log level for node agent        |
 
-Set the new log level for bluechi-agent by invoking the internal bluechi-agent API.
-
-### interface org.eclipse.bluechi.Monitor
-Currently not supported.
-### interface org.eclipse.bluechi.Job
-Currently not supported.
-
-## BlueChi-Agent public D-Bus API
-### interface org.eclipse.bluechi.Agent
-Currently not supported.
-### interface org.eclipse.bluechi.Metrics
-Currently not supported.
-
-## Internal D-Bus APIs
-### interface org.eclipse.bluechi.internal.Controller
-Currently not supported.
-### interface org.eclipse.bluechi.internal.Agent
-Currently not supported.
-### interface org.eclipse.bluechi.internal.Proxy
-Currently not supported.
-### interface org.eclipse.bluechi.internal.Agent.Metrics
-Currently not supported.
+## the others
+Not reviewed yet
