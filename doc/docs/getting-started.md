@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 # Getting started
 
 ## System requirements
-Piccolo with Bluechi has been tested with CentOS Stream 9.  
+Piccolo based on Bluechi has been tested with CentOS Stream 9.  
 [Bluechi](https://github.com/eclipse-bluechi/bluechi/tree/main) is required for Piccolo.  
 [Podman](https://podman.io/) needs to be installed as this is used as container runtime (see Podman installation instructions).  
 Also, [Rust](https://www.rust-lang.org) is required to build without using a container.

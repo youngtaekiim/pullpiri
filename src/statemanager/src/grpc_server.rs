@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use crate::method_bluechi;
+use crate::method_bluechi::send_dbus;
 use common::etcd;
 use common::statemanager::connection_server::Connection;
 use common::statemanager::{SendRequest, SendResponse};
@@ -30,7 +30,7 @@ impl Connection for StateManagerGrpcServer {
 
         if from == i32::from(common::constants::PiccoloModuleName::Apiserver) {
             let cmd: Vec<&str> = command.split('/').collect();
-            match method_bluechi::send_dbus(cmd).await {
+            match send_dbus(cmd).await {
                 Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
                 Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
             }
@@ -82,7 +82,7 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
 }
 
 async fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let _ = method_bluechi::send_dbus(vec![
+    let _ = send_dbus(vec![
         "STOP",
         &common::get_conf("BLUECHI_HOST_NODE"),
         &format!("{}.service", name),
@@ -91,7 +91,7 @@ async fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error:
     thread::sleep(Duration::from_millis(100));
     let kube_symlink_path = format!("{}{}.kube", SYSTEMD_PATH, name);
     let _ = std::fs::remove_file(kube_symlink_path);
-    method_bluechi::send_dbus(vec!["DAEMON_RELOAD"]).await?;
+    send_dbus(vec!["DAEMON_RELOAD"]).await?;
     thread::sleep(Duration::from_millis(100));
     Ok(())
 }
@@ -116,9 +116,9 @@ async fn make_and_start_new_symlink(
     let link = format!("{}{}.kube", SYSTEMD_PATH, name);
     std::os::unix::fs::symlink(original, link)?;
 
-    method_bluechi::send_dbus(vec!["DAEMON_RELOAD"]).await?;
+    send_dbus(vec!["DAEMON_RELOAD"]).await?;
     thread::sleep(Duration::from_millis(100));
-    method_bluechi::send_dbus(vec![
+    send_dbus(vec![
         "START",
         &common::get_conf("BLUECHI_HOST_NODE"),
         &format!("{}.service", name),

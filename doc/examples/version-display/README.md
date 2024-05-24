@@ -149,7 +149,7 @@ Statemanager can extract the scenario name, image name, and version from here, f
 # ls -al /etc/containers/systemd/version-display.kube 
 /etc/containers/systemd/version-display.kube -> /root/piccolo_yaml/version-display/version-display_2.0.kube
 ```
-Now, send the systemd reload and start unit commands to bluechi and the entire process will be completed.
+Now, send the reload and start unit commands to systemd and the entire process will be completed.
 
 <br>
 <br>

@@ -31,7 +31,7 @@ mod tests {
     #[tokio::test]
     async fn parsing_update_scenario() {
         let path = std::path::PathBuf::from(
-            "/root/work/projects-rust/piccolo-bluechi/doc/examples/version-display/scenario/update-scenario.yaml",
+            "/root/work/projects-rust/piccolo/doc/examples/version-display/scenario/update-scenario.yaml",
         );
 
         let result = crate::parser::parse(&path).await;
@@ -42,7 +42,7 @@ mod tests {
     #[tokio::test]
     async fn parsing_rollback_scenario() {
         let path = std::path::PathBuf::from(
-            "/root/work/projects-rust/piccolo-bluechi/doc/examples/version-display/scenario/rollback-scenario.yaml",
+            "/root/work/projects-rust/piccolo/doc/examples/version-display/scenario/rollback-scenario.yaml",
         );
 
         let result = crate::parser::parse(&path).await;
