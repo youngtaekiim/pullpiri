@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Piccolo-Bluechi
+# Piccolo
 - [Development](#development)
   - [Environment Setup](#environment-setup)
   - [Code Style](#code-style)
@@ -105,4 +105,4 @@ etcd : 2379
 Files for documentation of this project are located in the [doc](/doc/) directory comprising:
 
 - [Examples](/doc/examples/version-display/): directory containing all files and guides for performing example
-- [piccolo-bliechi.drawio](/doc/images/piccolo-bluechi.drawio) file containing all diagrams used for Piccolo
+- [piccolo-bliechi.drawio](/doc/images/piccolo.drawio) file containing all diagrams used for Piccolo

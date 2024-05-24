@@ -14,7 +14,7 @@ Also, [Rust](https://www.rust-lang.org) is required to build without using a con
 
 ## Preliminary Info
 There is a [piccolo.ini](/piccolo.ini) for configuration.
-```bash
+```ini
 HOST_IP=192.168.50.239
 YAML_STORAGE=/root/piccolo_yaml/
 BLUECHI_HOST_NODE=master
@@ -45,11 +45,12 @@ dnf install git-all make gcc -y
 # disable selinux
 setenforce 0
 ```
+For modifying configuration, see [Caution](#caution).
 
 ### Install process
-All Piccolo applications with test app will start in container.  
-If you are familiar with container, you will find it easy to use.  
-Although it supports `docker compose`, `podman play via Bluechi` uses podman as its container runtime, so `Piccolo` also uses `podman play` by default.
+All Piccolo applications with test app will start in container.
+If you are familiar with container, you will find it easy to use.
+`Piccolo` also uses `podman play` by default.
 If this is your first time, I recommend following [Example](/doc/examples/version-display/README.md) first.
 
 #### Podman-kube
@@ -69,20 +70,9 @@ For stoping,
 make uninstall
 ```
 
-#### (Optional) Docker compose
-For starting,
-```sh
-make up
-```
-
-For stoping,
-```sh
-make down
-```
-
 Also refer to [Makefile](/Makefile).
 
-### After Installation
+### Caution
 need to modify `HOST_IP` address in `yaml` file.
 ```
 # in containers/piccolo.yaml, there are 2 host IP env like below.

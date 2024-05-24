@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 FROM rust:1.77.2-slim AS builder
-WORKDIR /piccolo-bluechi
+WORKDIR /piccolo
 
 COPY ./src .
 
@@ -13,14 +13,14 @@ RUN apt update -y && \
 
 
 FROM alpine:3.19.1
-WORKDIR /piccolo-bluechi
+WORKDIR /piccolo
 
 COPY ./piccolo.ini .
 
 COPY --from=builder \
-    /piccolo-bluechi/target/release/api-server \
-    /piccolo-bluechi/target/release/statemanager \
-    /piccolo-bluechi/target/release/yamlparser ./
+    /piccolo/target/release/api-server \
+    /piccolo/target/release/statemanager \
+    /piccolo/target/release/yamlparser ./
 
 COPY --from=builder /lib64 /lib64
 COPY --from=builder \

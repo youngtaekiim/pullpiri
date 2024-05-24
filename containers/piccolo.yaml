@@ -11,18 +11,18 @@ spec:
   containers:
   - name: yamlparser
     image: localhost/piccolo:1.0
-    command: ["/piccolo-bluechi/yamlparser"]
+    command: ["/piccolo/yamlparser"]
     volumeMounts:
     - name: piccolo-yaml
       mountPath: /root/piccolo_yaml
     - name: yaml-example
-      mountPath: /piccolo-bluechi/example
+      mountPath: /piccolo/example
   - name: api-server
     image: localhost/piccolo:1.0
-    command: ["/piccolo-bluechi/api-server"]
+    command: ["/piccolo/api-server"]
   - name: statemanager
     image: localhost/piccolo:1.0
-    command: ["/piccolo-bluechi/statemanager"]
+    command: ["/piccolo/statemanager"]
     volumeMounts:
     - name: piccolo-yaml
       mountPath: /root/piccolo_yaml
