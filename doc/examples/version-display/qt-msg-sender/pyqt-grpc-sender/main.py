@@ -38,7 +38,7 @@ class MainWindow(QWidget):
         buttonLayout = QVBoxLayout(buttonWidget)
         buttonWidget.setStyleSheet("background-color: lightgrey; border:1px solid black;")
         self.buttons = []
-        for label in ['update (v2.0)', 'rollback (v1.0)']:
+        for label in ['update (v2.0)', 'rollback (v1.0)', 'launch (v1.0)', 'terminate']:
             btn = QRadioButton(label)
             btn.setCheckable(True)
             btn.clicked.connect(self.onButtonClicked)
@@ -69,6 +69,10 @@ class MainWindow(QWidget):
                     result = client.get_url(message="example/update-scenario.yaml")
                 elif "rollback" in btn.text():
                     result = client.get_url(message="example/rollback-scenario.yaml")
+                elif "launch" in btn.text():
+                    result = client.get_url(message="example/launch-scenario.yaml")
+                elif "terminate" in btn.text():
+                    result = client.get_url(message="example/terminate-scenario.yaml")
                 
             else:
                 btn .setStyleSheet("") #색상 되돌림

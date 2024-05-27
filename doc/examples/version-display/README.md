@@ -241,7 +241,8 @@ fe7721ed  localhost/piccolo:1.0                  ...   piccolo-yamlparser
 ```bash
 make tinstall
 ```
-Then there are two X11 applications.
+Then there are two X11 applications.  
+(Now, there are two more button `launch`, `terminate` in gRPC sender.)
 
 <img src="../../images/pyqt-sender.png" 
 width="60%"
@@ -272,6 +273,8 @@ Simillary, if you press the following buttons sequentially, the color of buttons
 width="40%"
 height="40%"
 />
+
+Additionally, the `launch` and `terminate` buttons also receive parking DDS message and operate similarly.
 
 ### Clean up
 

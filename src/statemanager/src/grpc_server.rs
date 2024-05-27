@@ -65,9 +65,11 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
     );
 
     match operation {
-        "deploy" => {
-            delete_symlink_and_reload(name).await?;
+        "launch" => {
             make_and_start_new_symlink(name, &image).await?;
+        }
+        "terminate" => {
+            delete_symlink_and_reload(name).await?;
         }
         "update" | "rollback" => {
             delete_symlink_and_reload(name).await?;
