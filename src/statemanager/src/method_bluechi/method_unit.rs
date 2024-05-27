@@ -15,14 +15,9 @@ fn unit_lifecycle(
 ) -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
-    let proxy = conn.with_proxy(
-        super::DEST,
-        super::PATH,
-        Duration::from_millis(5000),
-    );
+    let proxy = conn.with_proxy(super::DEST, super::PATH, Duration::from_millis(5000));
 
-    let (node,): (Path,) =
-        proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
+    let (node,): (Path,) = proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
 
     let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
 
@@ -38,14 +33,9 @@ fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn Error
     let unit_vector = vec![unit_name.to_owned()];
     let conn = Connection::new_system()?;
 
-    let proxy = conn.with_proxy(
-        super::DEST,
-        super::PATH,
-        Duration::from_millis(5000),
-    );
+    let proxy = conn.with_proxy(super::DEST, super::PATH, Duration::from_millis(5000));
 
-    let (node,): (Path,) =
-        proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
+    let (node,): (Path,) = proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
 
     let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
 
@@ -76,22 +66,14 @@ fn disable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn Erro
     let unit_vector = vec![unit_name.to_owned()];
     let conn = Connection::new_system()?;
 
-    let proxy = conn.with_proxy(
-        super::DEST,
-        super::PATH,
-        Duration::from_millis(5000),
-    );
+    let proxy = conn.with_proxy(super::DEST, super::PATH, Duration::from_millis(5000));
 
-    let (node,): (Path,) =
-        proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
+    let (node,): (Path,) = proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
 
     let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
 
-    let (changes,): (Vec<(String, String, String)>,) = node_proxy.method_call(
-        super::DEST_NODE,
-        "DisableUnitFiles",
-        (unit_vector, false),
-    )?;
+    let (changes,): (Vec<(String, String, String)>,) =
+        node_proxy.method_call(super::DEST_NODE, "DisableUnitFiles", (unit_vector, false))?;
 
     let mut result = String::new();
     for (op_type, file_name, file_dest) in changes {

@@ -11,11 +11,7 @@ use std::time::Duration;
 fn list_nodes() -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
-    let proxy = conn.with_proxy(
-        super::DEST,
-        super::PATH,
-        Duration::from_millis(5000),
-    );
+    let proxy = conn.with_proxy(super::DEST, super::PATH, Duration::from_millis(5000));
 
     let (nodes,): (Vec<(String, dbus::Path, String)>,) =
         proxy.method_call(super::DEST_CONTROLLER, "ListNodes", ())?;
@@ -27,16 +23,10 @@ fn list_nodes() -> Result<String, Box<dyn Error>> {
     Ok(result)
 }
 
-
-
 fn reload_all_nodes() -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
-    let proxy = conn.with_proxy(
-        super::DEST,
-        super::PATH,
-        Duration::from_millis(5000),
-    );
+    let proxy = conn.with_proxy(super::DEST, super::PATH, Duration::from_millis(5000));
 
     let mut result = String::new();
     let (nodes,): (Vec<(String, dbus::Path, String)>,) =

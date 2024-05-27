@@ -11,14 +11,9 @@ use std::time::Duration;
 fn list_node_units(node_name: &str) -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
-    let proxy = conn.with_proxy(
-        super::DEST,
-        super::PATH,
-        Duration::from_millis(5000),
-    );
+    let proxy = conn.with_proxy(super::DEST, super::PATH, Duration::from_millis(5000));
 
-    let (node,): (Path,) =
-        proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
+    let (node,): (Path,) = proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
 
     let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
 
@@ -38,14 +33,9 @@ fn list_node_units(node_name: &str) -> Result<String, Box<dyn Error>> {
 fn node_daemon_reload(node_name: &str) -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
-    let proxy = conn.with_proxy(
-        super::DEST,
-        super::PATH,
-        Duration::from_millis(5000),
-    );
+    let proxy = conn.with_proxy(super::DEST, super::PATH, Duration::from_millis(5000));
 
-    let (node,): (Path,) =
-        proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
+    let (node,): (Path,) = proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
 
     let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
     node_proxy.method_call(super::DEST_NODE, "Reload", ())?;
