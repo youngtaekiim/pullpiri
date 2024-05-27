@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use common::spec::scenario::{Action, KubePod};
+use common::spec::pod::Pod;
+use common::spec::scenario::Action;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
@@ -56,9 +57,9 @@ fn make_yaml_file(
     let yaml_file_path = format!("{}/{}_{}.yaml", dir, name, version);
     let mut yaml_file = fs::File::create(yaml_file_path)?;
 
-    let kube_pod = KubePod::new(name, action.clone());
+    let pod = Pod::new(name, action.get_podspec());
 
-    let yaml_contents = serde_yaml::to_string(&kube_pod)?;
+    let yaml_contents = serde_yaml::to_string(&pod)?;
     yaml_file.write_all(yaml_contents.as_bytes())?;
 
     Ok(())

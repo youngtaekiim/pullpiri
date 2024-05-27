@@ -6,7 +6,7 @@
 use clap::Parser;
 use std::path::PathBuf;
 
-use common::spec::workload_spec::Pod;
+use common::spec::pod::Pod;
 mod cli_parser;
 mod file_handler;
 

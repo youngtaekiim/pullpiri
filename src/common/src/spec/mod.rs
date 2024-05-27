@@ -4,4 +4,10 @@
  */
 
 pub mod scenario;
-pub mod workload_spec;
+pub mod workload;
+pub mod pod;
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+struct MetaData {
+    name: String,
+}
