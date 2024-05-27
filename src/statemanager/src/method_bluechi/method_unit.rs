@@ -15,19 +15,19 @@ fn unit_lifecycle(
 ) -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
-    let bluechi = conn.with_proxy(
-        "org.eclipse.bluechi",
-        "/org/eclipse/bluechi",
+    let proxy = conn.with_proxy(
+        super::DEST,
+        super::PATH,
         Duration::from_millis(5000),
     );
 
     let (node,): (Path,) =
-        bluechi.method_call("org.eclipse.bluechi.Controller", "GetNode", (node_name,))?;
+        proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
 
-    let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
+    let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
 
     let (job_path,): (Path,) =
-        node_proxy.method_call("org.eclipse.bluechi.Node", method, (unit_name, "replace"))?;
+        node_proxy.method_call(super::DEST_NODE, method, (unit_name, "replace"))?;
 
     Ok(format!(
         "{method} '{unit_name}' on node '{node_name}': {job_path}\n"
@@ -38,20 +38,20 @@ fn enable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn Error
     let unit_vector = vec![unit_name.to_owned()];
     let conn = Connection::new_system()?;
 
-    let bluechi = conn.with_proxy(
-        "org.eclipse.bluechi",
-        "/org/eclipse/bluechi",
+    let proxy = conn.with_proxy(
+        super::DEST,
+        super::PATH,
         Duration::from_millis(5000),
     );
 
     let (node,): (Path,) =
-        bluechi.method_call("org.eclipse.bluechi.Controller", "GetNode", (node_name,))?;
+        proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
 
-    let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
+    let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
 
     let (carries_install_info, changes): (bool, Vec<(String, String, String)>) = node_proxy
         .method_call(
-            "org.eclipse.bluechi.Node",
+            super::DEST_NODE,
             "EnableUnitFiles",
             (unit_vector, false, false),
         )?;
@@ -76,19 +76,19 @@ fn disable_unit(node_name: &str, unit_name: &str) -> Result<String, Box<dyn Erro
     let unit_vector = vec![unit_name.to_owned()];
     let conn = Connection::new_system()?;
 
-    let bluechi = conn.with_proxy(
-        "org.eclipse.bluechi",
-        "/org/eclipse/bluechi",
+    let proxy = conn.with_proxy(
+        super::DEST,
+        super::PATH,
         Duration::from_millis(5000),
     );
 
     let (node,): (Path,) =
-        bluechi.method_call("org.eclipse.bluechi.Controller", "GetNode", (node_name,))?;
+        proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
 
-    let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
+    let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
 
     let (changes,): (Vec<(String, String, String)>,) = node_proxy.method_call(
-        "org.eclipse.bluechi.Node",
+        super::DEST_NODE,
         "DisableUnitFiles",
         (unit_vector, false),
     )?;

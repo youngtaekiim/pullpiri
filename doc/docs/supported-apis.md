@@ -9,7 +9,7 @@ Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/
 
 ## Public D-Bus API
 
-### interface org.eclipse.bluechi.Controller
+### Controller
 | Command        | Piccolo | Description                               |
 | -------------- | :-----: | ----------------------------------------- |
 | ListUnits      | X       | Returns all loaded systemd units          |
@@ -22,7 +22,7 @@ Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/
 
 **Note** : (*) is used internally.
 
-### interface org.eclipse.bluechi.Node
+### Node
 | Command           | Piccolo | Description                         |
 | ----------------- | :-----: | ----------------------------------- |
 | StartUnit         | O       | Start named unit                    |

@@ -7,6 +7,11 @@ pub mod method_controller;
 pub mod method_node;
 pub mod method_unit;
 
+const DEST: &str = "org.eclipse.bluechi";
+const PATH: &str = "/org/eclipse/bluechi";
+const DEST_CONTROLLER: &str = "org.eclipse.bluechi.Controller";
+const DEST_NODE: &str = "org.eclipse.bluechi.Node";
+
 pub async fn send_dbus(cmd: Vec<&str>) -> Result<String, Box<dyn std::error::Error>> {
     println!("recv msg: {:?}\n", cmd);
 

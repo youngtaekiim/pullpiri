@@ -11,20 +11,20 @@ use std::time::Duration;
 fn list_node_units(node_name: &str) -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
-    let bluechi = conn.with_proxy(
-        "org.eclipse.bluechi",
-        "/org/eclipse/bluechi",
+    let proxy = conn.with_proxy(
+        super::DEST,
+        super::PATH,
         Duration::from_millis(5000),
     );
 
     let (node,): (Path,) =
-        bluechi.method_call("org.eclipse.bluechi.Controller", "GetNode", (node_name,))?;
+        proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
 
-    let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
+    let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
 
     // we are only interested in the first two response values - unit name and description
     let (units,): (Vec<(String, String)>,) =
-        node_proxy.method_call("org.eclipse.bluechi.Node", "ListUnits", ())?;
+        node_proxy.method_call(super::DEST_NODE, "ListUnits", ())?;
 
     let mut result = String::new();
     for (name, description) in units {
@@ -38,17 +38,17 @@ fn list_node_units(node_name: &str) -> Result<String, Box<dyn Error>> {
 fn node_daemon_reload(node_name: &str) -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
-    let bluechi = conn.with_proxy(
-        "org.eclipse.bluechi",
-        "/org/eclipse/bluechi",
+    let proxy = conn.with_proxy(
+        super::DEST,
+        super::PATH,
         Duration::from_millis(5000),
     );
 
     let (node,): (Path,) =
-        bluechi.method_call("org.eclipse.bluechi.Controller", "GetNode", (node_name,))?;
+        proxy.method_call(super::DEST_CONTROLLER, "GetNode", (node_name,))?;
 
-    let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
-    node_proxy.method_call("org.eclipse.bluechi.Node", "Reload", ())?;
+    let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
+    node_proxy.method_call(super::DEST_NODE, "Reload", ())?;
 
     Ok(format!("reload node '{}'\n", node_name))
 }

@@ -49,6 +49,8 @@ And the [example](/doc/examples/version-display/README.md) would be helpful.
 - Multi-node system and the resulting node-selectors have not yet been fully considered.
 - For better operation, recommend operating with `root` user.
 - `/etc/containers/systemd` folder is used for piccolo systemd service files. This cannot be changed.
+- `piccolo.ini` is installed during container build. Therefore, if any changes are made, you must re-run `make image`.
+- Because it is still an early version, it may sometimes take a lot of time to start/stop/update the container.
 
 ## Installation
 

@@ -259,6 +259,11 @@ width="40%"
 height="40%"
 />
 
+If you do not see this window, check the status of service.
+```bash
+systemctl status bluechi-agent.service
+```
+
 Simillary, if you press the following buttons sequentially, the color of buttons are changed to green.
 1. rollback button (in Qt gRPC sender)
 2. reverse (in Qt button Example...)

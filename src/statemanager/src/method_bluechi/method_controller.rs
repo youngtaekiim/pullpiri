@@ -11,14 +11,14 @@ use std::time::Duration;
 fn list_nodes() -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
-    let bluechi = conn.with_proxy(
-        "org.eclipse.bluechi",
-        "/org/eclipse/bluechi",
+    let proxy = conn.with_proxy(
+        super::DEST,
+        super::PATH,
         Duration::from_millis(5000),
     );
 
     let (nodes,): (Vec<(String, dbus::Path, String)>,) =
-        bluechi.method_call("org.eclipse.bluechi.Controller", "ListNodes", ())?;
+        proxy.method_call(super::DEST_CONTROLLER, "ListNodes", ())?;
 
     let mut result = String::new();
     for (name, _, status) in nodes {
@@ -27,25 +27,27 @@ fn list_nodes() -> Result<String, Box<dyn Error>> {
     Ok(result)
 }
 
+
+
 fn reload_all_nodes() -> Result<String, Box<dyn Error>> {
     let conn = Connection::new_system()?;
 
-    let bluechi = conn.with_proxy(
-        "org.eclipse.bluechi",
-        "/org/eclipse/bluechi",
+    let proxy = conn.with_proxy(
+        super::DEST,
+        super::PATH,
         Duration::from_millis(5000),
     );
 
     let mut result = String::new();
     let (nodes,): (Vec<(String, dbus::Path, String)>,) =
-        bluechi.method_call("org.eclipse.bluechi.Controller", "ListNodes", ())?;
+        proxy.method_call(super::DEST_CONTROLLER, "ListNodes", ())?;
 
     for (node_name, _, _) in nodes {
         let (node,): (Path,) =
-            bluechi.method_call("org.eclipse.bluechi.Controller", "GetNode", (&node_name,))?;
+            proxy.method_call(super::DEST_CONTROLLER, "GetNode", (&node_name,))?;
 
-        let node_proxy = conn.with_proxy("org.eclipse.bluechi", node, Duration::from_millis(5000));
-        node_proxy.method_call("org.eclipse.bluechi.Node", "Reload", ())?;
+        let node_proxy = conn.with_proxy(super::DEST, node, Duration::from_millis(5000));
+        node_proxy.method_call(super::DEST_NODE, "Reload", ())?;
 
         result.push_str(&format!("Node - {} is reloaded.\n", &node_name));
     }
