@@ -5,6 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 -->
 
 # Piccolo
+
 - [Development](#development)
   - [Environment Setup](#environment-setup)
   - [Code Style](#code-style)
@@ -21,11 +22,13 @@ SPDX-License-Identifier: Apache-2.0
 ## Development
 
 ### Environment Setup
+
 For detail, refer to [installation](/doc/docs/getting-started.md#installation).
 
 ### Code Style
 
 [rustfmt](https://github.com/rust-lang/rustfmt) is used.
+
 ```bash
 # in src directory
 cargo fmt
@@ -34,13 +37,15 @@ cargo fmt
 ### Linting
 
 [Clippy](https://doc.rust-lang.org/nightly/clippy/) is used.
+
 ```bash
 # in src directory
 cargo clippy
 ```
 
 ### Structure
-<img src="../images/overview.png" 
+
+<img alt="piccolo overview" src="../images/overview.png"
 width="75%"
 height="75%"
 />
@@ -48,6 +53,7 @@ height="75%"
 For detail, refer to [Structure](/doc/docs/structure.md).
 
 ### Build
+
 The first priority is to use Containers, but direct build is also possible. (However, build errors may occur depending on the system.)  
 The project is using [cargo](https://doc.rust-lang.org/cargo/) as its build system and command is wrapped in [Makefile](/Makefile).
 
@@ -70,20 +76,24 @@ make install
 # docker compose
 make up
 ```
+
 For more details, refer to the [Getting started](/doc/docs/getting-started.md)
 
 ### Static Code Analysis
+
 TBD
 
-
 ### Unit tests
+
 Unit tests can be executed using following commands:
+
 ```bash
 # in src directory
 cargo test
 ```
 
 ### Integration tests
+
 TBD
 
 ### Running
@@ -92,7 +102,8 @@ The following sections describe how to run the built application(s) locally on o
 Refer to [Getting Started](/doc/docs/getting-started.md).
 
 #### Using Ports
-```
+
+```Text
 api-server : 47001
 gateway : 47002
 statemanager: 47003
@@ -100,9 +111,11 @@ yamlparser : 47004
 etcd : 2379
 ```
 
-## Documentation (will be updated)
+## Documentation
 
 Files for documentation of this project are located in the [doc](/doc/) directory comprising:
 
 - [Examples](/doc/examples/version-display/): directory containing all files and guides for performing example
 - [piccolo.drawio](/doc/images/piccolo.drawio) file containing all diagrams used for Piccolo
+
+<!-- markdownlint-disable-file MD033 -->

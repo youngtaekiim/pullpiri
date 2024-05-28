@@ -9,6 +9,7 @@ SPDX-License-Identifier: Apache-2.0
 Piccolo itself uses the [Apache-2.0](/LICENSES/Apache-2.0.txt) license.
 
 The following packages (Rust Crate) use the [MIT](/LICENSES/MIT.txt) license.
+
 - clap
 - config
 - dbus
@@ -20,6 +21,7 @@ The following packages (Rust Crate) use the [MIT](/LICENSES/MIT.txt) license.
 - tonic-build
 
 The following packages (Rust Crate) use the [Apache-2.0](/LICENSES/Apache-2.0.txt) license.
+
 - clap
 - config
 - dbus
@@ -29,4 +31,5 @@ The following packages (Rust Crate) use the [Apache-2.0](/LICENSES/Apache-2.0.tx
 - serde_yaml
 
 The following packages (Rust Crate) use the [zlib](/LICENSES/zlib.txt) license.
+
 - const_format
