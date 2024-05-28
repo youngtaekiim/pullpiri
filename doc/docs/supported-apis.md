@@ -5,11 +5,13 @@ SPDX-License-Identifier: Apache-2.0
 -->
 
 # API
+
 Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/main/doc/docs/api/description.md).
 
 ## Public D-Bus API
 
 ### Controller
+
 | Command        | Piccolo | Description                               |
 | -------------- | :-----: | ----------------------------------------- |
 | ListUnits      | X       | Returns all loaded systemd units          |
@@ -23,6 +25,7 @@ Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/
 **Note** : (*) is used internally.
 
 ### Node
+
 | Command           | Piccolo | Description                         |
 | ----------------- | :-----: | ----------------------------------- |
 | StartUnit         | O       | Start named unit                    |
@@ -39,4 +42,5 @@ Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/
 | SetLogLevel       | X       | Set log level for node agent        |
 
 ## the others
+
 Not reviewed yet
