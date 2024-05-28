@@ -40,7 +40,7 @@ cargo clippy
 ```
 
 ### Structure
-<img src="../images/diagram.png" 
+<img src="../images/overview.png" 
 width="75%"
 height="75%"
 />
