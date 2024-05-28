@@ -5,6 +5,8 @@ At this time, it shows the process of updating or rolling back the app according
 
 ## Test summary
 
+![sequence diagram - launch](/doc/images/sequence-launch.png)
+
 ### Send scenario to piccolo (yamlparser)
 
 All test applications are available in below chapter.
