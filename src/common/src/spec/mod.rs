@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+pub mod pod;
 pub mod scenario;
 pub mod workload;
-pub mod pod;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 struct MetaData {
