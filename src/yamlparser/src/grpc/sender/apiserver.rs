@@ -6,11 +6,14 @@
 use common::apiserver::scenario_connection_client::ScenarioConnectionClient;
 use common::apiserver::{scenario::Scenario, Response};
 
-pub async fn send_grpc_msg(send: Scenario) -> Result<tonic::Response<Response>, tonic::Status> {
-    println!("sending msg - '{:?}'\n", send);
-
+pub async fn send_msg_to_apiserver(
+    send: Scenario
+) -> Result<tonic::Response<Response>, tonic::Status> {
     let mut client =
-        match ScenarioConnectionClient::connect(common::apiserver::connect_server()).await {
+        match ScenarioConnectionClient::connect(
+            common::apiserver::connect_server()
+        )
+        .await {
             Ok(c) => c,
             Err(_) => {
                 return Err(tonic::Status::new(

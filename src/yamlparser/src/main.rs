@@ -4,12 +4,11 @@
  */
 
 mod file_handler;
-mod grpc_msg_receiver;
-mod grpc_msg_sender;
+mod grpc;
 mod parser;
 
 use common::yamlparser::connection_server::ConnectionServer;
-use grpc_msg_receiver::YamlparserGrpcServer;
+use grpc::receiver::scenario_handler::YamlparserGrpcServer;
 use tonic::transport::Server;
 
 #[tokio::main]
