@@ -9,7 +9,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
-pub async fn scenario_parse(path: &PathBuf) -> Result<Scenario, Box<dyn std::error::Error>> {
+pub fn scenario_parse(path: &PathBuf) -> Result<Scenario, Box<dyn std::error::Error>> {
     let mut f = File::open(path)?;
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;

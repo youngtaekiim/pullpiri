@@ -6,6 +6,7 @@
 use crate::file_handler;
 use crate::grpc::sender::apiserver;
 use crate::parser;
+use common::apiserver::scenario::Scenario;
 use common::yamlparser::connection_server::Connection;
 use common::yamlparser::{SendRequest, SendResponse};
 use tonic::{Code, Request, Response, Status};
@@ -17,18 +18,24 @@ pub struct YamlparserGrpcServer {}
 impl Connection for YamlparserGrpcServer {
     async fn send(&self, request: Request<SendRequest>) -> Result<Response<SendResponse>, Status> {
         let req = request.into_inner();
-        let command = req.request;
+        let scenario = match handle_msg(&req.request) {
+            Ok(scenario) => scenario,
+            Err(e) => return Err(Status::new(Code::InvalidArgument, e.to_string())),
+        };
 
-        match handle_msg(&command).await {
-            Ok(s) => Ok(Response::new(SendResponse { response: s })),
+        match apiserver::send_msg_to_apiserver(scenario).await {
+            Ok(response) => {
+                Ok(tonic::Response::new(SendResponse {
+                    response: response.into_inner().resp 
+                }))
+            },
             Err(e) => Err(Status::new(Code::Unavailable, e.to_string())),
         }
     }
 }
 
-async fn handle_msg(path: &str) -> Result<String, Box<dyn std::error::Error>> {
+pub fn handle_msg(path: &str) -> Result<Scenario, Box<dyn std::error::Error>> {
     let absolute_path = file_handler::get_absolute_file_path(path)?;
-    let scenario = parser::scenario_parse(&absolute_path).await?;
-    apiserver::send_msg_to_apiserver(scenario).await?;
-    Ok("Success".to_string())
+    let scenario = parser::scenario_parse(&absolute_path)?;
+    Ok(scenario)
 }
