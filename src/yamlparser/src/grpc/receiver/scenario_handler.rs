@@ -24,11 +24,9 @@ impl Connection for YamlparserGrpcServer {
         };
 
         match apiserver::send_msg_to_apiserver(scenario).await {
-            Ok(response) => {
-                Ok(tonic::Response::new(SendResponse {
-                    response: response.into_inner().resp 
-                }))
-            },
+            Ok(response) => Ok(tonic::Response::new(SendResponse {
+                response: response.into_inner().resp,
+            })),
             Err(e) => Err(Status::new(Code::Unavailable, e.to_string())),
         }
     }
