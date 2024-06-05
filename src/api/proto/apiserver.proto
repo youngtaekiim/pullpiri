@@ -7,17 +7,7 @@ syntax = "proto3";
 
 package apiserver;
 
-import "apiserver/request.proto";
-import "apiserver/updateworkload.proto";
 import "apiserver/scenario.proto";
-
-service RequestConnection {
-  rpc Send (request.Request) returns (Response);
-}
-
-service UpdateWorkloadConnection {
-  rpc Send (updateworkload.UpdateWorkload) returns (Response);
-}
 
 service ScenarioConnection {
   rpc Send (scenario.Scenario) returns (Response);

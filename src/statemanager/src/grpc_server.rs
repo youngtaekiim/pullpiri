@@ -28,13 +28,7 @@ impl Connection for StateManagerGrpcServer {
         let command = req.request;
         println!("{}/{}", from, command);
 
-        if from == i32::from(common::constants::PiccoloModuleName::Apiserver) {
-            let cmd: Vec<&str> = command.split('/').collect();
-            match send_dbus(cmd).await {
-                Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
-                Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
-            }
-        } else if from == i32::from(common::constants::PiccoloModuleName::Gateway) {
+        if from == i32::from(common::constants::PiccoloModuleName::Gateway) {
             match make_action_for_scenario(&command).await {
                 Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
                 Err(e) => Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string())),
