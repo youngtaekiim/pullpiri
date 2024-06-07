@@ -5,7 +5,7 @@ FROM ubuntu:20.04 AS gateway-builder
 WORKDIR /root
 
 RUN apt-get update -y && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y libboost-all-dev libssl-dev git cmake gcc g++
+    DEBIAN_FRONTEND=noninteractive apt-get install -y libboost-all-dev libssl-dev libsystemd-dev git cmake gcc g++
 COPY ./src/gateway .
 
 WORKDIR /root/gateway_src

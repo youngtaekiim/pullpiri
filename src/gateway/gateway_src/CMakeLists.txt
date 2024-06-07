@@ -148,6 +148,7 @@ add_library(statemanager_grpc_proto
   ${statemanager_proto_srcs}
   ${statemanager_proto_hdrs})
 target_link_libraries(statemanager_grpc_proto
+  constants_grpc_proto
   ${GRPC_LIBRARIES}
   )
 
