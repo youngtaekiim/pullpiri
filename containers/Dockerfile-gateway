@@ -6,7 +6,9 @@ WORKDIR /root
 
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y libboost-all-dev libssl-dev libsystemd-dev git cmake gcc g++
-COPY ./src/gateway .
+
+COPY ./src/gateway/gateway_src /root/gateway_src
+COPY ./src/gateway/gateway_thirdlib /root/gateway_thirdlib
 
 WORKDIR /root/gateway_src
 RUN mkdir build
