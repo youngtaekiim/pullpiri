@@ -4,7 +4,15 @@
 FROM rust:1.78.0-slim AS builder
 WORKDIR /piccolo
 
-COPY ./src .
+COPY ./src/Cargo.lock \
+     ./src/Cargo.toml /piccolo/
+COPY ./src/api /piccolo/api
+COPY ./src/api-server/ /piccolo/api-server
+COPY ./src/common/ /piccolo/common
+COPY ./src/statemanager/ /piccolo/statemanager
+COPY ./src/tools/ /piccolo/tools
+COPY ./src/yamlparser/ /piccolo/yamlparser
+
 
 RUN apt update -y && \
     apt upgrade -y && \
