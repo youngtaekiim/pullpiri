@@ -8,9 +8,9 @@ height="75%"
 ```bash
 .
 ├── containers      # files for binary container
+├── examples      
 ├── doc
 │   ├── docs
-│   ├── examples
 │   └── images
 ├── etcd-data       # dummy folder for etcd DB
 ├── LICENSES

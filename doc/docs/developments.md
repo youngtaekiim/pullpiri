@@ -115,7 +115,7 @@ etcd : 2379
 
 Files for documentation of this project are located in the [doc](/doc/) directory comprising:
 
-- [Examples](/doc/examples/version-display/): directory containing all files and guides for performing example
+- [Examples](/examples/version-display/): directory containing all files and guides for performing example
 - [piccolo.drawio](/doc/images/piccolo.drawio) file containing all diagrams used for Piccolo
 
 <!-- markdownlint-disable-file MD033 -->

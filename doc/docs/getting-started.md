@@ -40,7 +40,7 @@ Also you need to modify `HOST_IP` address in `yaml` file.
 value: "192.168.50.239"
 ...
 
-# in doc/examples/version-display/qt-msg-sender/qt-sender.yaml,
+# in examples/version-display/qt-msg-sender/qt-sender.yaml,
 ...
 value: "192.168.50.239"
 ...
@@ -50,7 +50,7 @@ value: "192.168.50.239"
 
 Piccolo consists of many modules.
 For each modules, refer to [Structure](/doc/docs/developments.md#structure).  
-And the [example](/doc/examples/version-display/README.md) would be helpful.
+And the [example](/examples/version-display/README.md) would be helpful.
 
 ## Limitations
 
@@ -83,7 +83,7 @@ For modifying configuration, see [configuration](#piccolo-configuration).
 All Piccolo applications with test app will start in container.
 If you are familiar with container, you will find it easy to use.
 `Piccolo` also uses `podman play` by default.
-If this is your first time, I recommend following [Example](/doc/examples/version-display/README.md) first.
+If this is your first time, I recommend following [Example](/examples/version-display/README.md) first.
 
 Before starting, you must build Piccolo container image,
 

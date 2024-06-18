@@ -12,7 +12,7 @@ At this time, it shows the process of updating or rolling back the app according
 All test applications are available in below chapter.
 
 First, `Qt gRPC sender` transfers the update (or rollback) scenario file to yamlparser.
-This file is as follows: [Link to file](/doc/examples/version-display/scenario/update-scenario.yaml)
+This file is as follows: [Link to file](/examples/version-display/scenario/update-scenario.yaml)
 
 ```yaml
 apiVersion: v1
@@ -172,7 +172,7 @@ Now, send the reload and start unit commands to systemd and the entire process w
 This container image only show `version:x.0` in monitor.
 
 ```bash
-# in 'doc/examples/version-display/app' directory
+# in 'examples/version-display/app' directory
 podman build --no-cache --build-arg VERSION=1.0 -t version-display:1.0 .
 podman build --no-cache --build-arg VERSION=2.0 -t version-display:2.0 .
 ```
@@ -193,7 +193,7 @@ localhost/version-display    1.0   892206770723  12 hours ago   566 MB
 There are 2 msg sender application written in pyqt.
 
 ```bash
-# in 'doc/examples/version-display/qt-msg-sender' directory
+# in 'examples/version-display/qt-msg-sender' directory
 podman build --no-cache -t pyqt-dds-sender:1.0 -f pyqt-dds-sender/Dockerfile .
 podman build --no-cache -t pyqt-grpc-sender:1.0 -f pyqt-grpc-sender/Dockerfile .
 ```

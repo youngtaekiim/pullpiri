@@ -30,7 +30,7 @@ mod tests {
     #[test]
     fn parsing_update_scenario() {
         let path = std::path::PathBuf::from(
-            "/root/work/projects-rust/piccolo/doc/examples/version-display/scenario/update-scenario.yaml",
+            "/root/work/projects-rust/piccolo/examples/version-display/scenario/update-scenario.yaml",
         );
 
         let result = crate::parser::scenario_parse(&path);
@@ -41,7 +41,7 @@ mod tests {
     #[test]
     fn parsing_rollback_scenario() {
         let path = std::path::PathBuf::from(
-            "/root/work/projects-rust/piccolo/doc/examples/version-display/scenario/rollback-scenario.yaml",
+            "/root/work/projects-rust/piccolo/examples/version-display/scenario/rollback-scenario.yaml",
         );
 
         let result = crate::parser::scenario_parse(&path);

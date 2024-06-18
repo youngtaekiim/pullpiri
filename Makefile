@@ -43,8 +43,8 @@ uninstall:
 .PHONY: tinstall
 tinstall:
 	-mkdir /etc/containers/systemd/piccolo-test/
-	-cp -r ./doc/examples/version-display/scenario/* /etc/containers/systemd/piccolo/example/
-	-cp -r ./doc/examples/version-display/qt-msg-sender/qt-sender.* /etc/containers/systemd/piccolo-test/
+	-cp -r ./examples/version-display/scenario/* /etc/containers/systemd/piccolo/example/
+	-cp -r ./examples/version-display/qt-msg-sender/qt-sender.* /etc/containers/systemd/piccolo-test/
 	systemctl daemon-reload
 	systemctl start qt-sender
 
