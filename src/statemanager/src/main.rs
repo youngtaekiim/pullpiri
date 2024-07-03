@@ -17,7 +17,7 @@ async fn main() {
         .expect("statemanager address parsing error");
     let state_manager_grpc_server = StateManagerGrpcServer::default();
 
-    println!("Piccolod api-server listening on {}", addr);
+    println!("Piccolod statemanager listening on {}", addr);
 
     let _ = Server::builder()
         .add_service(ConnectionServer::new(state_manager_grpc_server))
