@@ -8,11 +8,14 @@ syntax = "proto3";
 package apiserver;
 
 import "apiserver/scenario.proto";
+import "apiserver/metric_notifier.proto";
 
 service ScenarioConnection {
-  rpc Send (scenario.Scenario) returns (Response);
+  rpc Send (scenario.Scenario) returns (scenario.Response);
 }
 
-message Response {
-  string resp = 1;
+service MetricNotifier {
+  rpc SendImageList (metric_notifier.ImageList) returns (metric_notifier.Response);
+  rpc SendContainerList (metric_notifier.ContainerList) returns (metric_notifier.Response);
+  rpc SendPodInspectInfo (metric_notifier.PodInspectInfoList) returns (metric_notifier.Response);
 }

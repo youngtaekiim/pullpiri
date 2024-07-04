@@ -17,7 +17,6 @@ COPY ./src/api /piccolo/api
 COPY ./src/api-server/ /piccolo/api-server
 COPY ./src/common/ /piccolo/common
 COPY ./src/statemanager/ /piccolo/statemanager
-COPY ./src/tools/ /piccolo/tools
 COPY ./src/yamlparser/ /piccolo/yamlparser
 
 RUN cargo build --release

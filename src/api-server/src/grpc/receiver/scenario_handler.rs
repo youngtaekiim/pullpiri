@@ -4,9 +4,8 @@
  */
 
 use crate::grpc::sender::gateway;
-use common::apiserver::scenario::Scenario;
+use common::apiserver::scenario::{Scenario, Response};
 use common::apiserver::scenario_connection_server::ScenarioConnection;
-use common::apiserver::Response;
 
 #[derive(Default)]
 pub struct GrpcUpdateServer {}

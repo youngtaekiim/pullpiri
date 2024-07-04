@@ -9,6 +9,9 @@ pub mod proto {
         pub mod scenario {
             tonic::include_proto!("apiserver.scenario");
         }
+        pub mod metric_notifier {
+            tonic::include_proto!("apiserver.metric_notifier");
+        }
     }
     pub mod gateway {
         tonic::include_proto!("piccologatewaypackage");
