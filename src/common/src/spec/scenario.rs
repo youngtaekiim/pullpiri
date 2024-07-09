@@ -42,6 +42,20 @@ pub struct Condition {
     operands: Operand,
 }
 
+impl Condition {
+    pub fn get_express(&self) -> String {
+        self.express.clone()
+    }
+
+    pub fn get_value(&self) -> String {
+        self.value.clone()
+    }
+
+    pub fn get_operand_value(&self) -> String {
+        self.operands.value.clone()
+    }
+}
+
 #[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Action {

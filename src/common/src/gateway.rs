@@ -5,6 +5,10 @@
 
 pub use api::proto::gateway::*;
 
+pub fn open_server() -> String {
+    format!("{}:47002", crate::get_conf("HOST_IP"))
+}
+
 pub fn connect_server() -> String {
     format!("http://{}:47002", crate::get_conf("HOST_IP"))
 }
