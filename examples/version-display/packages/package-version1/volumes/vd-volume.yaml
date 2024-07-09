@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Volume
+metadata:
+  label: null
+  name: vd-volume
+spec:
+  volumes:
+  volumeMounts:
+    - name: x11
+      mountPath: /tmp/.X11-unix
