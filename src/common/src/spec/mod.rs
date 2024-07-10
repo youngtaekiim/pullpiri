@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+pub mod package;
 pub mod pod;
 pub mod scenario;
 pub mod workload;
-pub mod package;
 
 use config::Map;
 

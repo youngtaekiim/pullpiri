@@ -4,7 +4,7 @@
  */
 
 use crate::grpc::sender::gateway;
-use common::apiserver::scenario::{Scenario, Response};
+use common::apiserver::scenario::{Response, Scenario};
 use common::apiserver::scenario_connection_server::ScenarioConnection;
 
 #[derive(Default)]

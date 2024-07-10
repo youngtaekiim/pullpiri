@@ -37,10 +37,9 @@ struct ScenarioSpec {
     targets: Vec<Target>,
 }
 
-
 #[derive(Debug, serde::Deserialize, PartialEq)]
 struct ScenarioStatus {
-    state: ScenarioState
+    state: ScenarioState,
 }
 
 #[derive(Debug, serde::Deserialize, PartialEq)]
@@ -94,4 +93,10 @@ struct Operand {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Target {
     name: String,
+}
+
+impl Target {
+    pub fn get_name(&self) -> String {
+        self.name.clone()
+    }
 }

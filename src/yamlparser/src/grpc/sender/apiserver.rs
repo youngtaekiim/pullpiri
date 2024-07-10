@@ -4,7 +4,7 @@
  */
 
 use common::apiserver::scenario_connection_client::ScenarioConnectionClient;
-use common::apiserver::{scenario::Scenario, scenario::Response};
+use common::apiserver::{scenario::Response, scenario::Scenario};
 
 pub async fn send_msg_to_apiserver(
     send: Scenario,

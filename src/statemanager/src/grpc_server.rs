@@ -7,7 +7,7 @@ use crate::method_bluechi::send_dbus;
 use common::etcd;
 use common::statemanager::connection_server::Connection;
 use common::statemanager::{SendRequest, SendResponse};
-use std::io::{Error, ErrorKind};
+use std::error::Error;
 use std::{thread, time::Duration};
 
 const SYSTEMD_PATH: &str = "/etc/containers/systemd/";
@@ -42,32 +42,42 @@ impl Connection for StateManagerGrpcServer {
     }
 }
 
-pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let value = etcd::get(key).await?;
-    /*let value = r#"---
-    operation: update
-    image: "sdv.lge.com/library/passive-redundant-pong:0.2""#;*/
+pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn Error>> {
+    let key_action = format!("{key}/action");
+    let key_target = format!("{key}/target");
+    let value_action = etcd::get(&key_action).await?;
+    let value_target = etcd::get(&key_target).await?;
+    let action: common::spec::scenario::Action = serde_yaml::from_str(&value_action)?;
+    let target: common::spec::scenario::Target = serde_yaml::from_str(&value_target)?;
 
-    let action: common::spec::scenario::Action = serde_yaml::from_str(&value)?;
-    let name = key.split('/').collect::<Vec<&str>>()[1];
+    let key_package = format!("package/{}", target.get_name());
+    let value_package = etcd::get(&key_package).await?;
+    let package: common::spec::package::Package = serde_yaml::from_str(&value_package)?;
+
+    let mut list_model = package.get_models();
+    // TODO : fix it for multiple models (pods)
+    let key_model = format!("model/{}", list_model.pop().unwrap());
+    let value_model = etcd::get(&key_model).await?;
+    let model: common::spec::package::model::Model = serde_yaml::from_str(&value_model)?;
+
+    let name = model.get_name();
     let operation = &*action.get_operation();
-    let image = action.get_image();
 
-    println!(
-        "name : {}\noperation : {}\nimage: {}\n",
-        name, operation, image
-    );
+    println!("name : {}\noperation : {}\n", name, operation);
 
     match operation {
         "launch" => {
-            make_and_start_new_symlink(name, &image).await?;
+            make_and_start_new_symlink(&name).await?;
         }
         "terminate" => {
-            delete_symlink_and_reload(name).await?;
+            delete_symlink_and_reload(&name).await?;
         }
         "update" | "rollback" => {
-            delete_symlink_and_reload(name).await?;
-            make_and_start_new_symlink(name, &image).await?;
+            delete_symlink_and_reload(&name).await?;
+            make_and_start_new_symlink(&name).await?;
+        }
+        "download" => {
+            println!("do something");
         }
         _ => {
             return Err("not supported operation".into());
@@ -77,7 +87,7 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn std::
     Ok(format!("Done : {}\n", operation))
 }
 
-async fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn Error>> {
     let _ = send_dbus(vec![
         "STOP",
         &common::get_conf("HOST_NODE"),
@@ -92,23 +102,8 @@ async fn delete_symlink_and_reload(name: &str) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-async fn make_and_start_new_symlink(
-    name: &str,
-    image: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let version = image
-        .split(':')
-        .collect::<Vec<&str>>()
-        .last()
-        .copied()
-        .ok_or(Error::new(ErrorKind::NotFound, "cannot find image version"))?;
-
-    let original = format!(
-        "{0}{1}/{1}_{2}.kube",
-        common::get_conf("YAML_STORAGE"),
-        name,
-        version
-    );
+async fn make_and_start_new_symlink(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let original = format!("{0}{1}/{1}.kube", common::get_conf("YAML_STORAGE"), name,);
     let link = format!("{}{}.kube", SYSTEMD_PATH, name);
     std::os::unix::fs::symlink(original, link)?;
 

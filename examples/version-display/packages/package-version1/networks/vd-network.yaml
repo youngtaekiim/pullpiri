@@ -3,5 +3,4 @@ kind: Network
 metadata:
   label: null
   name: vd-network
-spec:
-  hostNetwork: true
+spec: null

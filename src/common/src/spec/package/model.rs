@@ -11,6 +11,10 @@ pub struct Model {
 }
 
 impl Model {
+    pub fn get_name(&self) -> String {
+        self.metadata.name.clone()
+    }
+
     pub fn get_image(&self) -> String {
         self.spec.get_image()
     }

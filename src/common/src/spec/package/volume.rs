@@ -1,17 +1,5 @@
-/*
-apiVersion: v1
-kind: Volume
-metadata:
-  label: null
-  name: vd-volume
-spec:
-  volumes:
-    - name: x11
-      mountPath: /tmp/.X11-unix
-*/
-
-use super::MetaData;
 use super::super::workload::podspec;
+use super::MetaData;
 
 #[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]

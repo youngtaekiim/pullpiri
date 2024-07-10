@@ -1,6 +1,6 @@
 pub mod model;
-pub mod volume;
 pub mod network;
+pub mod volume;
 
 use super::MetaData;
 
@@ -30,6 +30,16 @@ struct Pattern {
 struct Model {
     name: String,
     resources: Resource,
+}
+
+impl Package {
+    pub fn get_models(&self) -> Vec<String> {
+        let mut ret: Vec<String> = Vec::new();
+        for m in &self.spec.models {
+            ret.push(m.name.clone());
+        }
+        return ret;
+    }
 }
 
 #[derive(Debug, serde::Deserialize, PartialEq)]
