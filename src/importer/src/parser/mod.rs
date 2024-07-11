@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-mod package;
-mod scenario;
+pub mod package;
+pub mod scenario;
 /*
  use crate::old_file_handler;
  use common::apiserver::scenario::Scenario;

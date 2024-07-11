@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+use std::{error::Error, path::PathBuf};
+
 mod downloader;
 mod parser;
 
 pub async fn handle_package(name: &str) {
     let base_url = common::get_conf("DOC_REGISTRY");
-    let full_url = format!("{}/packages/{}.tar", base_url, name);
+    let full_url: String = format!("{}/packages/{}.tar", base_url, name);
     // TODO
     // 1. download tar file (/root/piccolo_yaml/ ~~.tar)
     // 2. decompress tar file
@@ -20,11 +22,23 @@ pub async fn handle_package(name: &str) {
 pub async fn handle_scenario(name: &str) {
     let base_url = common::get_conf("DOC_REGISTRY");
     let full_url = format!("{}/scenarios/{}.yaml", base_url, name);
+
+    //TODO name 명을 meta data의 name으로 해야 할 것 같은데 ? parsing후에 save하자.
+
+    let save_path: String = common::get_conf("YAML_STORAGE");
+    let full_save_path = format!("{}/scenarios/{}.yaml", save_path, name);
+
     // TODO
     // 1. download yaml file : reqwest crate
     // 2. /root/piccolo_yaml/    scenarios/     yaml
+    _= downloader::download(&full_url, &full_save_path);
+    let temp_path = PathBuf::from(full_save_path);
+
     // 3. parsing - action, condition, target
+    let scenario: Result<common::apiserver::scenario::Scenario, Box<dyn Error>> = parser::scenario::scenario_parse(&temp_path);
+
     // 4. send result (name, action, condition, target, full)
+    // grpc send
 }
 
 /*

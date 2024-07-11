@@ -7,7 +7,7 @@
 use super::MetaData;
 
 #[allow(non_snake_case)]
-#[derive(Debug, serde::Deserialize, PartialEq)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Scenario {
     apiVersion: String,
     kind: String,
@@ -28,21 +28,25 @@ impl Scenario {
     pub fn get_actions(&self) -> Vec<Action> {
         self.spec.actions.clone()
     }
+
+    pub fn get_targets(&self) -> Vec<Target> {
+        self.spec.targets.clone()
+    }
 }
 
-#[derive(Debug, serde::Deserialize, PartialEq)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
 struct ScenarioSpec {
     conditions: Option<Condition>,
     actions: Vec<Action>,
     targets: Vec<Target>,
 }
 
-#[derive(Debug, serde::Deserialize, PartialEq)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
 struct ScenarioStatus {
     state: ScenarioState,
 }
 
-#[derive(Debug, serde::Deserialize, PartialEq)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
 enum ScenarioState {
     None,
     Waiting,
