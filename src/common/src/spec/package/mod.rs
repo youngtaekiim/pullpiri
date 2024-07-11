@@ -38,7 +38,7 @@ impl Package {
         for m in &self.spec.models {
             ret.push(m.name.clone());
         }
-        return ret;
+        ret
     }
 }
 
