@@ -40,7 +40,7 @@ pub async fn inspect_package(Path(name): Path<String>) -> impl IntoResponse {
 }
 
 pub async fn import_package(Path(name): Path<String>) -> impl IntoResponse {
-    importer::handle_package(&name);
+    importer::handle_package(&name).await;
     Response::builder()
         .status(StatusCode::OK)
         .body(Body::from(format!("name '{name}' is existed\n")))
