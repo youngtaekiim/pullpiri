@@ -27,7 +27,7 @@ struct Pattern {
 }
 
 #[derive(Debug, serde::Deserialize, PartialEq)]
-struct Model {
+pub struct Model {
     name: String,
     resources: Resource,
 }
@@ -43,7 +43,7 @@ impl Package {
 }
 
 #[derive(Debug, serde::Deserialize, PartialEq)]
-struct Resource {
+pub struct Resource {
     volume: String,
     network: String,
 }

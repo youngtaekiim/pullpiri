@@ -73,4 +73,8 @@ impl PodSpec {
         //self.podSpec.containers[0].image.clone()
         self.containers[0].image.clone()
     }
+
+    pub fn get_volume_mount(&self) -> Option<Vec<VolumeMount>> {
+        self.containers[0].volumeMounts.clone()
+    }
 }

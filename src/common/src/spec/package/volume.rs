@@ -11,6 +11,12 @@ pub struct Volume {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
-struct VolumeSpec {
+pub struct VolumeSpec {
     spec: Option<Vec<podspec::Volume>>,
+}
+
+impl Volume {
+    pub fn get_volume(&self) -> VolumeSpec {
+        self.spec.clone()
+    }
 }

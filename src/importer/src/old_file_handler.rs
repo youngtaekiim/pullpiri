@@ -2,7 +2,6 @@
  * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
-
 use common::spec::pod::Pod;
 use common::spec::scenario::Action;
 use std::error::Error;
@@ -69,14 +68,13 @@ pub fn perform(name: &str, action: &Action) -> Result<(), Box<dyn Error>> {
     let directory = format!("{}{}", common::get_conf("YAML_STORAGE"), name);
     fs::create_dir_all(&directory)?;
 
-    let image = action.get_image();
-
-    let version = image
-        .split(':')
-        .collect::<Vec<&str>>()
-        .last()
-        .copied()
-        .ok_or("cannot find version")?;
+    // let image = action.get_image();
+    // let version = image
+    //     .split(':')
+    //     .collect::<Vec<&str>>()
+    //     .last()
+    //     .copied()
+    //     .ok_or("cannot find version")?;
 
     make_kube_file(&directory, name, version)?;
     make_yaml_file(&directory, name, version, action)?;
