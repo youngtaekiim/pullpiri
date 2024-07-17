@@ -7,31 +7,35 @@ use std::error::Error;
 
 mod downloader;
 mod parser;
-mod old_file_handler;
+mod file_handler;
 mod decompress;
 
-pub async fn handle_package(name: &str) {
+pub async fn handle_package(name: &str) -> Result<parser::package::Package, Box<dyn std::error::Error>>{
+//url path
     let base_url = common::get_conf("DOC_REGISTRY");
     let full_url: String = format!("{}/packages/{}.tar", base_url, name);
 
+//save path
     let save_path: String = common::get_conf("YAML_STORAGE");
     let full_save_path = format!("{}/scenarios/{}.tar", save_path, name);
 
-    decompress::decompress(&full_save_path);
-    downloader::download(&full_url, &full_save_path);
+//download, decompress    
+    let _= downloader::download(&full_url, &full_save_path);
+    let _= decompress::decompress(&full_save_path);
 
+//parsing
     let parsing_path = format!("{}/scenarios/{}",save_path, name);
-    let package = parser::package::package_parse(&parsing_path);
-    //decompress 호출,, //경로는 일단 full_save_path에다가 그대로
-    //폴더 안에 내용들 parsing해 
-    //각각의 내용들을 하나의 yaml로 합치는 과정 필요.
-    //합친 yaml파일로 pod.yaml, .kube파일을 systemd에 생성
-    //parsing된 내용 구조체로 저장후 return
+    let package: Result<parser::package::Package, Box<dyn Error>> = parser::package::package_parse(&parsing_path);
 
+//kube, yaml create
+    // let merged_model: String = package.unwrap().models;
+    // let _= file_handler::perform(name, &merged_model);
+    
+    Ok(package?)
     // TODO
     // 1. download tar file (/root/piccolo_yaml/ ~~.tar)
     // 2. decompress tar file
-    // 3. parsing - model, networ
+    // 3. parsing - model, network
     // 4. merge parsing data to yaml file
     // ***** make pod.yaml .kube
     // 4. send result (name, model, network, volume)
@@ -44,7 +48,7 @@ pub async fn handle_scenario(name: &str) -> Result<parser::scenario::Scenario, B
     let save_path: String = common::get_conf("YAML_STORAGE");
     let full_save_path = format!("{}/scenarios/{}.yaml", save_path, name);
 
-    downloader::download(&full_url, &full_save_path);
+    let _= downloader::download(&full_url, &full_save_path);
 
     let scenario: Result<parser::scenario::Scenario, Box<dyn Error>> = parser::scenario::scenario_parse(&full_save_path);
 

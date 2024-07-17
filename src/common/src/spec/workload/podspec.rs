@@ -74,7 +74,16 @@ impl PodSpec {
         self.containers[0].image.clone()
     }
 
-    pub fn get_volume_mount(&self) -> Option<Vec<VolumeMount>> {
-        self.containers[0].volumeMounts.clone()
+    // set_volume 메서드 추가
+    // pub fn set_volume(&mut self, volume: Volume) {
+    //     if let Some(ref mut volumes) = self.volumes {
+    //         volumes.push(volume);
+    //     } else {
+    //         self.volumes = Some(vec![volume]);
+    //     }
+    // }
+    // set_volumes 메서드 추가
+    pub fn set_volumes(&mut self, volumes: Option<Vec<Volume>>) {
+        self.volumes = volumes;
     }
 }

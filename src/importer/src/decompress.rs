@@ -26,30 +26,30 @@ async fn determine_file_path(url: &str, data: &[u8]) -> io::Result<PathBuf> {
     Ok(file_path)
 }
 
-fn unpack_zip(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    let file = File::open(file_path)?;
-    let mut archive = ZipArchive::new(file)?;
+// fn unpack_zip(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+//     let file = File::open(file_path)?;
+//     let mut archive = ZipArchive::new(file)?;
 
-    for i in 0..archive.len() {
-        let mut file = archive.by_index(i)?;
-        let outpath = file.sanitized_name();
+//     for i in 0..archive.len() {
+//         let mut file = archive.by_index(i)?;
+//         let outpath = file.sanitized_name();
 
-        if file.name().ends_with('/') {
-            std::fs::create_dir_all(&outpath)?;
-        } else {
-            if let Some(p) = outpath.parent() {
-                if !p.exists() {
-                    std::fs::create_dir_all(&p)?;
-                }
-            }
-            let mut outfile = File::create(&outpath)?;
-            std::io::copy(&mut file, &mut outfile)?;
-        }
-    }
+//         if file.name().ends_with('/') {
+//             std::fs::create_dir_all(&outpath)?;
+//         } else {
+//             if let Some(p) = outpath.parent() {
+//                 if !p.exists() {
+//                     std::fs::create_dir_all(&p)?;
+//                 }
+//             }
+//             let mut outfile = File::create(&outpath)?;
+//             std::io::copy(&mut file, &mut outfile)?;
+//         }
+//     }
 
-    println!("ZIP file extracted to {}", file_path.display());
-    Ok(())
-}
+//     println!("ZIP file extracted to {}", file_path.display());
+//     Ok(())
+// }
 
 fn unpack_tar(file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let file = File::open(file_path)?;

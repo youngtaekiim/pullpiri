@@ -21,8 +21,6 @@ pub fn scenario_parse(path: &str) -> Result<Scenario, Box<dyn std::error::Error>
     let actions: &common::spec::scenario::Action = &scene.get_actions()[0];
     let targets: &common::spec::scenario::Target = &scene.get_targets()[0];
 
-    //old_file_handler::perform(&name, actions)?;
-
     Ok(Scenario {
         name,
         conditions: serde_yaml::to_string(conditions)?,

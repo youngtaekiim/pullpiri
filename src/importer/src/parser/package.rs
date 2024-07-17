@@ -1,6 +1,6 @@
+use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::{Path, PathBuf};
 use common::spec::package;
 
 pub struct Package {
@@ -16,63 +16,64 @@ pub fn package_parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> 
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
 
+    //name
     let package: package::Package = serde_yaml::from_str(&contents)?;
-    
-    let models_name: Vec<String> = package.get_models();
+    let name = package.get_name();
+    let model_name = package.get_model_name();
 
-    for model_name in models_name {
-        let model = model_parse(path, &model_name);
-        let volume_mount: Option<Vec<common::spec::workload::podspec::VolumeMount>> = volume_parse(path);
-        
-    }
+    //models
+    let package_model = package.get_models();
+    let model: Result<package::model::Model, Box<dyn Error>> = model_parse(path, &model_name[0]);
 
-    let network = network_parse(path);
-    let volume = volume_parse(path);
-    let volume_mount = volume. 
+    //networks
+    let network_yaml = &package_model[0].get_resources().get_network();
+    let networks = network_parse(path, &network_yaml);
 
-    //To Do
-    //merge model, network, volume
-    //old_file_handler::perform(&name, actions)?;
+    //volumes
+    let volume_yaml = &package_model[0].get_resources().get_volume();
+    let volumes = volume_parse(path, &volume_yaml)?;
+    let volume_copy = volumes.clone();
+
+    //merge data
+    let model_copy = model.unwrap().clone();
+    model_copy.get_podspec().set_volumes(volume_copy.get_volume().clone());
 
     Ok(Package {
         name,
-        conditions: serde_yaml::to_string(conditions)?,
-        actions: serde_yaml::to_string(actions)?,
-        targets: serde_yaml::to_string(targets)?,
-        scene: serde_yaml::to_string(&scene)?,
+        models: serde_yaml::to_string(&model_copy)?,
+        network: serde_yaml::to_string(&networks.unwrap())?,
+        volume: serde_yaml::to_string(&volumes)?,
     })
 
 }
 
 fn model_parse(path: &str, name: &str) -> Result<package::model::Model, Box<dyn std::error::Error>> {
-    let model_yaml = format!("{}/models/{}.yaml", path, name);
+    let model_yaml: String = format!("{}/models/{}.yaml", path, name);
     let mut f = File::open(model_yaml)?;
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
 
     let model: package::model::Model = serde_yaml::from_str(&contents)?;
-
     Ok(model)
 }
 
-fn network_parse(path: &str) -> Result<package::network::Network, Box<dyn std::error::Error>> {
-    let network_yaml = format!("{}/networks/network.yaml", path);
+fn network_parse(path: &str, name: &str) -> Result<package::network::Network, Box<dyn std::error::Error>> {
+    let network_yaml = format!("{}/networks/{}.yaml", path, name);
     let mut f = File::open(network_yaml)?;
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
 
     let network: package::network::Network = serde_yaml::from_str(&contents)?;
-
     Ok(network)
 }
 
-fn volume_parse(path: &str) -> Result<package::volume::Volume, Box<dyn std::error::Error>> {
-    let volume_yaml = format!("{}/volumes/volume.yaml", path);
+fn volume_parse(path: &str, name: &str) -> Result<package::volume::VolumeSpec, Box<dyn std::error::Error>> {
+    let volume_yaml = format!("{}/volumes/{}.yaml", path, name);
     let mut f = File::open(volume_yaml)?;
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
 
     let volume: package::volume::Volume = serde_yaml::from_str(&contents)?;
-
-    Ok(volume)
+    let volume_spec = volume.get_spec().clone().unwrap();
+    Ok(volume_spec)
 }
