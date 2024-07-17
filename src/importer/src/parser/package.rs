@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use common::spec::package;
+use crate::file_handler;
 
 pub struct Package {
     pub name: String,
@@ -37,10 +38,14 @@ pub fn package_parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> 
     //merge data
     let model_copy = model.unwrap().clone();
     model_copy.get_podspec().set_volumes(volume_copy.get_volume().clone());
+    let models = serde_yaml::to_string(&model_copy)?;
+
+    //perform_file
+    _= file_handler::perform(path, &models);
 
     Ok(Package {
         name,
-        models: serde_yaml::to_string(&model_copy)?,
+        models,
         network: serde_yaml::to_string(&networks.unwrap())?,
         volume: serde_yaml::to_string(&volumes)?,
     })

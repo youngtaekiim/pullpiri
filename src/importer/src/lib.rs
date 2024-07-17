@@ -2,13 +2,11 @@
  * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
-
-use std::error::Error;
-
 mod downloader;
 mod parser;
 mod file_handler;
 mod decompress;
+use std::error::Error;
 
 pub async fn handle_package(name: &str) -> Result<parser::package::Package, Box<dyn std::error::Error>>{
 //url path
@@ -27,18 +25,7 @@ pub async fn handle_package(name: &str) -> Result<parser::package::Package, Box<
     let parsing_path = format!("{}/scenarios/{}",save_path, name);
     let package: Result<parser::package::Package, Box<dyn Error>> = parser::package::package_parse(&parsing_path);
 
-//kube, yaml create
-    // let merged_model: String = package.unwrap().models;
-    // let _= file_handler::perform(name, &merged_model);
-    
     Ok(package?)
-    // TODO
-    // 1. download tar file (/root/piccolo_yaml/ ~~.tar)
-    // 2. decompress tar file
-    // 3. parsing - model, network
-    // 4. merge parsing data to yaml file
-    // ***** make pod.yaml .kube
-    // 4. send result (name, model, network, volume)
 }
 
 pub async fn handle_scenario(name: &str) -> Result<parser::scenario::Scenario, Box<dyn std::error::Error>> {
