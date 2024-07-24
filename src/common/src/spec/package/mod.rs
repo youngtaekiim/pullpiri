@@ -11,7 +11,7 @@ pub struct Package {
     kind: String,
     metadata: MetaData,
     spec: PackageSpec,
-    status: PackageStatus,
+    status: Option<PackageStatus>,
 }
 
 #[allow(non_snake_case)]
@@ -53,14 +53,12 @@ impl Package {
     pub fn get_name(&self) -> String {
         self.metadata.name.clone()
     }
-
-
 }
 
 #[derive(Debug, serde::Deserialize, PartialEq)]
 pub struct Resource {
-    pub volume: String,
-    pub network: String,
+    volume: String,
+    network: String,
 }
 
 impl Resource {

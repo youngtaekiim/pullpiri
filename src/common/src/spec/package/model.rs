@@ -7,7 +7,7 @@ pub struct Model {
     apiVersion: String,
     kind: String,
     metadata: MetaData,
-    spec: PodSpec,
+    pub spec: PodSpec,
 }
 
 impl Model {

@@ -13,7 +13,7 @@ pub struct Scenario {
     kind: String,
     metadata: MetaData,
     spec: ScenarioSpec,
-    status: ScenarioStatus,
+    status: Option<ScenarioStatus>
 }
 
 impl Scenario {

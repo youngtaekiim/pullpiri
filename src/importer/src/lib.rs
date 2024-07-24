@@ -15,14 +15,14 @@ pub async fn handle_package(name: &str) -> Result<parser::package::Package, Box<
 
 //save path
     let save_path: String = common::get_conf("YAML_STORAGE");
-    let full_save_path = format!("{}/scenarios/{}.tar", save_path, name);
+    let full_save_path = format!("{}/packages/{}.tar", save_path, name);
 
 //download, decompress    
     let _= downloader::download(&full_url, &full_save_path);
     let _= decompress::decompress(&full_save_path);
 
 //parsing
-    let parsing_path = format!("{}/scenarios/{}",save_path, name);
+    let parsing_path = format!("{}/packages/{}",save_path, name);
     let package: Result<parser::package::Package, Box<dyn Error>> = parser::package::package_parse(&parsing_path);
 
     Ok(package?)
@@ -42,32 +42,33 @@ pub async fn handle_scenario(name: &str) -> Result<parser::scenario::Scenario, B
     Ok(scenario?)
 }
 
-/*
+
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn parsing_update_scenario() {
-        let path = std::path::PathBuf::from(
-            "/root/work/projects-rust/piccolo/examples/version-display/scenario/update-scenario.yaml",
-        );
+    use std::error::Error;
 
-        let result = crate::parser::scenario_parse(&path);
+    #[test]
+    fn package_parse() {
+        let path: std::path::PathBuf = std::path::PathBuf::from(
+            "/home/seunghwanbang/work/piccolo-bluechi/examples/version-display/packages/package-version1",
+        );
+        let path_str = path.to_str();
+        let result: Result<crate::parser::package::Package, Box<dyn Error>> = crate::parser::package::package_parse(&path_str.unwrap());
         println!("{:#?}", result);
         assert!(result.is_ok());
     }
 
     #[test]
-    fn parsing_rollback_scenario() {
+    fn test_scenario_parse() {
         let path = std::path::PathBuf::from(
-            "/root/work/projects-rust/piccolo/examples/version-display/scenario/rollback-scenario.yaml",
+            "/home/seunghwanbang/work/piccolo-bluechi/examples/version-display/scenario/download-scenario.yaml",
         );
-
-        let result = crate::parser::scenario_parse(&path);
+        let path_str = path.to_str();
+        let result = crate::parser::scenario::scenario_parse(&path_str.unwrap());
         println!("{:#?}", result);
         assert!(result.is_ok());
     }
 }
-*/
 
 /*
 use crate::file_handler;

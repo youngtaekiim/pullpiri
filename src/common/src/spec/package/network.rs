@@ -1,4 +1,4 @@
-use crate::spec::workload::podspec;
+// use crate::spec::workload::podspec;
 
 use super::MetaData;
 
@@ -12,6 +12,18 @@ pub struct Network {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
-struct NetworkSpec {
-    spec: Option<Vec<podspec::Port>>,
+pub struct NetworkSpec {
+    dummy: Option<String>,
+}
+
+impl Network {
+    pub fn get_spec(&self) -> &Option<NetworkSpec> {
+        &self.spec
+    }
+}
+
+impl NetworkSpec {
+    pub fn get_network(&self) -> &Option<String> {
+        &self.dummy
+    }
 }

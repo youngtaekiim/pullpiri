@@ -4,6 +4,7 @@ metadata:
   label: null
   name: vd-volume
 spec:
-  volumeMounts:
-    - name: x11
-      mountPath: /tmp/.X11-unix
+  volumes:
+    - name: example-volume
+      hostPath:
+        path: /path/on/host  

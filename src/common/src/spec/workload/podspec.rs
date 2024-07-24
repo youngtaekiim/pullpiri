@@ -2,7 +2,7 @@
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct PodSpec {
     containers: Vec<Container>,
-    volumes: Option<Vec<Volume>>,
+    pub volumes: Option<Vec<Volume>>,
     initContainers: Option<Vec<Container>>,
     restartPolicy: Option<String>,
     terminationGracePeriodSeconds: Option<i32>,
@@ -74,16 +74,7 @@ impl PodSpec {
         self.containers[0].image.clone()
     }
 
-    // set_volume 메서드 추가
-    // pub fn set_volume(&mut self, volume: Volume) {
-    //     if let Some(ref mut volumes) = self.volumes {
-    //         volumes.push(volume);
-    //     } else {
-    //         self.volumes = Some(vec![volume]);
-    //     }
-    // }
-    // set_volumes 메서드 추가
-    pub fn set_volumes(&mut self, volumes: Option<Vec<Volume>>) {
-        self.volumes = volumes;
+    pub fn get_volume(&mut self) -> Option<Vec<Volume>> {
+        self.volumes.clone()
     }
 }

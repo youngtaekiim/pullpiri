@@ -18,13 +18,13 @@ pub async fn decompress(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn determine_file_path(url: &str, data: &[u8]) -> io::Result<PathBuf> {
-    let file_name = url.split('/').last().unwrap_or("default.tar");
-    let file_path = Path::new("./").join(file_name);
-    let mut file = File::create(&file_path)?;
-    file.write_all(data)?;
-    Ok(file_path)
-}
+// async fn determine_file_path(url: &str, data: &[u8]) -> io::Result<PathBuf> {
+//     let file_name = url.split('/').last().unwrap_or("default.tar");
+//     let file_path = Path::new("./").join(file_name);
+//     let mut file = File::create(&file_path)?;
+//     file.write_all(data)?;
+//     Ok(file_path)
+// }
 
 // fn unpack_zip(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 //     let file = File::open(file_path)?;
