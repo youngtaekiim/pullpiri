@@ -1,11 +1,9 @@
 use std::error::Error;
 use std::fs::File;
-use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tar::Archive;
-use zip::ZipArchive;
 
-pub async fn decompress(path: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn decompress(path: &str) -> Result<(), Box<dyn Error>> {
     //let file_path = determine_file_path(&url, &response).await?;
     //println!("File downloaded and saved as: {}", file_path.display());
 
@@ -26,7 +24,7 @@ pub async fn decompress(path: &str) -> Result<(), Box<dyn std::error::Error>> {
 //     Ok(file_path)
 // }
 
-// fn unpack_zip(file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+// fn unpack_zip(file_path: &Path) -> Result<(), Box<dyn Error>> {
 //     let file = File::open(file_path)?;
 //     let mut archive = ZipArchive::new(file)?;
 
@@ -51,14 +49,16 @@ pub async fn decompress(path: &str) -> Result<(), Box<dyn std::error::Error>> {
 //     Ok(())
 // }
 
-fn unpack_tar(file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn unpack_tar(file_path: &str) -> Result<(), Box<dyn Error>> {
     let file = File::open(file_path)?;
     let mut archive: Archive<File> = Archive::new(file);
 
     let path = Path::new(file_path);
-    let unpack_dir = path.parent().unwrap_or_else(|| Path::new("unpack_directory"));
+    let unpack_dir = path
+        .parent()
+        .unwrap_or_else(|| Path::new("unpack_directory"));
     archive.unpack(unpack_dir)?;
-    
+
     println!("TAR file extracted to {}", unpack_dir.display());
     Ok(())
 }

@@ -27,6 +27,8 @@ image:
 .PHONY: install
 install:
 	-mkdir /root/piccolo_yaml
+	-mkdir /root/piccolo_yaml/packages
+	-mkdir /root/piccolo_yaml/scenarios
 	-mkdir /etc/containers/systemd/piccolo/
 	-mkdir /etc/containers/systemd/piccolo/example
 	-cp -r ./piccolo.ini /etc/containers/systemd/piccolo/

@@ -7,8 +7,8 @@ use std::ffi::OsStr;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-//extern crate common;
 
+#[allow(dead_code)]
 pub fn get_absolute_file_path(path: &str) -> Result<PathBuf, Box<dyn Error>> {
     let file = Path::new(path);
     if !file.is_file() {
@@ -46,11 +46,7 @@ Yaml={}
     Ok(())
 }
 
-fn make_yaml_file(
-    dir: &str,
-    name: &str,
-    model: &str,
-) -> Result<(), Box<dyn Error>> {
+fn make_yaml_file(dir: &str, name: &str, model: &str) -> Result<(), Box<dyn Error>> {
     let yaml_file_path = format!("{}/{}.yaml", dir, name);
     let mut yaml_file = fs::File::create(yaml_file_path)?;
 
@@ -62,11 +58,11 @@ fn make_yaml_file(
 
 pub fn perform(name: &str, model: &str) -> Result<(), Box<dyn Error>> {
     //let directory = format!("{}{}", common::get_conf("YAML_STORAGE"), name);
-    let directory = format!("/home/seunghwanbang/work/piccolo-bluechi/examples/version-display/test/{}", name);
+    let directory = format!("/etc/containers/systemd/{}", name);
     fs::create_dir_all(&directory)?;
     if let Err(e) = fs::create_dir_all(&directory) {
         eprintln!("Failed to create directory {}: {}", directory, e);
-        
+
         return Err(e.into());
     } else {
         println!("!@#$!@#$!@#$");

@@ -24,7 +24,7 @@ fn init_conf() -> config::Config {
             config::Config::builder()
                 .set_default("HOST_IP", "0.0.0.0")
                 .unwrap()
-                .set_default("YAML_STORAGE", "/root/piccolo_yaml/")
+                .set_default("YAML_STORAGE", "/root/piccolo_yaml")
                 .unwrap()
                 .set_default("HOST_NODE", "master")
                 .unwrap()

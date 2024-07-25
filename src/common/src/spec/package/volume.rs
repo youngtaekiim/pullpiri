@@ -10,7 +10,6 @@ pub struct Volume {
     spec: Option<VolumeSpec>,
 }
 
-
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct VolumeSpec {
     volumes: Option<Vec<podspec::Volume>>,

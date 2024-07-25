@@ -70,7 +70,6 @@ impl Resource {
     }
 }
 
-
 #[derive(Debug, serde::Deserialize, PartialEq)]
 pub struct PackageStatus {
     model: Vec<ModelStatus>,

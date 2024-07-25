@@ -3,6 +3,7 @@ use hyperlocal::{UnixConnector, Uri as UnixUri};
 use serde::Deserialize;
 use std::error::Error;
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct Image {
     id: String,

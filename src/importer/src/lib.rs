@@ -2,107 +2,60 @@
  * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
-mod downloader;
-mod parser;
-mod file_handler;
 mod decompress;
-use std::error::Error;
+mod downloader;
+mod file_handler;
+pub mod parser;
 
-pub async fn handle_package(name: &str) -> Result<parser::package::Package, Box<dyn std::error::Error>>{
-//url path
+pub async fn handle_package(
+    name: &str,
+) -> Result<parser::package::Package, Box<dyn std::error::Error>> {
+    //url path
     let base_url = common::get_conf("DOC_REGISTRY");
     let full_url: String = format!("{}/packages/{}.tar", base_url, name);
 
-//save path
+    //save path
     let save_path: String = common::get_conf("YAML_STORAGE");
     let full_save_path = format!("{}/packages/{}.tar", save_path, name);
 
-//download, decompress    
-    let _= downloader::download(&full_url, &full_save_path);
-    let _= decompress::decompress(&full_save_path);
+    //download, decompress
+    downloader::download(&full_url, &full_save_path).await?;
+    decompress::decompress(&full_save_path).await?;
 
-//parsing
-    let parsing_path = format!("{}/packages/{}",save_path, name);
-    let package: Result<parser::package::Package, Box<dyn Error>> = parser::package::package_parse(&parsing_path);
-
-    Ok(package?)
+    //parsing
+    let parsing_path = format!("{}/packages/{}", save_path, name);
+    parser::package::package_parse(&parsing_path)
 }
 
-pub async fn handle_scenario(name: &str) -> Result<parser::scenario::Scenario, Box<dyn std::error::Error>> {
+pub async fn handle_scenario(
+    name: &str,
+) -> Result<parser::scenario::Scenario, Box<dyn std::error::Error>> {
     let base_url = common::get_conf("DOC_REGISTRY");
     let full_url = format!("{}/scenarios/{}.yaml", base_url, name);
 
     let save_path: String = common::get_conf("YAML_STORAGE");
     let full_save_path = format!("{}/scenarios/{}.yaml", save_path, name);
 
-    let _= downloader::download(&full_url, &full_save_path);
+    downloader::download(&full_url, &full_save_path).await?;
 
-    let scenario: Result<parser::scenario::Scenario, Box<dyn Error>> = parser::scenario::scenario_parse(&full_save_path);
-
-    Ok(scenario?)
+    parser::scenario::scenario_parse(&full_save_path)
 }
-
 
 #[cfg(test)]
 mod tests {
-    use std::error::Error;
+    use crate::{handle_package, handle_scenario};
 
-    #[test]
-    fn package_parse() {
-        let path: std::path::PathBuf = std::path::PathBuf::from(
-            "/home/seunghwanbang/work/piccolo-bluechi/examples/version-display/packages/package-version1",
-        );
-        let path_str = path.to_str();
-        let result: Result<crate::parser::package::Package, Box<dyn Error>> = crate::parser::package::package_parse(&path_str.unwrap());
+    #[tokio::test]
+    async fn package_parse() {
+        let result = handle_package("package-version1").await;
         println!("{:#?}", result);
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_scenario_parse() {
-        let path = std::path::PathBuf::from(
-            "/home/seunghwanbang/work/piccolo-bluechi/examples/version-display/scenario/download-scenario.yaml",
-        );
-        let path_str = path.to_str();
-        let result = crate::parser::scenario::scenario_parse(&path_str.unwrap());
+    #[tokio::test]
+    async fn test_scenario_parse() {
+        let result = handle_scenario("download-scenario").await;
         println!("{:#?}", result);
         assert!(result.is_ok());
     }
 }
-
-/*
-use crate::file_handler;
-use crate::grpc::sender::apiserver;
-use crate::parser;
-use common::apiserver::scenario::Scenario;
-use common::yamlparser::connection_server::Connection;
-use common::yamlparser::{SendRequest, SendResponse};
-use tonic::{Code, Request, Response, Status};
-
-#[derive(Default)]
-pub struct YamlparserGrpcServer {}
-
-#[tonic::async_trait]
-impl Connection for YamlparserGrpcServer {
-    async fn send(&self, request: Request<SendRequest>) -> Result<Response<SendResponse>, Status> {
-        let req = request.into_inner();
-        let scenario = match handle_msg(&req.request) {
-            Ok(scenario) => scenario,
-            Err(e) => return Err(Status::new(Code::InvalidArgument, e.to_string())),
-        };
-
-        match apiserver::send_msg_to_apiserver(scenario).await {
-            Ok(response) => Ok(tonic::Response::new(SendResponse {
-                response: response.into_inner().resp,
-            })),
-            Err(e) => Err(Status::new(Code::Unavailable, e.to_string())),
-        }
-    }
-}
-
-pub fn handle_msg(path: &str) -> Result<Scenario, Box<dyn std::error::Error>> {
-    let absolute_path = file_handler::get_absolute_file_path(path)?;
-    let scenario = parser::scenario_parse(&absolute_path)?;
-    Ok(scenario)
-}
-*/

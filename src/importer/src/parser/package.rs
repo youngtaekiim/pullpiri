@@ -1,9 +1,9 @@
+use crate::file_handler;
+use common::spec::package;
+use serde::de::DeserializeOwned;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
-use common::spec::package;
-use serde::de::DeserializeOwned;
-use crate::file_handler;
 
 #[derive(Debug)]
 pub struct Package {
@@ -38,7 +38,7 @@ pub fn package_parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> 
     let models = serde_yaml::to_string(&model)?;
 
     //make kube,yaml file
-    _= file_handler::perform(&model_name[0], &models);
+    _ = file_handler::perform(&model_name[0], &models);
 
     Ok(Package {
         name,
@@ -46,7 +46,6 @@ pub fn package_parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> 
         network: serde_yaml::to_string(&networks.unwrap())?,
         volume: serde_yaml::to_string(&volumes)?,
     })
-
 }
 
 fn parse_yaml<T>(path: &str, name: &str, subdir: &str) -> Result<T, Box<dyn Error>>
@@ -60,17 +59,17 @@ where
     let parsed: T = serde_yaml::from_str(&contents)?;
     Ok(parsed)
 }
-    
+
 fn model_parse(path: &str, name: &str) -> Result<package::model::Model, Box<dyn Error>> {
     parse_yaml(path, name, "models")
 }
-    
+
 fn network_parse(path: &str, name: &str) -> Result<package::network::NetworkSpec, Box<dyn Error>> {
-    let network: package::network::Network =  parse_yaml(path, name, "networks")?;
+    let network: package::network::Network = parse_yaml(path, name, "networks")?;
     let network_spec = network.get_spec().clone().unwrap();
     Ok(network_spec)
 }
-    
+
 fn volume_parse(path: &str, name: &str) -> Result<package::volume::VolumeSpec, Box<dyn Error>> {
     let volume: package::volume::Volume = parse_yaml(path, name, "volumes")?;
     let volume_spec = volume.get_spec().clone().unwrap();
