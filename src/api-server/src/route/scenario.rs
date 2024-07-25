@@ -33,32 +33,46 @@ pub async fn list_scenario() -> Json<Vec<Scenario>> {
 }
 
 pub async fn inspect_scenario(Path(name): Path<String>) -> impl IntoResponse {
-    Response::builder()
-        .status(StatusCode::OK)
-        .body(Body::from(format!("name '{name}' is existed\n")))
-        .unwrap()
+    println!("todo - inspect {name}");
+    return_ok()
 }
 
 pub async fn import_scenario(Path(name): Path<String>, body: String) -> impl IntoResponse {
-    importer::handle_scenario(&name).await;
-    let t_sce = crate::route::TempScenario{sce_name: "asdf".to_string()};
-    let t_rest_req = crate::route::RestRequest{
-        action: crate::route::Action::UPDATE,
-        resource: crate::route::Resource::Scenario(t_sce),
-    };
-    crate::manager::handle_rest_msg(t_rest_req).await;
+    let scenario = importer::handle_scenario(&body).await;
 
     println!("POST : scenario {name} is called.\n");
     println!("       Path is {body}.\n");
-    Response::builder()
-        .status(StatusCode::OK)
-        .body(Body::from(format!("name '{name}' is applied\n")))
-        .unwrap()
+
+    /*if scenario.is_err() {
+        return return_err();
+    }*/
+
+    if crate::manager::handle_scenario_msg(scenario.unwrap())
+        .await
+        .is_err()
+    {
+        println!("error: writing scenario in etcd");
+        return return_err();
+    }
+
+    return_ok()
 }
 
 pub async fn delete_scenario(Path(name): Path<String>) -> impl IntoResponse {
+    println!("todo - delete {name}");
+    return_ok()
+}
+
+fn return_ok() -> Response<Body> {
     Response::builder()
         .status(StatusCode::OK)
-        .body(Body::from(format!("name '{name}' is deleted\n")))
+        .body(Body::from(format!("Ok")))
+        .unwrap()
+}
+
+fn return_err() -> Response<Body> {
+    Response::builder()
+        .status(StatusCode::BAD_REQUEST)
+        .body(Body::from(format!("Error")))
         .unwrap()
 }

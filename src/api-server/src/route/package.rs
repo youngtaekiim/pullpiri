@@ -33,32 +33,46 @@ pub async fn list_package() -> Json<Vec<Package>> {
 }
 
 pub async fn inspect_package(Path(name): Path<String>) -> impl IntoResponse {
-    Response::builder()
-        .status(StatusCode::OK)
-        .body(Body::from(format!("name '{name}' is existed\n")))
-        .unwrap()
+    println!("todo - inspect {name}");
+    return_ok()
 }
 
 pub async fn import_package(Path(name): Path<String>, body: String) -> impl IntoResponse {
-    importer::handle_package(&name).await;
-    let t_pack = crate::route::TempPackage{pac_name: "asdf".to_string()};
-    let t_rest_req = crate::route::RestRequest{
-        action: crate::route::Action::LAUNCH,
-        resource: crate::route::Resource::Package(t_pack),
-    };
-    crate::manager::handle_rest_msg(t_rest_req).await;
+    let package = importer::handle_package(&body).await;
 
     println!("POST : package {name} is called.");
     println!("       Path is {body}.\n");
-    Response::builder()
-        .status(StatusCode::OK)
-        .body(Body::from(format!("name '{name}' is applied\n")))
-        .unwrap()
+
+    /*if package.is_err() {
+        return return_err();
+    }*/
+
+    if crate::manager::handle_package_msg(package.unwrap())
+        .await
+        .is_err()
+    {
+        println!("error: writing scenario in etcd");
+        return return_err();
+    }
+
+    return_ok()
 }
 
 pub async fn delete_package(Path(name): Path<String>) -> impl IntoResponse {
+    println!("todo - delete {name}");
+    return_ok()
+}
+
+fn return_ok() -> Response<Body> {
     Response::builder()
         .status(StatusCode::OK)
-        .body(Body::from(format!("name '{name}' is deleted\n")))
+        .body(Body::from(format!("Ok")))
+        .unwrap()
+}
+
+fn return_err() -> Response<Body> {
+    Response::builder()
+        .status(StatusCode::BAD_REQUEST)
+        .body(Body::from(format!("Error")))
         .unwrap()
 }

@@ -1,12 +1,19 @@
-use crate::route::{RestRequest, Resource};
+use importer::parser::package::Package;
+use importer::parser::scenario::Scenario;
 
-pub async fn handle_rest_msg(req: RestRequest) {
-    match req.resource {
-        Resource::Package(p) => {
-            println!("package name is {}", p.pac_name);
-        },
-        Resource::Scenario(s) => {
-            println!("scenario name is {}", s.sce_name);
-        },
-    }
+pub async fn handle_package_msg(p: Package) -> Result<(), Box<dyn std::error::Error>> {
+    let key_origin = format!("package/{}", p.name);
+    common::etcd::put(&format!("{key_origin}/models"), &p.models).await?;
+    common::etcd::put(&format!("{key_origin}/network"), &p.network).await?;
+    common::etcd::put(&format!("{key_origin}/volume"), &p.volume).await?;
+    Ok(())
+}
+
+pub async fn handle_scenario_msg(s: Scenario) -> Result<(), Box<dyn std::error::Error>> {
+    let key_origin = format!("scenario/{}", s.name);
+    common::etcd::put(&format!("{key_origin}/actions"), &s.actions).await?;
+    common::etcd::put(&format!("{key_origin}/conditions"), &s.conditions).await?;
+    common::etcd::put(&format!("{key_origin}/targets"), &s.targets).await?;
+    common::etcd::put(&format!("{key_origin}/full"), &s.scene).await?;
+    Ok(())
 }
