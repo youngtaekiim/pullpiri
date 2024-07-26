@@ -1,5 +1,6 @@
 use importer::parser::package::Package;
 use importer::parser::scenario::Scenario;
+use common::gateway;
 
 pub async fn handle_package_msg(p: Package) -> Result<(), Box<dyn std::error::Error>> {
     let key_origin = format!("package/{}", p.name);
@@ -15,5 +16,14 @@ pub async fn handle_scenario_msg(s: Scenario) -> Result<(), Box<dyn std::error::
     common::etcd::put(&format!("{key_origin}/conditions"), &s.conditions).await?;
     common::etcd::put(&format!("{key_origin}/targets"), &s.targets).await?;
     common::etcd::put(&format!("{key_origin}/full"), &s.scene).await?;
+
+    let event = gateway::EventName {
+        id: gateway::FuncId::Enable.into(),
+        name: format!("scenario/{}", &s.name),
+        target: gateway::Target::StateManager.into(),
+    };
+
+    crate::grpc::sender::gateway::send(event).await?;
+
     Ok(())
 }

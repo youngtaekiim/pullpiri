@@ -3,10 +3,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use common::apiserver::scenario::Scenario;
-use common::etcd;
+//use common::apiserver::scenario::Scenario;
 use common::gateway;
 
+pub async fn send(
+    event: gateway::EventName,
+) -> Result<tonic::Response<gateway::Reply>, tonic::Status> {
+    let mut client =
+        match gateway::piccolo_gateway_service_client::PiccoloGatewayServiceClient::connect(
+            gateway::connect_server(),
+        )
+        .await
+        {
+            Ok(c) => c,
+            Err(_) => {
+                return Err(tonic::Status::new(
+                    tonic::Code::Unavailable,
+                    "cannot connect gateway",
+                ))
+            }
+        };
+
+    client.request_event(tonic::Request::new(event)).await
+}
+
+/*
 pub async fn send_msg_to_gateway(
     scenario: Scenario,
 ) -> Result<tonic::Response<gateway::Reply>, tonic::Status> {
@@ -51,3 +72,4 @@ async fn write_etcd(scenario: &Scenario) -> Result<(), etcd::Error> {
 
     Ok(())
 }
+*/

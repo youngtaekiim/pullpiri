@@ -53,8 +53,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_scenario_parse() {
-        let result = handle_scenario("download-scenario").await;
+    async fn scenario_parse() {
+        let result = handle_scenario("launch-scenario").await;
         println!("{:#?}", result);
         assert!(result.is_ok());
     }

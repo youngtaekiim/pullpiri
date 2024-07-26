@@ -43,8 +43,8 @@ impl Connection for StateManagerGrpcServer {
 }
 
 pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn Error>> {
-    let key_action = format!("{key}/action");
-    let key_target = format!("{key}/target");
+    let key_action = format!("{key}/actions");
+    let key_target = format!("{key}/targets");
     let value_action = etcd::get(&key_action).await?;
     let value_target = etcd::get(&key_target).await?;
     let action: common::spec::scenario::Action = serde_yaml::from_str(&value_action)?;
@@ -56,7 +56,7 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn Error
 
     let mut list_model = package.get_model_name();
     // TODO : fix it for multiple models (pods)
-    let key_model = format!("model/{}", list_model.pop().unwrap());
+    let key_model = format!("package/{}/models", list_model.pop().unwrap());
     let value_model = etcd::get(&key_model).await?;
     let model: common::spec::package::model::Model = serde_yaml::from_str(&value_model)?;
 
