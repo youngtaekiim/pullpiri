@@ -37,7 +37,6 @@ pub async fn handle_scenario(
     let full_save_path = format!("{}/scenarios/{}.yaml", save_path, name);
 
     downloader::download(&full_url, &full_save_path).await?;
-
     parser::scenario::scenario_parse(&full_save_path)
 }
 

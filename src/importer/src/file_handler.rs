@@ -60,20 +60,6 @@ pub fn perform(name: &str, model: &str) -> Result<(), Box<dyn Error>> {
     //let directory = format!("{}{}", common::get_conf("YAML_STORAGE"), name);
     let directory = format!("/etc/containers/systemd/{}", name);
     fs::create_dir_all(&directory)?;
-    if let Err(e) = fs::create_dir_all(&directory) {
-        eprintln!("Failed to create directory {}: {}", directory, e);
-
-        return Err(e.into());
-    } else {
-        println!("!@#$!@#$!@#$");
-    }
-    // let image = action.get_image();
-    // let version = image
-    //     .split(':')
-    //     .collect::<Vec<&str>>()
-    //     .last()
-    //     .copied()
-    //     .ok_or("cannot find version")?;
 
     make_kube_file(&directory, name)?;
     make_yaml_file(&directory, name, model)?;

@@ -38,7 +38,7 @@ pub fn package_parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> 
     let models = serde_yaml::to_string(&model)?;
 
     //make kube,yaml file
-    _ = file_handler::perform(&model_name[0], &models);
+    file_handler::perform(&model_name[0], &models);
 
     Ok(Package {
         name,
