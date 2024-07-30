@@ -188,21 +188,19 @@ localhost/version-display    1.0   892206770723  12 hours ago   566 MB
 ...
 ```
 
-### Build dds/grpc message sender
+### Build dds message sender
 
-There are 2 msg sender application written in pyqt.
+There is a msg sender application written in pyqt.
 
 ```bash
 # in 'examples/version-display/qt-msg-sender' directory
 podman build --no-cache -t pyqt-dds-sender:1.0 -f pyqt-dds-sender/Dockerfile .
-podman build --no-cache -t pyqt-grpc-sender:1.0 -f pyqt-grpc-sender/Dockerfile .
 ```
 
 You can see,
 
 ```Text
 # podman images
-localhost/pyqt-grpc-sender   1.0   ede75e404c1b  6 hours ago    950 MB
 localhost/pyqt-dds-sender    1.0   7a9e5b7a6580  7 hours ago    917 MB
 ```
 
@@ -269,7 +267,7 @@ make tinstall
 Then there are two X11 applications.  
 (Now, there are two more button `launch`, `terminate` in gRPC sender.)
 
-<img alt="pyqt sender" src="../../images/pyqt-sender.png"
+<img alt="pyqt sender" src="../../doc/images/pyqt-sender.png"
 width="60%"
 height="60%"
 />
@@ -281,7 +279,7 @@ Now, if you press the following buttons sequentially, the color of buttons are c
 
 And, you can see version-display container window.
 
-<img alt="version 2" src="../../images/ver-display-2.png"
+<img alt="version 2" src="../../doc/images/ver-display-2.png"
 width="40%"
 height="40%"
 />
@@ -297,7 +295,7 @@ Simillary, if you press the following buttons sequentially, the color of buttons
 1. rollback button (in Qt gRPC sender)
 2. reverse (in Qt button Example...)
 
-<img alt="version 1" src="../../images/ver-display-1.png"
+<img alt="version 1" src="../../doc/images/ver-display-1.png"
 width="40%"
 height="40%"
 />

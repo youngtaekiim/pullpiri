@@ -17,16 +17,6 @@ spec:
     env:
     - name: DISPLAY
       value: :0
-  - name: pyqt-grpc-sender
-    image: localhost/pyqt-grpc-sender:1.0
-    volumeMounts:
-    - name: x11
-      mountPath: /tmp/.X11-unix
-    env:
-    - name: HOST_IP
-      value: "0.0.0.0"
-    - name: DISPLAY
-      value: :0
   volumes:
   - name: x11
     hostPath:

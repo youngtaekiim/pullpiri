@@ -30,9 +30,11 @@ pub fn package_parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> 
     let networks = network_parse(path, network_yaml);
 
     let volume_yaml = &package_model[0].get_resources().get_volume();
-    let volumes = &volume_parse(path, volume_yaml)?;
+    let volumes = &volume_parse(path, volume_yaml);
 
-    model.spec.volumes.clone_from(volumes.get_volume());
+    if let Some(volume_spec) = volumes {
+        model.spec.volumes.clone_from(volume_spec.get_volume());
+    }
 
     let models = serde_yaml::to_string(&model)?;
 
@@ -42,7 +44,7 @@ pub fn package_parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> 
     Ok(Package {
         name,
         models,
-        network: serde_yaml::to_string(&networks.unwrap())?,
+        network: serde_yaml::to_string(&networks)?,
         volume: serde_yaml::to_string(&volumes)?,
     })
 }
@@ -63,14 +65,15 @@ fn model_parse(path: &str, name: &str) -> Result<package::model::Model, Box<dyn 
     parse_yaml(path, name, "models")
 }
 
-fn network_parse(path: &str, name: &str) -> Result<package::network::NetworkSpec, Box<dyn Error>> {
-    let network: package::network::Network = parse_yaml(path, name, "networks")?;
-    let network_spec = network.get_spec().clone().unwrap();
-    Ok(network_spec)
+fn network_parse(path: &str, name: &str) -> Option<package::network::NetworkSpec> {
+    let network: package::network::Network = parse_yaml(path, name, "networks").unwrap();
+    network.get_spec().clone()
 }
 
-fn volume_parse(path: &str, name: &str) -> Result<package::volume::VolumeSpec, Box<dyn Error>> {
-    let volume: package::volume::Volume = parse_yaml(path, name, "volumes")?;
-    let volume_spec = volume.get_spec().clone().unwrap();
-    Ok(volume_spec)
+fn volume_parse(path: &str, name: &str) -> Option<package::volume::VolumeSpec> {
+    if let Ok(volume) = parse_yaml::<package::volume::Volume>(path, name, "volumes") {
+        volume.get_spec().clone()
+    } else {
+        None
+    }
 }
