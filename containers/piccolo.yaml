@@ -32,7 +32,7 @@ spec:
   - name: etcd
     image: gcr.io/etcd-development/etcd:v3.5.11
     command: ["/usr/local/bin/etcd"]
-#    args: ["--data-dir=/etcd-data"]
+    args: ["--data-dir=/etcd-data"]
     volumeMounts:
     - name: etcd-data
       mountPath: /etcd-data
