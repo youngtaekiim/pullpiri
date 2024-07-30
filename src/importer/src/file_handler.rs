@@ -50,19 +50,26 @@ fn make_yaml_file(dir: &str, name: &str, model: &str) -> Result<(), Box<dyn Erro
     let yaml_file_path = format!("{}/{}.yaml", dir, name);
     let mut yaml_file = fs::File::create(yaml_file_path)?;
 
-    let yaml_contents = serde_yaml::to_string(model)?;
-    yaml_file.write_all(yaml_contents.as_bytes())?;
+    yaml_file.write_all(model.as_bytes())?;
 
     Ok(())
 }
 
-pub fn perform(name: &str, model: &str) -> Result<(), Box<dyn Error>> {
-    //let directory = format!("{}{}", common::get_conf("YAML_STORAGE"), name);
-    let directory = format!("/etc/containers/systemd/{}", name);
+pub fn perform(
+    model_name: &str,
+    parsed_model_str: &str,
+    package_name: &str,
+) -> Result<(), Box<dyn Error>> {
+    let directory = format!(
+        "{}/packages/{}/{}",
+        common::get_conf("YAML_STORAGE"),
+        package_name,
+        model_name
+    );
     fs::create_dir_all(&directory)?;
 
-    make_kube_file(&directory, name)?;
-    make_yaml_file(&directory, name, model)?;
+    make_kube_file(&directory, model_name)?;
+    make_yaml_file(&directory, model_name, parsed_model_str)?;
 
     Ok(())
 }

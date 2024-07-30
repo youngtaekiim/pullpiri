@@ -13,6 +13,8 @@ spec:
     image: localhost/piccolo:1.0
     command: ["/piccolo/api-server"]
     volumeMounts:
+    - name: piccolo-yaml
+      mountPath: /root/piccolo_yaml
     - name: config-path
       mountPath: /piccolo/piccolo.ini
   - name: statemanager

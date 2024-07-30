@@ -33,12 +33,11 @@ pub fn package_parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> 
     let volumes = &volume_parse(path, &volume_yaml)?;
 
     model.spec.volumes = volumes.get_volume().clone();
-    println!("test123{:?}", model.get_podspec().get_volume());
 
     let models = serde_yaml::to_string(&model)?;
 
     //make kube,yaml file
-    file_handler::perform(&model_name[0], &models);
+    file_handler::perform(&model_name[0], &models, &name)?;
 
     Ok(Package {
         name,

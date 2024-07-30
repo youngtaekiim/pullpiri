@@ -40,6 +40,8 @@ install:
 .PHONY: uninstall
 uninstall:
 	-systemctl stop piccolo
+	-rm -rf /root/piccolo_yaml/packages
+	-rm -rf /root/piccolo_yaml/scenarios
 	-rm -rf /etc/containers/systemd/piccolo/
 	systemctl daemon-reload
 
@@ -53,6 +55,7 @@ tinstall:
 
 .PHONY: tuninstall
 tuninstall:
+	-rm -rf /root/piccolo_yaml/version-display
 	-systemctl stop qt-sender
 	-rm -rf /etc/containers/systemd/piccolo-test/
 	-systemctl stop version-display.service

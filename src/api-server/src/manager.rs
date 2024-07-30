@@ -1,6 +1,6 @@
+use common::gateway;
 use importer::parser::package::Package;
 use importer::parser::scenario::Scenario;
-use common::gateway;
 
 pub async fn handle_package_msg(p: Package) -> Result<(), Box<dyn std::error::Error>> {
     let key_origin = format!("package/{}", p.name);
