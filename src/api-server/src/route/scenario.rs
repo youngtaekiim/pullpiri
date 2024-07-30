@@ -66,13 +66,13 @@ pub async fn delete_scenario(Path(name): Path<String>) -> impl IntoResponse {
 fn return_ok() -> Response<Body> {
     Response::builder()
         .status(StatusCode::OK)
-        .body(Body::from(format!("Ok")))
+        .body(Body::from("Ok".to_string()))
         .unwrap()
 }
 
 fn return_err() -> Response<Body> {
     Response::builder()
         .status(StatusCode::BAD_REQUEST)
-        .body(Body::from(format!("Error")))
+        .body(Body::from("Error".to_string()))
         .unwrap()
 }

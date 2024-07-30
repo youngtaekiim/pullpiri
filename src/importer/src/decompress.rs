@@ -15,5 +15,3 @@ pub async fn decompress(path: &str) -> Result<(), Box<dyn Error>> {
     println!("TAR file extracted to {}", unpack_dir.display());
     Ok(())
 }
-
-

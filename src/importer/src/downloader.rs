@@ -3,8 +3,6 @@ use std::{
     io::{copy, BufWriter},
 };
 
-use reqwest;
-
 pub async fn download(url: &str, path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let response = reqwest::get(url).await?;
 

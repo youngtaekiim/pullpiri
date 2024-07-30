@@ -27,12 +27,12 @@ pub fn package_parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> 
     let mut model: package::model::Model = model_parse(path, &model_name[0]).unwrap();
 
     let network_yaml = &package_model[0].get_resources().get_network();
-    let networks = network_parse(path, &network_yaml);
+    let networks = network_parse(path, network_yaml);
 
     let volume_yaml = &package_model[0].get_resources().get_volume();
-    let volumes = &volume_parse(path, &volume_yaml)?;
+    let volumes = &volume_parse(path, volume_yaml)?;
 
-    model.spec.volumes = volumes.get_volume().clone();
+    model.spec.volumes.clone_from(volumes.get_volume());
 
     let models = serde_yaml::to_string(&model)?;
 
