@@ -12,6 +12,8 @@ members = [
     "common",
     "importer",
     "metric-notifier",
+    "dummy-gateway",
+    "dummy-controller",
 #    "gateway",
 ]
 

@@ -43,6 +43,18 @@ spec:
     env:
     - name: HOST_IP
       value: "0.0.0.0"
+  - name: dummy-gateway
+    image: localhost/piccolo:1.0
+    command: ["/piccolo/dummy-gateway"]
+    volumeMounts:
+    - name: config-path
+      mountPath: /piccolo/piccolo.ini
+  - name: dummy-controller
+    image: localhost/piccolo:1.0
+    command: ["/piccolo/dummy-controller"]
+    volumeMounts:
+    - name: config-path
+      mountPath: /piccolo/piccolo.ini
   volumes:
   - name: piccolo-yaml
     hostPath:

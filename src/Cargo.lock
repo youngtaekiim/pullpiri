@@ -563,6 +563,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "dummy-controller"
+version = "0.1.0"
+dependencies = [
+ "common",
+]
+
+[[package]]
+name = "dummy-gateway"
+version = "0.1.0"
+dependencies = [
+ "axum 0.7.5",
+ "common",
+ "prost",
+ "serde",
+ "tokio",
+ "tonic",
+ "tonic-build",
+]
+
+[[package]]
 name = "either"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
