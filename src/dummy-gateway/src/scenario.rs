@@ -1,8 +1,60 @@
 use serde::Deserialize;
 
+/*
+Scenario example
+
+JSON *****************
+{
+  "name": "fakename",
+  "condition": {
+    "name": null,       // Optional
+    "criteria": [
+      {
+        "message": "rt/piccolo/gear_state",
+        "value": "driving",
+        "operand": "equal"
+      },
+      {
+        "message": "rt/piccolo/day",
+        "value": "night",
+        "operand": "equal"
+      }
+    ]
+  },
+  "policy": {
+    "name": null,       // Optional
+    "act": [
+      {
+        "message": "rt/piccolo/light_on",
+        "value": "true"
+      }
+    ]
+  }
+}
+**********************
+
+YAML *****************
+name: fakename
+condition:
+  name: null        # Optional
+  criteria:
+  - message: rt/piccolo/gear_state
+    value: driving
+    operand: equal
+  - message: rt/piccolo/day
+    value: night
+    operand: equal
+policy:
+  name: null        # Optional
+  act:
+  - message: rt/piccolo/light_on
+    value: 'true'
+**********************
+*/
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct ResourceScenario {
-    name: String,
+    pub name: String,
     condition: Condition,
     policy: Policy,
 }

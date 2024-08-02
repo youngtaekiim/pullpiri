@@ -1,10 +1,6 @@
-use axum::{
-    extract::State,
-    Json,
-};
-use tokio::sync::mpsc::UnboundedSender;
-
 use crate::scenario::ResourceScenario;
+use axum::{extract::State, Json};
+use tokio::sync::mpsc::Sender;
 
 #[derive(serde::Serialize)]
 pub struct Scenario {
@@ -12,11 +8,14 @@ pub struct Scenario {
 }
 
 pub async fn import_scenario(
-    State(tx): State<UnboundedSender<ResourceScenario>
+    State(tx): State<Sender<ResourceScenario>>,
+    Json(resource_scenario): Json<ResourceScenario>,
 ) -> String {
-    println!("POST : scenario {name} is called.\n");
-    println!("       Path is {body}.\n");
+    let data: ResourceScenario = resource_scenario;
+    let name = data.name.clone();
 
+    let _ = tx.send(data).await;
+    name
 }
 
 /*
