@@ -8,6 +8,7 @@ pub mod etcd;
 pub mod gateway;
 pub mod spec;
 pub mod statemanager;
+pub mod dummylightcontroller;
 
 pub mod constants {
     pub use api::proto::constants::*;
