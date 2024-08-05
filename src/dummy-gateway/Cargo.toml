@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 #common = { path = "../common" }
 axum = "0.7.5"
+axum-yaml = "0.4.0"
 dust_dds = "0.10.0"
 serde = { version = "1.0", features = ["derive"] }
 tonic = "0.11.0"

@@ -52,6 +52,7 @@ policy:
 **********************
 */
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone)]
 pub struct ResourceScenario {
     pub name: String,
@@ -59,18 +60,21 @@ pub struct ResourceScenario {
     policy: Policy,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone)]
 struct Condition {
     name: Option<String>,
     criteria: Vec<Criterion>,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone)]
 struct Policy {
     name: Option<String>,
     act: Vec<Act>,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone)]
 struct Criterion {
     message: String,
@@ -78,6 +82,7 @@ struct Criterion {
     operand: String,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone)]
 struct Act {
     message: String,

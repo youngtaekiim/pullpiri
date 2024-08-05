@@ -1,5 +1,6 @@
 use crate::scenario::ResourceScenario;
-use axum::{extract::State, Json};
+use axum::extract::State;
+use axum_yaml::Yaml;
 use tokio::sync::mpsc::Sender;
 
 #[derive(serde::Serialize)]
@@ -9,7 +10,7 @@ pub struct Scenario {
 
 pub async fn import_scenario(
     State(tx): State<Sender<ResourceScenario>>,
-    Json(resource_scenario): Json<ResourceScenario>,
+    Yaml(resource_scenario): Yaml<ResourceScenario>,
 ) -> String {
     let data: ResourceScenario = resource_scenario;
     let name = data.name.clone();
