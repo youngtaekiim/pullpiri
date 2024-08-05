@@ -563,6 +563,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "dummy-gateway"
+version = "0.1.0"
+dependencies = [
+ "axum 0.7.5",
+ "dust_dds",
+ "prost",
+ "serde",
+ "tokio",
+ "tonic",
+ "tonic-build",
+]
+
+[[package]]
 name = "dummy-light-controller"
 version = "0.1.0"
 dependencies = [
