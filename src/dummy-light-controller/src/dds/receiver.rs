@@ -27,7 +27,7 @@ impl DdsEventListener {
 
 impl Drop for DdsEventListener {
     fn drop(&mut self) {
-        let topic_name = "rt/piccolo/light_state";
+        let topic_name = "/rt/piccolo/Light_State";
         println!("drop DdsEventListener {}\n", topic_name);
     }
 }
@@ -44,7 +44,7 @@ impl super::EventListener for DdsEventListener {
 
         let topic = participant
             .create_topic::<lightState::DataType>(
-                "rt/piccolo/light_state",
+                "/rt/piccolo/Light_State",
                 "lightState::DataType",
                 QosKind::Default,
                 None,

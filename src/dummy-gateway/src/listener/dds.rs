@@ -7,18 +7,21 @@ use tokio::sync::mpsc::Sender;
 
 use crate::listener::DdsData;
 
+// TOPIC NAME = /rt/piccolo/Gear_State
 #[allow(non_snake_case)]
 pub mod gearState {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
-        pub gear: String,
+        pub state: String,
     }
 }
 
-pub mod day {
+// TOPIC NAME = /rt/piccolo/Day_Time
+#[allow(non_snake_case)]
+pub mod dayTime {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
-        pub day: String,
+        pub day: bool,
     }
 }
 
@@ -68,7 +71,7 @@ impl DdsListener {
             "gear" => {
                 let topic = participant
                     .create_topic::<gearState::DataType>(
-                        "rt/piccolo/gear_state",
+                        "/rt/piccolo/Gear_State",
                         "gearState::DataType",
                         QosKind::Default,
                         None,
@@ -91,16 +94,22 @@ impl DdsListener {
                         .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
                         .await
                     {
-                        let data = data_samples[0].data().unwrap();
+                        let data: gearState::DataType = data_samples[0].data().unwrap();
                         println!("Received: {:?}\n", data);
+
+                        let msg = DdsData {
+                            name: self.name.clone(),
+                            value: data.state,
+                        };
+                        let _ = self.tx.send(msg).await;
                     }
                     std::thread::sleep(std::time::Duration::from_millis(100));
                 }
             }
             "day" => {
                 let topic = participant
-                    .create_topic::<day::DataType>(
-                        "rt/piccolo/day",
+                    .create_topic::<dayTime::DataType>(
+                        "/rt/piccolo/Day_Time",
                         "day::DataType",
                         QosKind::Default,
                         None,
@@ -109,7 +118,7 @@ impl DdsListener {
                     .await
                     .unwrap();
                 let reader = subscriber
-                    .create_datareader::<day::DataType>(&topic, QosKind::Default, None, NO_STATUS)
+                    .create_datareader::<dayTime::DataType>(&topic, QosKind::Default, None, NO_STATUS)
                     .await
                     .unwrap();
 
@@ -118,12 +127,15 @@ impl DdsListener {
                         .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
                         .await
                     {
-                        let data = data_samples[0].data().unwrap();
+                        let data: dayTime::DataType = data_samples[0].data().unwrap();
                         println!("Received: {:?}\n", data);
 
                         let msg = DdsData {
                             name: self.name.clone(),
-                            value: "driving or true".to_string(),
+                            value: match data.day {
+                                true => "day".to_string(),
+                                false => "night".to_string(),
+                            },
                         };
                         let _ = self.tx.send(msg).await;
                     }
