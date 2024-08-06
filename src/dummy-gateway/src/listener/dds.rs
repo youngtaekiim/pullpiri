@@ -118,7 +118,12 @@ impl DdsListener {
                     .await
                     .unwrap();
                 let reader = subscriber
-                    .create_datareader::<dayTime::DataType>(&topic, QosKind::Default, None, NO_STATUS)
+                    .create_datareader::<dayTime::DataType>(
+                        &topic,
+                        QosKind::Default,
+                        None,
+                        NO_STATUS,
+                    )
                     .await
                     .unwrap();
 
