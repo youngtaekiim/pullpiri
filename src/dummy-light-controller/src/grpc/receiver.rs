@@ -1,10 +1,9 @@
+use crate::controller_manager::message;
+use crate::controller_manager::messageFrom;
 use common::dummylightcontroller::dummy_light_controller_server::DummyLightController;
 use common::dummylightcontroller::PolicyLightOn;
 use common::dummylightcontroller::Reply;
 use tokio::sync::mpsc;
-use crate::controller_manager;
-use crate::controller_manager::message;
-use crate::controller_manager::messageFrom;
 
 pub struct GrpcServer {
     pub grpc_msg_tx: mpsc::Sender<message>,
@@ -20,7 +19,7 @@ impl DummyLightController for GrpcServer {
         let req = request.into_inner();
         //println!("req msg : {:#?}", req);
         let msg = message {
-            id: messageFrom::DUMMYGATEWAY,
+            id: messageFrom::DummyGateway,
             data: req.light_on,
         };
         let _ = self.grpc_msg_tx.send(msg).await;

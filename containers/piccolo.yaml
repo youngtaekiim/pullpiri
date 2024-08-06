@@ -49,9 +49,9 @@ spec:
     volumeMounts:
     - name: config-path
       mountPath: /piccolo/piccolo.ini
-  - name: dummy-controller
+  - name: dummy-light-controller
     image: localhost/piccolo:1.0
-    command: ["/piccolo/dummy-controller"]
+    command: ["/piccolo/dummy-light-controller"]
     volumeMounts:
     - name: config-path
       mountPath: /piccolo/piccolo.ini

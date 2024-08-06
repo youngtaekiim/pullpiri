@@ -1,20 +1,21 @@
-use tokio::sync::mpsc;
-use tonic::transport::Server;
 use crate::dds::EventListener;
 use common::dummylightcontroller::dummy_light_controller_server::DummyLightControllerServer;
-use common::dummylightcontroller::PolicyLightOn;
+use tokio::sync::mpsc;
+use tonic::transport::Server;
 
-
-pub enum messageFrom{
-    LIGHTSOURCE = 0,
-    DUMMYGATEWAY,
+#[allow(non_camel_case_types)]
+pub enum messageFrom {
+    LightSource,
+    DummyGateway,
 }
 
-pub struct message{
+#[allow(non_camel_case_types)]
+pub struct message {
     pub id: messageFrom,
     pub data: bool,
 }
 
+#[allow(non_camel_case_types)]
 pub struct controller_manager {
     grpc_rx: mpsc::Receiver<message>,
     grpc_tx: mpsc::Sender<message>,
@@ -22,17 +23,20 @@ pub struct controller_manager {
     policy_status: bool,
 }
 
-impl controller_manager{
+impl controller_manager {
     pub fn new() -> Self {
         let (grpc_tx, grpc_rx) = mpsc::channel(100);
-        controller_manager{grpc_rx, grpc_tx, light_status: false, policy_status: false}
+        controller_manager {
+            grpc_rx,
+            grpc_tx,
+            light_status: false,
+            policy_status: false,
+        }
     }
 
     pub fn executer(&self) {
-        if self.policy_status{
-            if !self.light_status{
-                //To-Do somerhing
-            }
+        if self.policy_status && !self.light_status {
+            //To-Do somerhing
         }
     }
 
@@ -42,20 +46,18 @@ impl controller_manager{
 
         while let Some(req) = self.grpc_rx.recv().await {
             let id = req.id;
-            let data = req.data;;
-            match id{
-                messageFrom::LIGHTSOURCE => {
+            let data = req.data;
+            match id {
+                messageFrom::LightSource => {
                     self.light_status = data;
                     self.executer();
-                },
-                messageFrom::DUMMYGATEWAY => self.policy_status = data,
-                _ => println!("wrong id"),
+                }
+                messageFrom::DummyGateway => self.policy_status = data,
             }
             println!("policy activate is {}", self.policy_status);
             println!("light state is {}", self.light_status);
         }
     }
-
 }
 async fn grpc_server(tx: mpsc::Sender<message>) {
     let server = crate::grpc::receiver::GrpcServer {

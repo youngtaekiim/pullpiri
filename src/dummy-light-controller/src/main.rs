@@ -1,6 +1,6 @@
+mod controller_manager;
 mod dds;
 mod grpc;
-mod controller_manager;
 
 #[tokio::main]
 async fn main() {

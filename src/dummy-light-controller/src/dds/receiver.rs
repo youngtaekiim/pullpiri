@@ -1,21 +1,21 @@
+use crate::controller_manager::message;
+use crate::controller_manager::messageFrom;
 use dust_dds::{
     dds_async::domain_participant_factory::DomainParticipantFactoryAsync,
     infrastructure::{qos::QosKind, status::NO_STATUS},
     subscription::sample_info::{ANY_INSTANCE_STATE, ANY_SAMPLE_STATE, ANY_VIEW_STATE},
 };
 use tokio::sync::mpsc;
-use crate::controller_manager::message;
-use crate::controller_manager::messageFrom;
 
 #[allow(non_snake_case)]
-pub mod lightState{
+pub mod lightState {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
-        pub on:bool,
+        pub on: bool,
     }
 }
 
-pub struct DdsEventListener{
+pub struct DdsEventListener {
     grpc_tx: mpsc::Sender<message>,
 }
 
@@ -27,7 +27,8 @@ impl DdsEventListener {
 
 impl Drop for DdsEventListener {
     fn drop(&mut self) {
-        println!("drop DdsEventListener {}\n", "rt/piccolo/light_state");
+        let topic_name = "rt/piccolo/light_state";
+        println!("drop DdsEventListener {}\n", topic_name);
     }
 }
 
@@ -70,10 +71,10 @@ impl super::EventListener for DdsEventListener {
                 let receive_data = data_samples[0].data().unwrap();
 
                 println!("dds Received: {:?}\n", receive_data);
-                    let msg = message {
-                        id: messageFrom::LIGHTSOURCE,
-                        data: receive_data.on,
-                    };
+                let msg = message {
+                    id: messageFrom::LightSource,
+                    data: receive_data.on,
+                };
                 let _ = self.grpc_tx.send(msg).await;
             }
             std::thread::sleep(std::time::Duration::from_millis(100));

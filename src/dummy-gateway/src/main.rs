@@ -6,6 +6,7 @@
 use scenario::ResourceScenario;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
+mod grpc;
 pub mod listener;
 mod manager;
 mod route;

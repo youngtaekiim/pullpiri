@@ -35,7 +35,12 @@ pub mod light {
 pub struct DdsListener {
     name: String,
     tx: Sender<DdsData>,
-    status: bool,
+}
+
+impl Drop for DdsListener {
+    fn drop(&mut self) {
+        println!("drop DdsListener {}\n", self.name);
+    }
 }
 
 impl DdsListener {
@@ -43,7 +48,6 @@ impl DdsListener {
         DdsListener {
             name: name.to_string(),
             tx,
-            status: true,
         }
     }
 
@@ -91,9 +95,6 @@ impl DdsListener {
                         println!("Received: {:?}\n", data);
                     }
                     std::thread::sleep(std::time::Duration::from_millis(100));
-                    if !self.status {
-                        break;
-                    }
                 }
             }
             "day" => {
@@ -127,16 +128,9 @@ impl DdsListener {
                         let _ = self.tx.send(msg).await;
                     }
                     std::thread::sleep(std::time::Duration::from_millis(100));
-                    if !self.status {
-                        break;
-                    }
                 }
             }
             _ => panic!("topic name is wrong"),
         };
-    }
-
-    pub fn stop(&mut self) {
-        self.status = false;
     }
 }
