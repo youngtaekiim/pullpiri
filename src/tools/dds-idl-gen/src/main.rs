@@ -3,7 +3,7 @@ fn main() {
     let idl_src = r#"module dayTime {
     @final
     struct DataType {
-        bool day;
+        boolean day;
     };
 };"#;
     let result = dust_dds_gen::compile_idl(idl_src).unwrap();
@@ -21,7 +21,7 @@ fn main() {
     let idl_src = r#"module lightState {
     @final
     struct DataType {
-        bool on;
+        boolean on;
     };
 };"#;
     let result = dust_dds_gen::compile_idl(idl_src).unwrap();
