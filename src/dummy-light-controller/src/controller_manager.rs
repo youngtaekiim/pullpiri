@@ -23,6 +23,7 @@ pub struct controller_manager {
     policy_status: bool,
 }
 
+#[allow(unused_must_use)]
 impl controller_manager {
     pub fn new() -> Self {
         let (grpc_tx, grpc_rx) = mpsc::channel(100);
@@ -34,9 +35,10 @@ impl controller_manager {
         }
     }
 
-    pub fn executer(&self) {
+    pub fn executer(&self, dds_sender: &crate::dds::sender::DdsEventSender) {
         if self.policy_status && !self.light_status {
             //To-Do somerhing
+            dds_sender.send();
         }
     }
 
@@ -44,13 +46,15 @@ impl controller_manager {
         tokio::spawn(launch_dds(self.grpc_tx.clone()));
         tokio::spawn(grpc_server(self.grpc_tx.clone()));
 
+        let dds_sender = crate::dds::sender::DdsEventSender::new().await;
+
         while let Some(req) = self.grpc_rx.recv().await {
             let id = req.id;
             let data = req.data;
             match id {
                 messageFrom::LightSource => {
                     self.light_status = data;
-                    self.executer();
+                    self.executer(&dds_sender);
                 }
                 messageFrom::DummyGateway => self.policy_status = data,
             }
