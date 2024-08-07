@@ -104,13 +104,15 @@ Refer to [Getting Started](/doc/docs/getting-started.md).
 #### Using Ports
 
 ```Text
+gRPC
 api-server : 47001
 gateway : 47002
 statemanager: 47003
-yamlparser : 47004
-etcd : 2379
 
-REST API : 47099
+REST
+api-server : 47099
+
+etcd : 2379
 ```
 
 ## Documentation
