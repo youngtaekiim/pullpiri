@@ -8,10 +8,10 @@ use dust_dds::{
 };
 
 #[allow(non_snake_case)]
-pub mod lightState {
+pub mod TurnLight {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
-        pub on: bool,
+        pub operation: String,
     }
 }
 
@@ -20,7 +20,7 @@ pub struct DdsEventSender {
     participant: DomainParticipantAsync,
     topic: TopicAsync,
     publisher: PublisherAsync,
-    writer: DataWriterAsync<lightState::DataType>,
+    writer: DataWriterAsync<TurnLight::DataType>,
 }
 
 impl DdsEventSender {
@@ -34,9 +34,9 @@ impl DdsEventSender {
                 .await
                 .unwrap();
             let topic = participant
-                .create_topic::<lightState::DataType>(
-                    "LargeDataTopic",
-                    "DataType",
+                .create_topic::<TurnLight::DataType>(
+                    "/rt/piccolo/Turn_Light",
+                    "TurnLight::DataType",
                     QosKind::Default,
                     None,
                     NO_STATUS,
@@ -63,7 +63,9 @@ impl DdsEventSender {
         }
     }
     pub async fn send(&self) {
-        let msg = lightState::DataType { on: true };
+        let msg = TurnLight::DataType {
+            operation: "on".to_string(),
+        };
         self.writer.write(&msg, None).await.unwrap();
     }
 }

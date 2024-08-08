@@ -8,7 +8,7 @@ use dust_dds::{
 use tokio::sync::mpsc;
 
 #[allow(non_snake_case)]
-pub mod lightState {
+pub mod LightState {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
         pub on: bool,
@@ -43,9 +43,9 @@ impl super::EventListener for DdsEventListener {
             .unwrap();
 
         let topic = participant
-            .create_topic::<lightState::DataType>(
+            .create_topic::<LightState::DataType>(
                 "/rt/piccolo/Light_State",
-                "lightState::DataType",
+                "LightState::DataType",
                 QosKind::Default,
                 None,
                 NO_STATUS,
@@ -59,7 +59,7 @@ impl super::EventListener for DdsEventListener {
             .unwrap();
 
         let reader = subscriber
-            .create_datareader::<lightState::DataType>(&topic, QosKind::Default, None, NO_STATUS)
+            .create_datareader::<LightState::DataType>(&topic, QosKind::Default, None, NO_STATUS)
             .await
             .unwrap();
 

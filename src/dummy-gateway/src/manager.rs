@@ -38,12 +38,15 @@ impl Manager {
         let mut day_status = false;
 
         while let Some(data) = self.rx_dds.recv().await {
-            if data.name == "gear" && data.value == "driving" {
-                gear_status = true;
-            } else if data.name == "day" && data.value == "night" {
-                day_status = true;
+            println!("{:?}\n", data);
+            if data.name == "gear" {
+                gear_status = data.value == "drive";
+            }
+            if data.name == "day" {
+                day_status = data.value == "night";
             }
 
+            println!("gear: {gear_status}, day: {day_status}\n");
             if gear_status && day_status {
                 println!("meet conditions. send policy");
                 // send gRPC

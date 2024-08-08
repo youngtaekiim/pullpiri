@@ -18,7 +18,7 @@ fn main() {
     let result = dust_dds_gen::compile_idl(idl_src).unwrap();
     println!("{}\n", result);
 
-    let idl_src = r#"module lightState {
+    let idl_src = r#"module LightState {
     @final
     struct DataType {
         boolean on;
@@ -36,7 +36,7 @@ fn main() {
     let result = dust_dds_gen::compile_idl(idl_src).unwrap();
     println!("{}", result);
 
-    let idl_src = r#"module turnLight {
+    let idl_src = r#"module TurnLight {
     @final
     struct DataType {
         string operation;
@@ -63,7 +63,7 @@ pub mod gearState {
 }
 
 # TOPIC NAME = /rt/piccolo/Light_State
-pub mod lightState {
+pub mod LightState {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
         pub on: bool,
@@ -79,7 +79,7 @@ pub mod speed {
 }
 
 # TOPIC NAME = /rt/piccolo/Turn_Light
-pub mod turnLight {
+pub mod TurnLight {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
         pub operation: String,

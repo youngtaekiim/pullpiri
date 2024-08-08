@@ -35,10 +35,10 @@ impl controller_manager {
         }
     }
 
-    pub fn executer(&self, dds_sender: &crate::dds::sender::DdsEventSender) {
+    pub async fn executer(&self, dds_sender: &crate::dds::sender::DdsEventSender) {
         if self.policy_status && !self.light_status {
             //To-Do somerhing
-            dds_sender.send();
+            dds_sender.send().await;
         }
     }
 
@@ -54,7 +54,7 @@ impl controller_manager {
             match id {
                 messageFrom::LightSource => {
                     self.light_status = data;
-                    self.executer(&dds_sender);
+                    self.executer(&dds_sender).await;
                 }
                 messageFrom::DummyGateway => self.policy_status = data,
             }
@@ -80,6 +80,7 @@ async fn grpc_server(tx: mpsc::Sender<message>) {
 }
 
 async fn launch_dds(grpc_tx: mpsc::Sender<message>) {
+    println!("launch dds");
     let l = crate::dds::receiver::DdsEventListener::new(grpc_tx);
     l.run().await;
 }

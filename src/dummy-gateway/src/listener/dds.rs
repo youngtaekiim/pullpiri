@@ -110,7 +110,7 @@ impl DdsListener {
                 let topic = participant
                     .create_topic::<dayTime::DataType>(
                         "/rt/piccolo/Day_Time",
-                        "day::DataType",
+                        "dayTime::DataType",
                         QosKind::Default,
                         None,
                         NO_STATUS,

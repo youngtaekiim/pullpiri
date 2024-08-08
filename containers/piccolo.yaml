@@ -55,6 +55,18 @@ spec:
     volumeMounts:
     - name: config-path
       mountPath: /piccolo/piccolo.ini
+#  - name: light-dev
+#    image: sdv.lge.com/library/dummy_light_dev:0.2
+#    command: ["/root/build/lightDev"]
+#  - name: light-show
+#    image: sdv.lge.com/library/dummy_light_show:pyqt3
+#    command: ["python3", "/root/test_app/main.py"]
+#    volumeMounts:
+#    - name: x11
+#      mountPath: /tmp/.X11-unix
+#    env:
+#    - name: DISPLAY
+#      value: :0
   volumes:
   - name: piccolo-yaml
     hostPath:
@@ -71,3 +83,6 @@ spec:
   - name: config-path
     hostPath:
       path: /etc/containers/systemd/piccolo/piccolo.ini
+#  - name: x11
+#    hostPath:
+#      path: /tmp/.X11-unix
