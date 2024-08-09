@@ -924,12 +924,10 @@ name = "importer"
 version = "0.1.0"
 dependencies = [
  "common",
- "prost",
  "reqwest",
  "serde",
  "serde_yaml",
  "tar",
- "tokio",
  "tonic-build",
 ]
 

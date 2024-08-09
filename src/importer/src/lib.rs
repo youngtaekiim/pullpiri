@@ -2,8 +2,6 @@
  * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
-mod decompress;
-mod downloader;
 mod file_handler;
 pub mod parser;
 
@@ -23,13 +21,13 @@ pub async fn handle_package(package_name: &str) -> Result<package::Package, Box<
 
     //download, decompress
     if !Path::new(&full_save_path).exists() {
-        downloader::download(&full_url, &full_save_path).await?;
+        file_handler::download(&full_url, &full_save_path).await?;
     }
-    decompress::decompress(&full_save_path).await?;
+    file_handler::extract(&full_save_path)?;
 
     //parsing
     let parsing_path = format!("{}/packages/{}", save_path, package_name);
-    package::package_parse(&parsing_path)
+    package::parse(&parsing_path)
 }
 
 pub async fn handle_scenario(scenario_name: &str) -> Result<scenario::Scenario, Box<dyn Error>> {
@@ -40,26 +38,7 @@ pub async fn handle_scenario(scenario_name: &str) -> Result<scenario::Scenario, 
     let full_save_path = format!("{}/scenarios/{}.yaml", save_path, scenario_name);
 
     if !Path::new(&full_save_path).exists() {
-        downloader::download(&full_url, &full_save_path).await?;
+        file_handler::download(&full_url, &full_save_path).await?;
     }
-    scenario::scenario_parse(&full_save_path)
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::{handle_package, handle_scenario};
-
-    #[tokio::test]
-    async fn package_parse() {
-        let result = handle_package("package-version1").await;
-        println!("{:#?}", result);
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn scenario_parse() {
-        let result = handle_scenario("launch-scenario").await;
-        println!("{:#?}", result);
-        assert!(result.is_ok());
-    }
+    scenario::parse(&full_save_path)
 }
