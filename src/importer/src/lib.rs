@@ -7,39 +7,42 @@ mod downloader;
 mod file_handler;
 pub mod parser;
 
-pub async fn handle_package(
-    package_name: &str,
-) -> Result<parser::package::Package, Box<dyn std::error::Error>> {
+use parser::{package, scenario};
+use std::{error::Error, path::Path};
+
+pub async fn handle_package(package_name: &str) -> Result<package::Package, Box<dyn Error>> {
     //url path
     let base_url = common::get_conf("DOC_REGISTRY");
     let full_url: String = format!("{}/packages/{}.tar", base_url, package_name);
+    println!("full url : {}", full_url);
 
     //save path
     let save_path: String = common::get_conf("YAML_STORAGE");
     let full_save_path = format!("{}/packages/{}.tar", save_path, package_name);
+    println!("full save path : {}", full_save_path);
 
     //download, decompress
-    println!("full url : {}", full_url);
-    println!("full save path : {}", full_save_path);
-    downloader::download(&full_url, &full_save_path).await?;
+    if !Path::new(&full_save_path).exists() {
+        downloader::download(&full_url, &full_save_path).await?;
+    }
     decompress::decompress(&full_save_path).await?;
 
     //parsing
     let parsing_path = format!("{}/packages/{}", save_path, package_name);
-    parser::package::package_parse(&parsing_path)
+    package::package_parse(&parsing_path)
 }
 
-pub async fn handle_scenario(
-    name: &str,
-) -> Result<parser::scenario::Scenario, Box<dyn std::error::Error>> {
+pub async fn handle_scenario(scenario_name: &str) -> Result<scenario::Scenario, Box<dyn Error>> {
     let base_url = common::get_conf("DOC_REGISTRY");
-    let full_url = format!("{}/scenarios/{}.yaml", base_url, name);
+    let full_url = format!("{}/scenarios/{}.yaml", base_url, scenario_name);
 
     let save_path: String = common::get_conf("YAML_STORAGE");
-    let full_save_path = format!("{}/scenarios/{}.yaml", save_path, name);
+    let full_save_path = format!("{}/scenarios/{}.yaml", save_path, scenario_name);
 
-    downloader::download(&full_url, &full_save_path).await?;
-    parser::scenario::scenario_parse(&full_save_path)
+    if !Path::new(&full_save_path).exists() {
+        downloader::download(&full_url, &full_save_path).await?;
+    }
+    scenario::scenario_parse(&full_save_path)
 }
 
 #[cfg(test)]
