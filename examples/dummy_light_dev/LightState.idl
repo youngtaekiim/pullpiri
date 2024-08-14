@@ -1,0 +1,8 @@
+module LightState
+{
+  @final
+  struct DataType
+  {
+    boolean on;
+  };
+};

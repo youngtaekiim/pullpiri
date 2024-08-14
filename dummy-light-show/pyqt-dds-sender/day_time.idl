@@ -1,6 +1,0 @@
-module dayTime {
-    @final
-    struct DataType {
-        boolean day;
-    };
-};

@@ -9,9 +9,9 @@ axum = "0.7.5"
 axum-yaml = "0.4.0"
 dust_dds = "0.10.0"
 serde = { version = "1.0", features = ["derive"] }
-tonic = "0.11.0"
-prost = "0.12.6"
+tonic = "0.12.1"
+prost = "0.13.1"
 tokio = { version = "1.38.0", features = ["macros", "rt-multi-thread"] }
 
 [build-dependencies]
-tonic-build = "0.11.0"
+tonic-build = "0.12.1"

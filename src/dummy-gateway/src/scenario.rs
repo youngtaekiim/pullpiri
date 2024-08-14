@@ -56,35 +56,35 @@ policy:
 #[derive(Deserialize, Debug, Clone)]
 pub struct ResourceScenario {
     pub name: String,
-    condition: Condition,
-    policy: Policy,
+    pub condition: Condition,
+    pub policy: Policy,
 }
 
 #[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone)]
-struct Condition {
+pub struct Condition {
     name: Option<String>,
-    criteria: Vec<Criterion>,
+    pub criteria: Vec<Criterion>,
 }
 
 #[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone)]
-struct Policy {
+pub struct Policy {
     name: Option<String>,
-    act: Vec<Act>,
+    pub act: Vec<Act>,
 }
 
 #[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone)]
-struct Criterion {
-    message: String,
-    value: String,
-    operand: String,
+pub struct Criterion {
+    pub message: String,
+    pub value: String,
+    pub operand: String,
 }
 
 #[allow(dead_code)]
 #[derive(Deserialize, Debug, Clone)]
-struct Act {
-    message: String,
-    value: String,
+pub struct Act {
+    pub message: String,
+    pub value: String,
 }

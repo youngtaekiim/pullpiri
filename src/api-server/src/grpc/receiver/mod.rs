@@ -3,4 +3,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+pub mod metric_notifier;
 pub mod scenario_handler;

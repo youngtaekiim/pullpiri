@@ -1,6 +1,0 @@
-module turnLight {
-    @final
-    struct DataType {
-        string operation;
-    };
-};

@@ -9,7 +9,7 @@ use crate::listener::DdsData;
 
 // TOPIC NAME = /rt/piccolo/Gear_State
 #[allow(non_snake_case)]
-pub mod gearState {
+pub mod GearState {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
         pub state: String,
@@ -18,10 +18,18 @@ pub mod gearState {
 
 // TOPIC NAME = /rt/piccolo/Day_Time
 #[allow(non_snake_case)]
-pub mod dayTime {
+pub mod DayTime {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
         pub day: bool,
+    }
+}
+
+#[allow(non_snake_case)]
+pub mod LightState {
+    #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
+    pub struct DataType {
+        pub on: bool,
     }
 }
 
@@ -48,6 +56,7 @@ impl Drop for DdsListener {
 
 impl DdsListener {
     pub fn new(name: &str, tx: Sender<DdsData>) -> Self {
+        println!("make DdsListener {}\n", name);
         DdsListener {
             name: name.to_string(),
             tx,
@@ -70,9 +79,9 @@ impl DdsListener {
         match self.name.as_str() {
             "gear" => {
                 let topic = participant
-                    .create_topic::<gearState::DataType>(
+                    .create_topic::<GearState::DataType>(
                         "/rt/piccolo/Gear_State",
-                        "gearState::DataType",
+                        "GearState::DataType",
                         QosKind::Default,
                         None,
                         NO_STATUS,
@@ -80,7 +89,7 @@ impl DdsListener {
                     .await
                     .unwrap();
                 let reader = subscriber
-                    .create_datareader::<gearState::DataType>(
+                    .create_datareader::<GearState::DataType>(
                         &topic,
                         QosKind::Default,
                         None,
@@ -89,13 +98,14 @@ impl DdsListener {
                     .await
                     .unwrap();
 
+                println!("make loop - gear");
                 loop {
                     if let Ok(data_samples) = reader
                         .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
                         .await
                     {
-                        let data: gearState::DataType = data_samples[0].data().unwrap();
-                        println!("Received: {:?}\n", data);
+                        let data: GearState::DataType = data_samples[0].data().unwrap();
+                        println!("Received:  GEAR {}\n", data.state);
 
                         let msg = DdsData {
                             name: self.name.clone(),
@@ -108,9 +118,9 @@ impl DdsListener {
             }
             "day" => {
                 let topic = participant
-                    .create_topic::<dayTime::DataType>(
+                    .create_topic::<DayTime::DataType>(
                         "/rt/piccolo/Day_Time",
-                        "dayTime::DataType",
+                        "DayTime::DataType",
                         QosKind::Default,
                         None,
                         NO_STATUS,
@@ -118,7 +128,7 @@ impl DdsListener {
                     .await
                     .unwrap();
                 let reader = subscriber
-                    .create_datareader::<dayTime::DataType>(
+                    .create_datareader::<DayTime::DataType>(
                         &topic,
                         QosKind::Default,
                         None,
@@ -126,20 +136,64 @@ impl DdsListener {
                     )
                     .await
                     .unwrap();
-
+                println!("make loop - day");
                 loop {
                     if let Ok(data_samples) = reader
                         .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
                         .await
                     {
-                        let data: dayTime::DataType = data_samples[0].data().unwrap();
-                        println!("Received: {:?}\n", data);
+                        let data: DayTime::DataType = data_samples[0].data().unwrap();
+                        println!("Received:  DAY {}\n", data.day);
 
                         let msg = DdsData {
                             name: self.name.clone(),
                             value: match data.day {
                                 true => "day".to_string(),
                                 false => "night".to_string(),
+                            },
+                        };
+                        let _ = self.tx.send(msg).await;
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
+            }
+            "light" => {
+                let topic = participant
+                    .create_topic::<LightState::DataType>(
+                        "/rt/piccolo/Light_State",
+                        "LightState::DataType",
+                        QosKind::Default,
+                        None,
+                        NO_STATUS,
+                    )
+                    .await
+                    .unwrap();
+                let reader = subscriber
+                    .create_datareader::<LightState::DataType>(
+                        &topic,
+                        QosKind::Default,
+                        None,
+                        NO_STATUS,
+                    )
+                    .await
+                    .unwrap();
+                println!("make loop - light");
+                loop {
+                    if let Ok(data_samples) = reader
+                        .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
+                        .await
+                    {
+                        let data: LightState::DataType = data_samples[0].data().unwrap();
+                        println!("Received:  LIGHT {}\n", data.on);
+                        if data.on {
+                            continue
+                        }
+
+                        let msg = DdsData {
+                            name: self.name.clone(),
+                            value: match data.on {
+                                true => "ON".to_string(),
+                                false => "OFF".to_string(),
                             },
                         };
                         let _ = self.tx.send(msg).await;

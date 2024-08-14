@@ -1,6 +1,9 @@
 use common::dummylightcontroller;
 
-pub async fn send() -> Result<tonic::Response<dummylightcontroller::Reply>, tonic::Status> {
+#[allow(dead_code)]
+pub async fn send(
+    onoff: bool,
+) -> Result<tonic::Response<dummylightcontroller::Reply>, tonic::Status> {
     println!("sending policy (light on)\n");
 
     let mut client = match dummylightcontroller::dummy_light_controller_client::DummyLightControllerClient::connect(
@@ -19,7 +22,7 @@ pub async fn send() -> Result<tonic::Response<dummylightcontroller::Reply>, toni
 
     client
         .request_event(tonic::Request::new(dummylightcontroller::PolicyLightOn {
-            light_on: true,
+            light_on: onoff,
         }))
         .await
 }

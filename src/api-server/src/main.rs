@@ -8,6 +8,7 @@ mod manager;
 mod route;
 
 use axum::Router;
+use common::apiserver::metric_notifier_server::MetricNotifierServer;
 use common::apiserver::scenario_connection_server::ScenarioConnectionServer;
 use tonic::transport::Server;
 
@@ -16,11 +17,13 @@ async fn running_grpc() {
         .parse()
         .expect("api-server address parsing error");
     let scenario_server = grpc::receiver::scenario_handler::GrpcUpdateServer::default();
+    let metric_server = grpc::receiver::metric_notifier::GrpcMetricServer::default();
 
     println!("Piccolod api-server listening on {}", addr);
 
     let _ = Server::builder()
         .add_service(ScenarioConnectionServer::new(scenario_server))
+        .add_service(MetricNotifierServer::new(metric_server))
         .serve(addr)
         .await;
 }

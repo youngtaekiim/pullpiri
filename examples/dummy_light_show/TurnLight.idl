@@ -1,0 +1,8 @@
+module TurnLight
+{
+  @final
+  struct DataType
+  {
+    string operation;
+  };
+};

@@ -11,9 +11,8 @@ members = [
     "api",
     "common",
     "importer",
-    "metric-notifier",
     "dummy-gateway",
-    "dummy-light-controller",
+#    "dummy-light-controller",
 #    "gateway",
 ]
 

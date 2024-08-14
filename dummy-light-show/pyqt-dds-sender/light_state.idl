@@ -1,6 +1,0 @@
-module lightState {
-    @final
-    struct DataType {
-        boolean state;
-    };
-};
