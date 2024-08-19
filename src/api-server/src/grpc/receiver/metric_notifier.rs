@@ -18,7 +18,7 @@ impl MetricNotifier for GrpcMetricServer {
         println!("Got a request from {:?}", request.remote_addr());
 
         let image_list = request.into_inner();
-        println!("image\n{:?}", image_list);
+        println!("image\n{:#?}", image_list);
 
         Ok(tonic::Response::new(Response { success: true }))
     }
@@ -27,7 +27,7 @@ impl MetricNotifier for GrpcMetricServer {
         println!("Got a request from {:?}", request.remote_addr());
 
         let container_list = request.into_inner();
-        println!("container\n{:?}", container_list);
+        println!("container\n{:#?}", container_list);
 
         Ok(tonic::Response::new(Response { success: true }))
     }
@@ -36,7 +36,7 @@ impl MetricNotifier for GrpcMetricServer {
         println!("Got a request from {:?}", request.remote_addr());
 
         let pod_list = request.into_inner();
-        println!("pod\n{:?}", pod_list);
+        println!("pod\n{:#?}", pod_list);
 
         Ok(tonic::Response::new(Response { success: true }))
     }
