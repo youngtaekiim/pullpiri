@@ -55,7 +55,7 @@ impl MetricNotifier for GrpcMetricServer {
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Default)]
 pub struct NewImageList {
     pub images: Vec<String>,
 }
@@ -68,7 +68,7 @@ impl From<ImageList> for NewImageList {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Default)]
 pub struct NewContainerList {
     pub containers: Vec<NewContainerInfo>,
 }
@@ -105,7 +105,7 @@ impl From<ContainerInfo> for NewContainerInfo {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Default)]
 pub struct NewPodList {
     pub pods: Vec<NewPodInfo>,
 }

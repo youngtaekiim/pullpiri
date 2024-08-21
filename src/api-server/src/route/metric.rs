@@ -10,18 +10,18 @@ pub fn get_route() -> Router {
 }
 
 pub async fn list_image() -> Json<NewImageList> {
-    let s = common::etcd::get("metric/image").await.unwrap();
-    let image: NewImageList = serde_json::from_str(&s).unwrap();
+    let s = common::etcd::get("metric/image").await.unwrap_or_default();
+    let image: NewImageList = serde_json::from_str(&s).unwrap_or_default();
     Json(image)
 }
 
 pub async fn list_container() -> Json<NewContainerList> {
-    let s = common::etcd::get("metric/container").await.unwrap();
-    let container: NewContainerList = serde_json::from_str(&s).unwrap();
+    let s = common::etcd::get("metric/container").await.unwrap_or_default();
+    let container: NewContainerList = serde_json::from_str(&s).unwrap_or_default();
     Json(container)
 }
 pub async fn list_pod() -> Json<NewPodList> {
-    let s = common::etcd::get("metric/pod").await.unwrap();
-    let pod: NewPodList = serde_json::from_str(&s).unwrap();
+    let s = common::etcd::get("metric/pod").await.unwrap_or_default();
+    let pod: NewPodList = serde_json::from_str(&s).unwrap_or_default();
     Json(pod)
 }
