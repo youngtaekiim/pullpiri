@@ -31,7 +31,8 @@ async fn running_grpc() {
 async fn running_rest() {
     let app = Router::new()
         .merge(route::package::get_route())
-        .merge(route::scenario::get_route());
+        .merge(route::scenario::get_route())
+        .merge(route::metric::get_route());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:47099")
         .await
