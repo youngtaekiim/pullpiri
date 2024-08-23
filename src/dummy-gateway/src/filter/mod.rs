@@ -43,10 +43,8 @@ impl Filter {
             self.state = new_state;
 
             let state_value = if new_state { "ACTIVE" } else { "INACTIVE" };
-            if new_state {
-                let _ = common::etcd::put(&format!("scenario/{}", self.name.clone()), state_value)
-                    .await;
-            }
+            let _ =
+                common::etcd::put(&format!("scenario/{}", self.name.clone()), state_value).await;
         }
     }
 

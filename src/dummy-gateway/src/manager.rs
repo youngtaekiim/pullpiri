@@ -55,13 +55,13 @@ impl Manager {
                     continue;
                 }
 
-                match data.name.as_str() {
+                    match data.name.as_str() {
                     "gear" => filters[0].set_status(0, &data.value).await,
                     "day" => filters[0].set_status(1, &data.value).await,
                     "light" => filters[0].receive_light(&data.value).await,
-                    _ => continue,
+                        _ => continue,
+                    }
                 }
-            }
         });
 
         let mut rx_rest = arc_rx_rest.lock().await;
@@ -88,16 +88,14 @@ impl Manager {
         let mut gear_target = "";
         let mut day_target = "";
 
-        let criteria = &scenario.condition.criteria;
-        for criterion in criteria {
+        for criterion in &scenario.condition.criteria {
             if criterion.message.contains("Gear") {
                 gear_target = &criterion.value;
-                println!("gear target : {gear_target}");
             } else if criterion.message.contains("Day") {
                 day_target = &criterion.value;
-                println!("day target : {day_target}");
             }
         }
+        println!("gear target : {gear_target}\nday target : {day_target}");
 
         let gear_current = self.gear.lock().await;
         let day_current = self.day.lock().await;
