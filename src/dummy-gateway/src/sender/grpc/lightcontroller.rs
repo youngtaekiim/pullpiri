@@ -15,7 +15,7 @@ pub async fn send(
         Err(_) => {
             return Err(tonic::Status::new(
                 tonic::Code::Unavailable,
-                "cannot connect statemanager",
+                "cannot connect dummy-light-controller",
             ))
         }
     };

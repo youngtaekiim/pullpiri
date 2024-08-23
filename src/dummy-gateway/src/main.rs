@@ -5,11 +5,12 @@
 use scenario::ResourceScenario;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
-mod grpc;
+pub mod filter;
 pub mod listener;
 mod manager;
 mod route;
 mod scenario;
+mod sender;
 
 async fn running_manager(rx: Receiver<ResourceScenario>) {
     let mut manager = manager::Manager::new(rx);
