@@ -58,6 +58,7 @@ pub struct ResourceScenario {
     pub name: String,
     pub condition: Condition,
     pub policy: Policy,
+    pub route: Option<bool>,
 }
 
 #[allow(dead_code)]

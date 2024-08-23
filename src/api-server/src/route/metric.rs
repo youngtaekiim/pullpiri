@@ -16,7 +16,9 @@ pub async fn list_image() -> Json<NewImageList> {
 }
 
 pub async fn list_container() -> Json<NewContainerList> {
-    let s = common::etcd::get("metric/container").await.unwrap_or_default();
+    let s = common::etcd::get("metric/container")
+        .await
+        .unwrap_or_default();
     let container: NewContainerList = serde_json::from_str(&s).unwrap_or_default();
     Json(container)
 }

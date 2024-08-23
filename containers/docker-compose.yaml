@@ -3,12 +3,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 version: "3"
-name: "piccolo"
+name: "piccolo-reconcile-test"
 services:
-  dummy-gateway:
-    network_mode: "host"
-    image: sdv.lge.com/library/piccolo-reconcile:0.1
-    command: /piccolo/dummy-gateway
+#  dummy-gateway:
+#    network_mode: "host"
+#    image: sdv.lge.com/library/piccolo-reconcile:0.1
+#    image: localhost/piccolo:1.0
+#    command: /piccolo/dummy-gateway
 #    volumes:
 #      - /root/work/projects-rust/piccolo-bluechi/piccolo.ini:/piccolo/piccolo.ini
 #  dummy-light-controller:

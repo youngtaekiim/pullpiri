@@ -12,11 +12,24 @@ pub async fn import_scenario(
     State(tx): State<Sender<ResourceScenario>>,
     Yaml(resource_scenario): Yaml<ResourceScenario>,
 ) -> String {
-    let data: ResourceScenario = resource_scenario;
+    let mut data: ResourceScenario = resource_scenario;
     let name = data.name.clone();
+    data.route = Some(true);
 
     let _ = tx.send(data).await;
-    name
+    format!("{name} is applied")
+}
+
+pub async fn delete_scenario(
+    State(tx): State<Sender<ResourceScenario>>,
+    Yaml(resource_scenario): Yaml<ResourceScenario>,
+) -> String {
+    let mut data: ResourceScenario = resource_scenario;
+    let name = data.name.clone();
+    data.route = Some(false);
+
+    let _ = tx.send(data).await;
+    format!("{name} is deleted")
 }
 
 /*

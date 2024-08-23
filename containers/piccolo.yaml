@@ -43,6 +43,9 @@ spec:
     env:
     - name: HOST_IP
       value: "0.0.0.0"
+  - name: dummy-gateway
+    image: localhost/piccolo:1.0
+    command: ["/piccolo/dummy-gateway"]
   volumes:
   - name: piccolo-yaml
     hostPath:

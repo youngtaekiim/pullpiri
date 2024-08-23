@@ -186,7 +186,7 @@ impl DdsListener {
                         let data: LightState::DataType = data_samples[0].data().unwrap();
                         println!("Received:  LIGHT {}\n", data.on);
                         if data.on {
-                            continue
+                            continue;
                         }
 
                         let msg = DdsData {

@@ -35,6 +35,7 @@ install:
 	-cp -r ./etcd-data /etc/containers/systemd/piccolo/etcd-data/
 	systemctl daemon-reload
 	systemctl start piccolo
+	podman-compose -f containers/docker-compose.yaml up -d
 
 .PHONY: uninstall
 uninstall:
@@ -43,6 +44,7 @@ uninstall:
 	-rm -rf /root/piccolo_yaml/scenarios
 	-rm -rf /etc/containers/systemd/piccolo/
 	systemctl daemon-reload
+	podman-compose -f containers/docker-compose.yaml down
 
 .PHONY: tinstall
 tinstall:

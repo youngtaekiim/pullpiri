@@ -2,7 +2,6 @@
 * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 * SPDX-License-Identifier: Apache-2.0
 */
-
 use scenario::ResourceScenario;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
@@ -18,7 +17,9 @@ async fn running_manager(rx: Receiver<ResourceScenario>) {
 }
 
 async fn running_rest(tx: Sender<ResourceScenario>) {
-    let app = axum::Router::new().route("/scenario", axum::routing::post(route::import_scenario));
+    let app = axum::Router::new()
+        .route("/scenario", axum::routing::post(route::import_scenario))
+        .route("/scenario", axum::routing::delete(route::delete_scenario));
     let listener = tokio::net::TcpListener::bind("0.0.0.0:47098")
         .await
         .unwrap();
