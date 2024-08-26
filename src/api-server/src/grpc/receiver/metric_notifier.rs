@@ -80,6 +80,7 @@ pub struct NewContainerInfo {
     pub image: String,
     pub state: std::collections::HashMap<String, String>,
     pub config: std::collections::HashMap<String, String>,
+    pub annotation: std::collections::HashMap<String, String>,
 }
 
 impl From<ContainerList> for NewContainerList {
@@ -101,6 +102,7 @@ impl From<ContainerInfo> for NewContainerInfo {
             image: value.image,
             state: value.state,
             config: value.config,
+            annotation: value.annotation,
         }
     }
 }
