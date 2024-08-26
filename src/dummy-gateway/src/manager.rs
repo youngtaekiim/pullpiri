@@ -55,13 +55,13 @@ impl Manager {
                     continue;
                 }
 
-                    match data.name.as_str() {
+                match data.name.as_str() {
                     "gear" => filters[0].set_status(0, &data.value).await,
                     "day" => filters[0].set_status(1, &data.value).await,
                     "light" => filters[0].receive_light(&data.value).await,
-                        _ => continue,
-                    }
+                    _ => continue,
                 }
+            }
         });
 
         let mut rx_rest = arc_rx_rest.lock().await;
@@ -71,6 +71,8 @@ impl Manager {
             if Some(false) == scenario.route {
                 println!("#####\nscenario is deleted\n#####\n");
                 let _ = common::etcd::delete(&format!("scenario/{}", scenario.name.clone())).await;
+                let _ = common::etcd::delete(&format!("condition/{}", scenario.name.clone())).await;
+                let _ = common::etcd::delete(&format!("action/{}", scenario.name.clone())).await;
                 self.remove_filter(0).await;
             } else if Some(true) == scenario.route {
                 println!("{:#?}", scenario);
@@ -96,6 +98,18 @@ impl Manager {
             }
         }
         println!("gear target : {gear_target}\nday target : {day_target}");
+
+        let _ = common::etcd::put(
+            &format!("condition/{}", &scenario.name),
+            &format!("{} / {}", gear_target, day_target),
+        )
+        .await;
+        let action_value = &scenario.policy.act.first().unwrap().value.clone();
+        let _ = common::etcd::put(
+            &format!("action/{}", &scenario.name),
+            &format!("Light {}", action_value),
+        )
+        .await;
 
         let gear_current = self.gear.lock().await;
         let day_current = self.day.lock().await;

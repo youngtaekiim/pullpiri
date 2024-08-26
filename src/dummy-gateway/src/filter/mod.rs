@@ -36,8 +36,8 @@ impl Filter {
             self.current_day = value.to_string();
         }
 
-        let new_state =
-            self.current_day == self.day_target && self.current_gear == self.gear_target;
+        let new_state = (self.day_target.is_empty() || self.current_day == self.day_target)
+            && (self.gear_target.is_empty() || self.current_gear == self.gear_target);
         if self.state != new_state {
             println!("Now policy is {new_state}\n");
             self.state = new_state;

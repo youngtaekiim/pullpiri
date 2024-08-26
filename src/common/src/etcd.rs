@@ -32,7 +32,7 @@ pub async fn get(key: &str) -> Result<String, Error> {
 
 pub async fn get_all(key: &str) -> Result<(Vec<String>, Vec<String>), Error> {
     let mut client = get_client().await?;
-    let option = Some(GetOptions::new().with_all_keys());
+    let option = Some(GetOptions::new().with_prefix());
     let resp = client.get(key, option).await?;
 
     let mut k = Vec::<String>::new();

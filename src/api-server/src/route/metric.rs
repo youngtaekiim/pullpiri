@@ -35,11 +35,22 @@ pub async fn list_scenario() -> Json<Vec<Scenario>> {
 
     let mut scenarios: Vec<Scenario> = Vec::new();
     for _ in 0..k.len() {
-        let name = k.pop().unwrap();
-        let n: Vec<&str> = name.split('/').collect();
+        let key = k.pop().unwrap();
+        let split: Vec<&str> = key.split('/').collect();
+
+        let name = split.get(1).unwrap().to_string();
+        let status = v.pop().unwrap_or_default();
+        let condition = common::etcd::get(&format!("condition/{}", name.clone()))
+            .await
+            .unwrap();
+        let action = common::etcd::get(&format!("action/{}", name.clone()))
+            .await
+            .unwrap();
         scenarios.push(Scenario {
-            name: n.get(1).unwrap().to_string(),
-            status: v.pop().unwrap_or_default(),
+            name,
+            status,
+            condition,
+            action,
         });
     }
     Json(scenarios)
@@ -49,4 +60,6 @@ pub async fn list_scenario() -> Json<Vec<Scenario>> {
 pub struct Scenario {
     pub name: String,
     pub status: String,
+    pub condition: String,
+    pub action: String,
 }
