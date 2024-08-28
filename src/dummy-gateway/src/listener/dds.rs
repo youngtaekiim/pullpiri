@@ -185,9 +185,6 @@ impl DdsListener {
                     {
                         let data: LightState::DataType = data_samples[0].data().unwrap();
                         println!("Received:  LIGHT {}\n", data.on);
-                        if data.on {
-                            continue;
-                        }
 
                         let msg = DdsData {
                             name: self.name.clone(),

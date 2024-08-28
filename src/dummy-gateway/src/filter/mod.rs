@@ -5,6 +5,13 @@ pub struct Filter {
     day_target: String,
     current_gear: String,
     current_day: String,
+    policy: String,
+}
+
+impl Drop for Filter {
+    fn drop(&mut self) {
+        println!("filter {} is dropped", self.name);
+    }
 }
 
 impl Filter {
@@ -14,6 +21,7 @@ impl Filter {
         target_day: &str,
         current_gear: &str,
         current_day: &str,
+        policy: &str,
     ) -> Self {
         let status = target_gear == current_gear && target_day == current_day;
         let state_value = if status { "ACTIVE" } else { "INACTIVE" };
@@ -26,6 +34,7 @@ impl Filter {
             day_target: target_day.to_string(),
             current_gear: current_gear.to_string(),
             current_day: current_day.to_string(),
+            policy: policy.to_string(),
         }
     }
 
@@ -49,14 +58,16 @@ impl Filter {
     }
 
     pub async fn receive_light(&mut self, value: &str) {
-        if !self.state {
+        if !self.state || self.policy == value {
             return;
         }
+
+        println!("policy is applied and light is {}. send TURN {} LIGHT msg\n", value, self.policy);
+        let dds_sender = crate::sender::dds::DdsEventSender::new().await;
         if value == "OFF" {
-            //let _ = crate::grpc::sender::lightcontroller::send(false).await;
-            println!("policy is applied and light is off. send TURN ON LIGHT msg\n");
-            let dds_sender = crate::sender::dds::DdsEventSender::new().await;
-            dds_sender.send().await;
+            dds_sender.send("on").await;
+        } else if value == "ON" {
+            dds_sender.send("off").await;
         }
     }
 }

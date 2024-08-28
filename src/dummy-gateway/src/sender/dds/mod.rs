@@ -62,9 +62,10 @@ impl DdsEventSender {
             }
         }
     }
-    pub async fn send(&self) {
+
+    pub async fn send(&self, onoff: &str) {
         let msg = TurnLight::DataType {
-            operation: "on".to_string(),
+            operation: onoff.to_string(),
         };
         self.writer.write(&msg, None).await.unwrap();
     }

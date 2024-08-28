@@ -120,14 +120,17 @@ impl Manager {
             day_target,
             &gear_current,
             &day_current,
+            action_value,
         )
         .await;
-        let mut filters = self.filters.lock().await;
+        let arc_filters = Arc::clone(&self.filters);
+        let mut filters = arc_filters.lock().await;
         filters.push(f);
     }
 
     async fn remove_filter(&mut self, index: usize) -> Option<Filter> {
-        let mut filters = self.filters.lock().await;
+        let arc_filters = Arc::clone(&self.filters);
+        let mut filters = arc_filters.lock().await;
         if index < filters.len() {
             Some(filters.remove(index))
         } else {
