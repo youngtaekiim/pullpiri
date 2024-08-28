@@ -4,6 +4,7 @@
 */
 use scenario::ResourceScenario;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tower_http::cors::{Any, CorsLayer};
 
 pub mod filter;
 pub mod listener;
@@ -18,9 +19,14 @@ async fn running_manager(rx: Receiver<ResourceScenario>) {
 }
 
 async fn running_rest(tx: Sender<ResourceScenario>) {
+    let cors = CorsLayer::new()
+    .allow_origin(Any)
+    .allow_methods(Any)
+    .allow_headers(Any);
     let app = axum::Router::new()
         .route("/scenario", axum::routing::post(route::import_scenario))
-        .route("/scenario", axum::routing::delete(route::delete_scenario));
+        .route("/scenario", axum::routing::delete(route::delete_scenario))
+        .layer(cors);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:47098")
         .await
         .unwrap();
