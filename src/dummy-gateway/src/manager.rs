@@ -55,12 +55,21 @@ impl Manager {
                     continue;
                 }
 
-                match data.name.as_str() {
+                for filter in filters.iter_mut() {
+                    match data.name.as_str() {
+                        "gear" => filter.set_status(0, &data.value).await,
+                        "day" => filter.set_status(1, &data.value).await,
+                        "light" => filter.receive_light(&data.value).await,
+                        _ => continue,
+                    }
+                }
+
+                /*match data.name.as_str() {
                     "gear" => filters[0].set_status(0, &data.value).await,
                     "day" => filters[0].set_status(1, &data.value).await,
                     "light" => filters[0].receive_light(&data.value).await,
                     _ => continue,
-                }
+                }*/
             }
         });
 
@@ -70,10 +79,11 @@ impl Manager {
             // TODO get condition and DDS criteria
             if Some(false) == scenario.route {
                 println!("#####\nscenario is deleted\n#####\n");
-                let _ = common::etcd::delete(&format!("scenario/{}", scenario.name.clone())).await;
-                let _ = common::etcd::delete(&format!("condition/{}", scenario.name.clone())).await;
-                let _ = common::etcd::delete(&format!("action/{}", scenario.name.clone())).await;
-                self.remove_filter(0).await;
+                let _ = common::etcd::delete_all(&format!("scenario")).await;
+                let _ = common::etcd::delete_all(&format!("condition")).await;
+                let _ = common::etcd::delete_all(&format!("action")).await;
+                //self.remove_filter(0).await;
+                self.remove_filter().await;
             } else if Some(true) == scenario.route {
                 println!("{:#?}", scenario);
                 let _ =
@@ -128,13 +138,21 @@ impl Manager {
         filters.push(f);
     }
 
-    async fn remove_filter(&mut self, index: usize) -> Option<Filter> {
+    /*async fn remove_filter(&mut self, index: usize) -> Option<Filter> {
         let arc_filters = Arc::clone(&self.filters);
         let mut filters = arc_filters.lock().await;
         if index < filters.len() {
             Some(filters.remove(index))
         } else {
             None
+        }
+    }*/
+
+    async fn remove_filter(&mut self) {
+        let arc_filters = Arc::clone(&self.filters);
+        let mut filters = arc_filters.lock().await;
+        if !filters.is_empty() {
+            filters.clear();
         }
     }
 }

@@ -48,7 +48,7 @@ impl Filter {
         let new_state = (self.day_target.is_empty() || self.current_day == self.day_target)
             && (self.gear_target.is_empty() || self.current_gear == self.gear_target);
         if self.state != new_state {
-            println!("Now policy is {new_state}\n");
+            println!("{} - Now policy is {}\n", self.name, new_state);
             self.state = new_state;
 
             let state_value = if new_state { "ACTIVE" } else { "INACTIVE" };
@@ -62,7 +62,7 @@ impl Filter {
             return;
         }
 
-        println!("policy is applied and light is {}. send TURN {} LIGHT msg\n", value, self.policy);
+        println!("{} - policy is applied and light is {}. send TURN {} LIGHT msg\n", self.name, value, self.policy);
         let dds_sender = crate::sender::dds::DdsEventSender::new().await;
         if value == "OFF" {
             dds_sender.send("on").await;

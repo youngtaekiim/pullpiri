@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-pub use etcd_client::{Client, Error, GetOptions};
+pub use etcd_client::{Client, Error, GetOptions, DeleteOptions};
 
 pub fn open_server() -> String {
     format!("{}:2379", crate::get_conf("HOST_IP"))
@@ -48,5 +48,12 @@ pub async fn get_all(key: &str) -> Result<(Vec<String>, Vec<String>), Error> {
 pub async fn delete(key: &str) -> Result<(), Error> {
     let mut client = get_client().await?;
     client.delete(key, None).await?;
+    Ok(())
+}
+
+pub async fn delete_all(key: &str) -> Result<(), Error> {
+    let mut client = get_client().await?;
+    let option = Some(DeleteOptions::new().with_prefix());
+    client.delete(key, option).await?;
     Ok(())
 }
