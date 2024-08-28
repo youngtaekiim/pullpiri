@@ -64,9 +64,9 @@ impl Filter {
 
         println!("{} - policy is applied and light is {}. send TURN {} LIGHT msg\n", self.name, value, self.policy);
         let dds_sender = crate::sender::dds::DdsEventSender::new().await;
-        if value == "OFF" {
+        if value == "off" {
             dds_sender.send("on").await;
-        } else if value == "ON" {
+        } else if value == "on" {
             dds_sender.send("off").await;
         }
     }

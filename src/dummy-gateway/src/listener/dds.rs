@@ -189,8 +189,8 @@ impl DdsListener {
                         let msg = DdsData {
                             name: self.name.clone(),
                             value: match data.on {
-                                true => "ON".to_string(),
-                                false => "OFF".to_string(),
+                                true => "on".to_string(),
+                                false => "off".to_string(),
                             },
                         };
                         let _ = self.tx.send(msg).await;
