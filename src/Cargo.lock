@@ -553,9 +553,9 @@ dependencies = [
 
 [[package]]
 name = "dust_dds"
-version = "0.10.1"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e190567b63c1f65581e8995597ec3ce10025136ec51c7e81ce247eecb8e2d2b7"
+checksum = "ee155270750643d8586cfe5d0e7cdf148cf4754e268f361a977cd1c6b23f5979"
 dependencies = [
  "dust_dds_derive",
  "fnmatch-regex",
@@ -567,9 +567,9 @@ dependencies = [
 
 [[package]]
 name = "dust_dds_derive"
-version = "0.10.1"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aee5879e6dd6c6abff83185a4f0e174352619a25e00c2928d8016017023173e5"
+checksum = "c2f6c1e0113699edc14a6a2700fd1d3979f14f0c6a4b80006d7805bc158abdde"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -20,9 +20,9 @@ async fn running_manager(rx: Receiver<ResourceScenario>) {
 
 async fn running_rest(tx: Sender<ResourceScenario>) {
     let cors = CorsLayer::new()
-    .allow_origin(Any)
-    .allow_methods(Any)
-    .allow_headers(Any);
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
     let app = axum::Router::new()
         .route("/scenario", axum::routing::post(route::import_scenario))
         .route("/scenario", axum::routing::delete(route::delete_scenario))

@@ -8,6 +8,7 @@ metadata:
   name: piccolo
 spec:
   hostNetwork: true
+  hostPid: true
   containers:
   - name: api-server
     image: localhost/piccolo:1.0

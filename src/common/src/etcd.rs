@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-pub use etcd_client::{Client, Error, GetOptions, DeleteOptions};
+pub use etcd_client::{Client, DeleteOptions, Error, GetOptions};
 
 pub fn open_server() -> String {
     format!("{}:2379", crate::get_conf("HOST_IP"))

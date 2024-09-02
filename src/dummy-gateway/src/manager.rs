@@ -79,9 +79,9 @@ impl Manager {
             // TODO get condition and DDS criteria
             if Some(false) == scenario.route {
                 println!("#####\nscenario is deleted\n#####\n");
-                let _ = common::etcd::delete_all(&format!("scenario")).await;
-                let _ = common::etcd::delete_all(&format!("condition")).await;
-                let _ = common::etcd::delete_all(&format!("action")).await;
+                let _ = common::etcd::delete_all("scenario").await;
+                let _ = common::etcd::delete_all("condition").await;
+                let _ = common::etcd::delete_all("action").await;
                 //self.remove_filter(0).await;
                 self.remove_filter().await;
             } else if Some(true) == scenario.route {
