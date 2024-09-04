@@ -13,7 +13,6 @@ members = [
     "importer",
     "gateway",
     "dummy-gateway",
-#    "dummy-light-controller",
 ]
 
 exclude = [
