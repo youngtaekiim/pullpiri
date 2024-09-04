@@ -4,6 +4,7 @@
  */
 
 pub mod apiserver;
+pub mod dummylightcontroller;
 pub mod etcd;
 pub mod gateway;
 pub mod spec;

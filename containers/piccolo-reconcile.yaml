@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: piccolo-reconcile
+spec:
+  hostNetwork: true
+  containers:
+  - name: light-dev
+    image: sdv.lge.com/library/dummy_light_dev:py0.1
+    command: ["python3", "-u", "/app/main.py"]
+  - name: light-show
+    image: sdv.lge.com/library/dummy_light_show:py0.1
+    command: ["python3", "-u", "/app/main.py"]
+    volumeMounts:
+    - name: x11
+      mountPath: /tmp/.X11-unix
+    - name: xauth
+      mountPath: /root/.Xauthority
+    env:
+    - name: DISPLAY
+      value: :0
+  volumes:
+  - name: x11
+    hostPath:
+      path: /tmp/.X11-unix
+  - name: xauth
+    hostPath:
+      path: /root/.Xauthority

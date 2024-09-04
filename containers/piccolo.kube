@@ -8,3 +8,6 @@ WantedBy=multi-user.target default.target
 
 [Kube]
 Yaml=/etc/containers/systemd/piccolo/piccolo.yaml
+
+[Service]
+Restart=always

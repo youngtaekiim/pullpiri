@@ -8,6 +8,7 @@ metadata:
   name: piccolo
 spec:
   hostNetwork: true
+  hostPid: true
   containers:
   - name: api-server
     image: localhost/piccolo:1.0
@@ -44,6 +45,9 @@ spec:
     env:
     - name: RUST_BACKTRACE
       value: "full"
+  - name: dummy-gateway
+    image: localhost/piccolo:1.0
+    command: ["/piccolo/dummy-gateway"]
   volumes:
   - name: piccolo-yaml
     hostPath:

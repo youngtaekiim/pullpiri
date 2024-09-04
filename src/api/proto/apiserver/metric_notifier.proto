@@ -16,6 +16,7 @@ message ContainerInfo {
   string image = 3;
   map<string, string> state = 4;
   map<string, string> config = 5;
+  map<string, string> annotation = 6;
 }
 
 message PodList {

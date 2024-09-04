@@ -17,7 +17,8 @@ COPY ./src/common/ /piccolo/common
 COPY ./src/gateway/ /piccolo/gateway
 COPY ./src/importer/ /piccolo/importer
 COPY ./src/statemanager/ /piccolo/statemanager
-COPY ./src/metric-notifier/ /piccolo/metric-notifier
+COPY ./src/dummy-gateway/ /piccolo/dummy-gateway
+#COPY ./src/dummy-light-controller/ /piccolo/dummy-light-controller
 
 RUN cargo build --release
 
@@ -30,6 +31,8 @@ COPY ./piccolo.ini .
 COPY --from=builder \
     /piccolo/target/release/api-server \
     /piccolo/target/release/gateway \
+    /piccolo/target/release/dummy-gateway \
+#    /piccolo/target/release/dummy-light-controller \
     /piccolo/target/release/statemanager ./
 
 COPY --from=builder /lib64 /lib64
