@@ -22,7 +22,4 @@ pub mod proto {
     pub mod constants {
         tonic::include_proto!("constants");
     }
-    pub mod dummylightcontroller {
-        tonic::include_proto!("dummylightcontroller");
-    }
 }
