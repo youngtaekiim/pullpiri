@@ -158,22 +158,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "axum-yaml"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0fc2edb81a9c8b2d3bb53e996ef3055f670406dd78bf296d292d3e22d11177e"
-dependencies = [
- "async-trait",
- "axum-core",
- "bytes",
- "http",
- "mime",
- "serde",
- "serde_path_to_error",
- "serde_yaml",
-]
-
-[[package]]
 name = "backtrace"
 version = "0.3.73"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -401,22 +385,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "442039f5147480ba31067cb00ada1adae6892028e40e45fc5de7b7df6dcc1b5f"
 dependencies = [
  "const-random",
-]
-
-[[package]]
-name = "dummy-gateway"
-version = "0.1.0"
-dependencies = [
- "axum",
- "axum-yaml",
- "common",
- "dust_dds",
- "prost",
- "serde",
- "tokio",
- "tonic",
- "tonic-build",
- "tower-http",
 ]
 
 [[package]]

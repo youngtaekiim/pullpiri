@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-FROM rust:1.78.0-slim AS builder-arm
+FROM rust:1.78.0-slim AS builder
 WORKDIR /piccolo
 
 COPY ./src/Cargo.lock \
@@ -10,25 +10,26 @@ COPY ./src/api /piccolo/api
 COPY ./src/api-server/ /piccolo/api-server
 COPY ./src/common/ /piccolo/common
 COPY ./src/gateway/ /piccolo/gateway
+COPY ./src/importer/ /piccolo/importer
 COPY ./src/statemanager/ /piccolo/statemanager
-COPY ./src/tools/ /piccolo/tools
 
 RUN apt update -y && \
     apt upgrade -y && \
-    apt install -y libdbus-1-dev pkg-config protobuf-compiler && \
+    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev && \
     cargo build --release
+
 
 FROM arm64v8/alpine:3.20
 WORKDIR /piccolo
 
 COPY ./piccolo.ini .
 
-COPY --from=builder-arm \
+COPY --from=builder \
     /piccolo/target/release/api-server \
     /piccolo/target/release/gateway \
     /piccolo/target/release/statemanager \
 
-COPY --from=builder-arm \
+COPY --from=builder \
     /lib/aarch64-linux-gnu/libc.so.6 \
     /lib/aarch64-linux-gnu/libcap.so.2 \
     /lib/aarch64-linux-gnu/libcap.so.2.66 \
@@ -49,7 +50,7 @@ COPY --from=builder-arm \
     /lib/aarch64-linux-gnu/libzstd.so.1 \
     /lib/aarch64-linux-gnu/libzstd.so.1.5.4 \
     /lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 /lib/aarch64-linux-gnu/
-COPY --from=builder-arm \
+COPY --from=builder \
     /lib/ld-linux-aarch64.so.1 /lib/
 
 CMD sh

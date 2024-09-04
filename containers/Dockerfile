@@ -2,11 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 FROM rust:1.78.0-slim AS builder
-
-RUN apt update -y && \
-    apt upgrade -y && \
-    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev
-
 WORKDIR /piccolo
 
 COPY ./src/Cargo.lock \
@@ -17,9 +12,11 @@ COPY ./src/common/ /piccolo/common
 COPY ./src/gateway/ /piccolo/gateway
 COPY ./src/importer/ /piccolo/importer
 COPY ./src/statemanager/ /piccolo/statemanager
-COPY ./src/dummy-gateway/ /piccolo/dummy-gateway
 
-RUN cargo build --release
+RUN apt update -y && \
+    apt upgrade -y && \
+    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev && \
+    cargo build --release
 
 
 FROM alpine:3.19.1
@@ -30,7 +27,6 @@ COPY ./piccolo.ini .
 COPY --from=builder \
     /piccolo/target/release/api-server \
     /piccolo/target/release/gateway \
-    /piccolo/target/release/dummy-gateway \
     /piccolo/target/release/statemanager ./
 
 COPY --from=builder /lib64 /lib64

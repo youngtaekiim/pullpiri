@@ -12,7 +12,6 @@ members = [
     "common",
     "importer",
     "gateway",
-    "dummy-gateway",
 ]
 
 exclude = [
