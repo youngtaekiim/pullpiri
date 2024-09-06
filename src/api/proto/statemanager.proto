@@ -10,14 +10,13 @@ package statemanager;
 import "constants.proto";
 
 service Connection {
-  rpc Send (SendRequest) returns (SendResponse);
+  rpc SendAction (Action) returns (Response);
 }
 
-message SendRequest {
-  constants.PiccoloModuleName from = 1;
-  string request = 2;
+message Action {
+  string action = 2;
 }
 
-message SendResponse {
-  string response = 1;
+message Response {
+  string resp = 1;
 }

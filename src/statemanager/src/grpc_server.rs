@@ -6,7 +6,7 @@
 use crate::method_bluechi::send_dbus;
 use common::etcd;
 use common::statemanager::connection_server::Connection;
-use common::statemanager::{SendRequest, SendResponse};
+use common::statemanager::{Action, Response};
 use std::error::Error;
 use std::{thread, time::Duration};
 
@@ -17,30 +17,22 @@ pub struct StateManagerGrpcServer {}
 
 #[tonic::async_trait]
 impl Connection for StateManagerGrpcServer {
-    async fn send(
+    async fn send_action(
         &self,
-        request: tonic::Request<SendRequest>,
-    ) -> Result<tonic::Response<SendResponse>, tonic::Status> {
+        request: tonic::Request<Action>,
+    ) -> Result<tonic::Response<Response>, tonic::Status> {
         println!("Got a request from {:?}", request.remote_addr());
 
         let req = request.into_inner();
-        let from = req.from;
-        let command = req.request;
-        println!("{}/{}", from, command);
+        let command = req.action;
+        println!("{}", command);
 
-        if from == i32::from(common::constants::PiccoloModuleName::Gateway) {
-            match make_action_for_scenario(&command).await {
-                Ok(v) => Ok(tonic::Response::new(SendResponse { response: v })),
-                Err(e) => {
-                    println!("{:?}", e);
-                    Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string()))
-                }
+        match make_action_for_scenario(&command).await {
+            Ok(v) => Ok(tonic::Response::new(Response { resp: v })),
+            Err(e) => {
+                println!("{:?}", e);
+                Err(tonic::Status::new(tonic::Code::Unavailable, e.to_string()))
             }
-        } else {
-            Err(tonic::Status::new(
-                tonic::Code::Unavailable,
-                "unsupported 'from' module",
-            ))
         }
     }
 }

@@ -1,14 +1,14 @@
 use crate::event;
 use crate::event::{parser, Event};
 use crate::listener::EventListener;
-use common::gateway::piccolo_gateway_service_server::PiccoloGatewayServiceServer;
-use common::gateway::EventName;
+use common::gateway::connection_server::ConnectionServer;
+use common::gateway::Condition;
 use tokio::sync::mpsc;
 use tonic::transport::Server;
 
 pub struct GatewayManager {
-    grpc_rx: mpsc::Receiver<EventName>,
-    grpc_tx: mpsc::Sender<EventName>,
+    grpc_rx: mpsc::Receiver<Condition>,
+    grpc_tx: mpsc::Sender<Condition>,
 }
 
 impl GatewayManager {
@@ -37,7 +37,7 @@ impl GatewayManager {
     }
 }
 
-async fn grpc_server(tx: mpsc::Sender<EventName>) {
+async fn grpc_server(tx: mpsc::Sender<Condition>) {
     let server = crate::grpc::receiver::GrpcServer {
         grpc_msg_tx: tx.clone(),
     };
@@ -48,7 +48,7 @@ async fn grpc_server(tx: mpsc::Sender<EventName>) {
     println!("Piccolod gateway listening on {}", addr);
 
     let _ = Server::builder()
-        .add_service(PiccoloGatewayServiceServer::new(server))
+        .add_service(ConnectionServer::new(server))
         .serve(addr)
         .await;
 }

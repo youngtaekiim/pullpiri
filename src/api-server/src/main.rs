@@ -8,7 +8,7 @@ mod manager;
 mod route;
 
 use axum::Router;
-use common::apiserver::metric_notifier_server::MetricNotifierServer;
+use common::apiserver::metric_connection_server::MetricConnectionServer;
 use common::apiserver::scenario_connection_server::ScenarioConnectionServer;
 use tonic::transport::Server;
 use tower_http::cors::{Any, CorsLayer};
@@ -24,7 +24,7 @@ async fn running_grpc() {
 
     let _ = Server::builder()
         .add_service(ScenarioConnectionServer::new(scenario_server))
-        .add_service(MetricNotifierServer::new(metric_server))
+        .add_service(MetricConnectionServer::new(metric_server))
         .serve(addr)
         .await;
 }

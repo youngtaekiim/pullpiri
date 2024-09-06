@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+use common::apiserver::metric_connection_server::MetricConnection;
 use common::apiserver::metric_notifier::{
-    ContainerInfo, ContainerList, ImageList, PodInfo, PodInfoContainer, PodList, Response,
+    ContainerInfo, ContainerList, ImageList, PodContainerInfo, PodInfo, PodList,
 };
-use common::apiserver::metric_notifier_server::MetricNotifier;
+use common::apiserver::Response;
 use tonic::Request;
 
 type GrpcResult = Result<tonic::Response<Response>, tonic::Status>;
@@ -15,7 +16,7 @@ type GrpcResult = Result<tonic::Response<Response>, tonic::Status>;
 pub struct GrpcMetricServer {}
 
 #[tonic::async_trait]
-impl MetricNotifier for GrpcMetricServer {
+impl MetricConnection for GrpcMetricServer {
     async fn send_image_list(&self, request: Request<ImageList>) -> GrpcResult {
         println!("Got a request from {:?}", request.remote_addr());
 
@@ -25,7 +26,9 @@ impl MetricNotifier for GrpcMetricServer {
         //println!("image\n{:#?}", j);
         let _ = common::etcd::put("metric/image", &j).await;
 
-        Ok(tonic::Response::new(Response { success: true }))
+        Ok(tonic::Response::new(Response {
+            resp: true.to_string(),
+        }))
     }
 
     async fn send_container_list(&self, request: Request<ContainerList>) -> GrpcResult {
@@ -37,7 +40,9 @@ impl MetricNotifier for GrpcMetricServer {
         //println!("container\n{:#?}", j);
         let _ = common::etcd::put("metric/container", &j).await;
 
-        Ok(tonic::Response::new(Response { success: true }))
+        Ok(tonic::Response::new(Response {
+            resp: true.to_string(),
+        }))
     }
 
     async fn send_pod_list(&self, request: Request<PodList>) -> GrpcResult {
@@ -49,7 +54,9 @@ impl MetricNotifier for GrpcMetricServer {
         //println!("pod\n{:#?}", j);
         let _ = common::etcd::put("metric/pod", &j).await;
 
-        Ok(tonic::Response::new(Response { success: true }))
+        Ok(tonic::Response::new(Response {
+            resp: true.to_string(),
+        }))
     }
 }
 
@@ -116,14 +123,14 @@ pub struct NewPodList {
 pub struct NewPodInfo {
     pub id: String,
     pub name: String,
-    pub containers: Vec<NewPodInfoContainer>,
+    pub containers: Vec<NewPodContainerInfo>,
     pub state: String,
     pub host_name: String,
     pub created: String,
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct NewPodInfoContainer {
+pub struct NewPodContainerInfo {
     pub id: String,
     pub name: String,
     pub state: String,
@@ -142,10 +149,10 @@ impl From<PodList> for NewPodList {
 
 impl From<PodInfo> for NewPodInfo {
     fn from(value: PodInfo) -> Self {
-        let mut nv = Vec::<NewPodInfoContainer>::new();
+        let mut nv = Vec::<NewPodContainerInfo>::new();
         let iter = value.containers.iter();
         for v in iter {
-            nv.push(NewPodInfoContainer::from(v.clone()))
+            nv.push(NewPodContainerInfo::from(v.clone()))
         }
         NewPodInfo {
             id: value.id,
@@ -158,9 +165,9 @@ impl From<PodInfo> for NewPodInfo {
     }
 }
 
-impl From<PodInfoContainer> for NewPodInfoContainer {
-    fn from(value: PodInfoContainer) -> Self {
-        NewPodInfoContainer {
+impl From<PodContainerInfo> for NewPodContainerInfo {
+    fn from(value: PodContainerInfo) -> Self {
+        NewPodContainerInfo {
             id: value.id,
             name: value.name,
             state: value.state,

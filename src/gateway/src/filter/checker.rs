@@ -1,7 +1,7 @@
-use crate::event;
+use crate::filter;
 
 pub fn check(name: &str, value: &str) -> bool {
-    let e = event::get(name).unwrap();
+    let e = filter::get(name).unwrap();
 
     e.target_value == value
 }

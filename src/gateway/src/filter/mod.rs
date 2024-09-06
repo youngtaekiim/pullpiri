@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 #[derive(Debug)]
-pub struct Event {
+pub struct Filter {
     pub name: String,
     pub express: String,
     pub target_value: String,

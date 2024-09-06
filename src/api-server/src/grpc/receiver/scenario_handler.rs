@@ -4,15 +4,16 @@
  */
 
 //use crate::grpc::sender::gateway;
-use common::apiserver::scenario::{Response, Scenario};
+use common::apiserver::scenario::Scenario;
 use common::apiserver::scenario_connection_server::ScenarioConnection;
+use common::apiserver::Response;
 
 #[derive(Default)]
 pub struct GrpcUpdateServer {}
 
 #[tonic::async_trait]
 impl ScenarioConnection for GrpcUpdateServer {
-    async fn send(
+    async fn send_scenario(
         &self,
         request: tonic::Request<Scenario>,
     ) -> Result<tonic::Response<Response>, tonic::Status> {

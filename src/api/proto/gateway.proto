@@ -7,25 +7,14 @@ syntax = "proto3";
 
 package gateway;
 
-service PiccoloGatewayService {
-  rpc RequestEvent (EventName) returns (Reply);
+service Connection {
+  rpc SendCondition (Condition) returns (Response);
 }
 
-message EventName {
-  FuncId id = 1;
+message Condition {
   string name = 2;
-  Target target = 3;
 }
 
-enum FuncId {
-  Enable = 0;
-  Disable = 1;
-}
-
-enum Target {
-  StateManager = 0;
-}
-
-message Reply {
-  bool isOk = 1;
+message Response {
+  string resp = 1;
 }

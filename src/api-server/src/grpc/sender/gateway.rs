@@ -4,24 +4,23 @@
  */
 
 use common::gateway;
+use common::gateway::{Condition, Response};
+use tonic::{Request, Status};
 
-pub async fn send(
-    event: gateway::EventName,
-) -> Result<tonic::Response<gateway::Reply>, tonic::Status> {
-    let mut client =
-        match gateway::piccolo_gateway_service_client::PiccoloGatewayServiceClient::connect(
-            gateway::connect_server(),
-        )
-        .await
-        {
-            Ok(c) => c,
-            Err(_) => {
-                return Err(tonic::Status::new(
-                    tonic::Code::Unavailable,
-                    "cannot connect gateway",
-                ))
-            }
-        };
+pub async fn send(condition: Condition) -> Result<tonic::Response<Response>, Status> {
+    let mut client = match gateway::connection_client::ConnectionClient::connect(
+        gateway::connect_server(),
+    )
+    .await
+    {
+        Ok(c) => c,
+        Err(_) => {
+            return Err(Status::new(
+                tonic::Code::Unavailable,
+                "cannot connect gateway",
+            ))
+        }
+    };
 
-    client.request_event(tonic::Request::new(event)).await
+    client.send_condition(Request::new(condition)).await
 }

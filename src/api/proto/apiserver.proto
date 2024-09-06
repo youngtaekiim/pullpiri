@@ -11,11 +11,15 @@ import "apiserver/scenario.proto";
 import "apiserver/metric_notifier.proto";
 
 service ScenarioConnection {
-  rpc Send (scenario.Scenario) returns (scenario.Response);
+  rpc SendScenario (scenario.Scenario) returns (Response);
 }
 
-service MetricNotifier {
-  rpc SendImageList (metric_notifier.ImageList) returns (metric_notifier.Response);
-  rpc SendContainerList (metric_notifier.ContainerList) returns (metric_notifier.Response);
-  rpc SendPodList (metric_notifier.PodList) returns (metric_notifier.Response);
+service MetricConnection {
+  rpc SendImageList (metric_notifier.ImageList) returns (Response);
+  rpc SendContainerList (metric_notifier.ContainerList) returns (Response);
+  rpc SendPodList (metric_notifier.PodList) returns (Response);
+}
+
+message Response {
+  string resp = 1;
 }

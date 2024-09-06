@@ -12,7 +12,3 @@ message Scenario {
   string conditions = 2;
   string actions = 3;
 }
-
-message Response {
-  string resp = 1;
-}

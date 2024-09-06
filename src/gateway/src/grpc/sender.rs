@@ -8,7 +8,7 @@ use common::statemanager;
 #[allow(dead_code)]
 pub async fn to_statemanager(
     msg: &str,
-) -> Result<tonic::Response<statemanager::SendResponse>, tonic::Status> {
+) -> Result<tonic::Response<statemanager::Response>, tonic::Status> {
     println!("sending msg - '{}'\n", msg);
 
     let mut client = match statemanager::connection_client::ConnectionClient::connect(
@@ -26,9 +26,8 @@ pub async fn to_statemanager(
     };
 
     client
-        .send(tonic::Request::new(statemanager::SendRequest {
-            from: common::constants::PiccoloModuleName::Gateway.into(),
-            request: msg.to_owned(),
+        .send_action(tonic::Request::new(statemanager::Action {
+            action: msg.to_owned(),
         }))
         .await
 }

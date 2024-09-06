@@ -17,13 +17,11 @@ pub async fn handle_scenario_msg(s: Scenario) -> Result<(), Box<dyn std::error::
     common::etcd::put(&format!("{key_origin}/targets"), &s.targets).await?;
     common::etcd::put(&format!("{key_origin}/full"), &s.scene).await?;
 
-    let event = gateway::EventName {
-        id: gateway::FuncId::Enable.into(),
+    let condition = gateway::Condition {
         name: format!("scenario/{}", &s.name),
-        target: gateway::Target::StateManager.into(),
     };
 
-    crate::grpc::sender::gateway::send(event).await?;
+    crate::grpc::sender::gateway::send(condition).await?;
 
     Ok(())
 }

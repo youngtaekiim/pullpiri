@@ -23,21 +23,17 @@ message PodList {
   repeated PodInfo pods = 1;
 }
 
-message PodInfo{
+message PodInfo {
   string id = 1;
   string name = 2;
-  repeated PodInfoContainer containers = 3;  
+  repeated PodContainerInfo containers = 3;  
   string state = 4;  
   string host_name = 6;
   string created = 7;
 }
 
-message PodInfoContainer{
+message PodContainerInfo {
   string id = 1;
   string name = 2;
   string state = 3;
-}
-
-message Response {
-  bool success = 1;
 }
