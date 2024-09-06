@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 dust_dds = "0.11.0"
 common = { path = "../common" }
-lazy_static = "1.5.0"
 tonic = "0.12.1"
 prost = "0.13.1"
 tokio = { version = "1.38.0", features = ["macros", "rt-multi-thread"] }

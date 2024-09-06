@@ -1,4 +1,3 @@
-use crate::event::{self, checker};
 use crate::grpc::sender;
 use dust_dds::{
     dds_async::domain_participant_factory::DomainParticipantFactoryAsync,
@@ -69,10 +68,10 @@ impl super::EventListener for DdsEventListener {
                 let data = data_samples[0].data().unwrap();
                 println!("Received: {:?}\n", data);
 
-                if checker::check(&self.name, &data.gear) {
+                /*if checker::check(&self.name, &data.gear) {
                     notify_to_destination(&self.name).await;
                     break;
-                }
+                }*/
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
         }

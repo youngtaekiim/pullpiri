@@ -18,10 +18,16 @@ impl Connection for GrpcServer {
         request: tonic::Request<Condition>,
     ) -> Result<tonic::Response<Response>, tonic::Status> {
         println!("Got a request from {:?}", request.remote_addr());
-        let req = request.into_inner();
+        let req: Condition = request.into_inner();
         //println!("req msg : {:#?}", req);
-        let _ = self.grpc_msg_tx.send(req).await;
+        match self.grpc_msg_tx.send(req).await {
+            Ok(_) => Ok(tonic::Response::new(Response { resp: true.to_string() })),
+            Err(_) => Err(tonic::Status::new(
+                tonic::Code::Unavailable,
+                "cannot send condition",
+            ))
+        }
 
-        Ok(tonic::Response::new(Response { resp: true.to_string() }))
+        //Ok(tonic::Response::new(Response { resp: true.to_string() }))
     }
 }

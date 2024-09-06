@@ -1,26 +1,23 @@
-use crate::event;
-use crate::event::{parser, Event};
+use crate::filter::Filter;
 use crate::listener::EventListener;
-use common::gateway::connection_server::ConnectionServer;
 use common::gateway::Condition;
-use tokio::sync::mpsc;
-use tonic::transport::Server;
+use tokio::sync::mpsc::{Sender, Receiver, channel};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
-pub struct GatewayManager {
-    grpc_rx: mpsc::Receiver<Condition>,
-    grpc_tx: mpsc::Sender<Condition>,
+pub struct Manager {
+    rx_grpc: Receiver<Condition>,
+    filters: Arc<Mutex<Vec<Filter>>>,
 }
 
-impl GatewayManager {
-    pub fn new() -> Self {
-        let (grpc_tx, grpc_rx) = mpsc::channel(100);
-        GatewayManager { grpc_rx, grpc_tx }
+impl Manager {
+    pub fn new(rx: Receiver<Condition>) -> Self {
+        Manager { rx_grpc: rx , filters: Arc::new(Mutex::new(Vec::new())) }
     }
 
     pub async fn run(&mut self) {
-        tokio::spawn(grpc_server(self.grpc_tx.clone()));
 
-        while let Some(req) = self.grpc_rx.recv().await {
+        while let Some(req) = self.rx_grpc.recv().await {
             let name = req.name.clone();
             if event::get(&name).is_some() {
                 println!("Already exist scenario.\n");
@@ -35,22 +32,6 @@ impl GatewayManager {
             tokio::spawn(launch_dds(name));
         }
     }
-}
-
-async fn grpc_server(tx: mpsc::Sender<Condition>) {
-    let server = crate::grpc::receiver::GrpcServer {
-        grpc_msg_tx: tx.clone(),
-    };
-    let addr = common::gateway::open_server()
-        .parse()
-        .expect("gateway address parsing error");
-
-    println!("Piccolod gateway listening on {}", addr);
-
-    let _ = Server::builder()
-        .add_service(ConnectionServer::new(server))
-        .serve(addr)
-        .await;
 }
 
 async fn launch_dds(name: String) {

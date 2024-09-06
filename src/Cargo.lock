@@ -570,7 +570,6 @@ version = "0.1.0"
 dependencies = [
  "common",
  "dust_dds",
- "lazy_static",
  "prost",
  "serde",
  "serde_yaml",
