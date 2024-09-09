@@ -1,25 +1,48 @@
-use crate::grpc::sender;
+use super::DdsData;
 use dust_dds::{
     dds_async::domain_participant_factory::DomainParticipantFactoryAsync,
     infrastructure::{qos::QosKind, status::NO_STATUS},
     subscription::sample_info::{ANY_INSTANCE_STATE, ANY_SAMPLE_STATE, ANY_VIEW_STATE},
 };
+use tokio::sync::mpsc::Sender;
 
+// TOPIC NAME = /rt/piccolo/Gear_State
 #[allow(non_snake_case)]
-pub mod gearState {
+pub mod GearState {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
-        pub gear: String,
+        pub state: String,
     }
 }
 
+// TOPIC NAME = /rt/piccolo/Day_Time
+#[allow(non_snake_case)]
+pub mod DayTime {
+    #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
+    pub struct DataType {
+        pub day: bool,
+    }
+}
+
+/*#[allow(non_snake_case)]
+pub mod LightState {
+    #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
+    pub struct DataType {
+        pub on: bool,
+    }
+}*/
+
 pub struct DdsEventListener {
     name: String,
+    tx: Sender<DdsData>,
 }
 
 impl DdsEventListener {
-    pub fn new(name: String) -> Self {
-        DdsEventListener { name }
+    pub fn new(name: &str, tx: Sender<DdsData>) -> Self {
+        DdsEventListener {
+            name: name.to_string(),
+            tx,
+        }
     }
 }
 
@@ -39,53 +62,93 @@ impl super::EventListener for DdsEventListener {
             .await
             .unwrap();
 
-        let topic = participant
-            .create_topic::<gearState::DataType>(
-                "rt/piccolo/gear_state",
-                "gearState::DataType",
-                QosKind::Default,
-                None,
-                NO_STATUS,
-            )
-            .await
-            .unwrap();
-
         let subscriber = participant
             .create_subscriber(QosKind::Default, None, NO_STATUS)
             .await
             .unwrap();
 
-        let reader = subscriber
-            .create_datareader::<gearState::DataType>(&topic, QosKind::Default, None, NO_STATUS)
-            .await
-            .unwrap();
+        match self.name.as_str() {
+            "gear" => {
+                let topic = participant
+                    .create_topic::<GearState::DataType>(
+                        "/rt/piccolo/Gear_State",
+                        "GearState::DataType",
+                        QosKind::Default,
+                        None,
+                        NO_STATUS,
+                    )
+                    .await
+                    .unwrap();
+                let reader = subscriber
+                    .create_datareader::<GearState::DataType>(
+                        &topic,
+                        QosKind::Default,
+                        None,
+                        NO_STATUS,
+                    )
+                    .await
+                    .unwrap();
 
-        loop {
-            if let Ok(data_samples) = reader
-                .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
-                .await
-            {
-                let data = data_samples[0].data().unwrap();
-                println!("Received: {:?}\n", data);
+                println!("make loop - gear");
+                loop {
+                    if let Ok(data_samples) = reader
+                        .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
+                        .await
+                    {
+                        let data: GearState::DataType = data_samples[0].data().unwrap();
+                        println!("Received:  GEAR {}\n", data.state);
 
-                /*if checker::check(&self.name, &data.gear) {
-                    notify_to_destination(&self.name).await;
-                    break;
-                }*/
+                        let msg = DdsData {
+                            name: self.name.clone(),
+                            value: data.state,
+                        };
+                        let _ = self.tx.send(msg).await;
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
             }
-            std::thread::sleep(std::time::Duration::from_millis(100));
-        }
+            "day" => {
+                let topic = participant
+                    .create_topic::<DayTime::DataType>(
+                        "/rt/piccolo/Day_Time",
+                        "DayTime::DataType",
+                        QosKind::Default,
+                        None,
+                        NO_STATUS,
+                    )
+                    .await
+                    .unwrap();
+                let reader = subscriber
+                    .create_datareader::<DayTime::DataType>(
+                        &topic,
+                        QosKind::Default,
+                        None,
+                        NO_STATUS,
+                    )
+                    .await
+                    .unwrap();
+                println!("make loop - day");
+                loop {
+                    if let Ok(data_samples) = reader
+                        .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
+                        .await
+                    {
+                        let data: DayTime::DataType = data_samples[0].data().unwrap();
+                        println!("Received:  DAY {}\n", data.day);
+
+                        let msg = DdsData {
+                            name: self.name.clone(),
+                            value: match data.day {
+                                true => "day".to_string(),
+                                false => "night".to_string(),
+                            },
+                        };
+                        let _ = self.tx.send(msg).await;
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
+            }
+            _ => panic!("topic name is wrong"),
+        };
     }
-}
-
-async fn notify_to_destination(key: &str) {
-    let e = event::remove(key).unwrap();
-    let action_key = e.action_key;
-
-    println!(
-        "target destination : {}, target action: {}",
-        e.target_dest, action_key
-    );
-
-    let _ = sender::to_statemanager(&action_key).await;
 }

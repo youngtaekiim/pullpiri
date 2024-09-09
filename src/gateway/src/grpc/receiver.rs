@@ -21,11 +21,13 @@ impl Connection for GrpcServer {
         let req: Condition = request.into_inner();
         //println!("req msg : {:#?}", req);
         match self.grpc_msg_tx.send(req).await {
-            Ok(_) => Ok(tonic::Response::new(Response { resp: true.to_string() })),
+            Ok(_) => Ok(tonic::Response::new(Response {
+                resp: true.to_string(),
+            })),
             Err(_) => Err(tonic::Status::new(
                 tonic::Code::Unavailable,
                 "cannot send condition",
-            ))
+            )),
         }
 
         //Ok(tonic::Response::new(Response { resp: true.to_string() }))

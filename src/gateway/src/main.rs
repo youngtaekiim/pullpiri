@@ -9,12 +9,11 @@ use tokio::sync::mpsc::{channel, Receiver, Sender};
 async fn running_manager(rx: Receiver<Condition>) {
     let mut manager = manager::Manager::new(rx);
     manager.run().await;
-
 }
 
 async fn running_grpc(tx: Sender<Condition>) {
-    use tonic::transport::Server;
     use common::gateway::connection_server::ConnectionServer;
+    use tonic::transport::Server;
 
     let server = crate::grpc::receiver::GrpcServer {
         grpc_msg_tx: tx.clone(),
@@ -37,5 +36,5 @@ async fn main() {
     let f_grpc = running_grpc(tx_grpc);
     let f_manage = running_manager(rx_grpc);
 
-    tokio::join!(f_grpc, f_manage);    
+    tokio::join!(f_grpc, f_manage);
 }

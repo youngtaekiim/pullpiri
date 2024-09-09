@@ -12,8 +12,11 @@ pub struct Filter {
 impl Filter {
     pub async fn new(name: &str) -> Self {
         let action_key = name.to_string();
-        let conditions = common::etcd::get(&format!("{name}/conditions")).await.unwrap();
-        let condition: common::spec::scenario::Condition = serde_yaml::from_str(&conditions).unwrap();
+        let conditions = common::etcd::get(&format!("{name}/conditions"))
+            .await
+            .unwrap();
+        let condition: common::spec::scenario::Condition =
+            serde_yaml::from_str(&conditions).unwrap();
 
         Filter {
             name: name.to_string(),
