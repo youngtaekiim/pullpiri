@@ -3,31 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use common::statemanager;
+use common::statemanager::{connect_server, connection_client::ConnectionClient, Action, Response};
+use tonic::{Request, Status};
 
 #[allow(dead_code)]
-pub async fn to_statemanager(
-    msg: &str,
-) -> Result<tonic::Response<statemanager::Response>, tonic::Status> {
+pub async fn send(msg: &str) -> Result<tonic::Response<Response>, Status> {
     println!("sending msg - '{}'\n", msg);
-
-    let mut client = match statemanager::connection_client::ConnectionClient::connect(
-        statemanager::connect_server(),
-    )
-    .await
-    {
-        Ok(c) => c,
-        Err(_) => {
-            return Err(tonic::Status::new(
-                tonic::Code::Unavailable,
-                "cannot connect statemanager",
-            ))
-        }
+    let action = Action {
+        action: msg.to_string(),
     };
 
-    client
-        .send_action(tonic::Request::new(statemanager::Action {
-            action: msg.to_owned(),
-        }))
-        .await
+    let mut client = ConnectionClient::connect(connect_server()).await.unwrap();
+    client.send_action(Request::new(action)).await
 }

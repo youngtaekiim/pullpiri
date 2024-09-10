@@ -1,4 +1,4 @@
-pub mod checker;
+use crate::listener::DdsData;
 
 #[derive(Debug)]
 pub struct Filter {
@@ -25,5 +25,13 @@ impl Filter {
             topic: condition.get_operand_value(),
             action_key,
         }
+    }
+
+    pub async fn check(&mut self, data: DdsData) {
+        println!("{} {}", data.name, data.value);
+        println!(
+            "{} {} {} {} {}",
+            self.name, self.express, self.target_value, self.topic, self.action_key
+        );
     }
 }

@@ -3,24 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use common::gateway;
-use common::gateway::{Condition, Response};
+use common::gateway::{connect_server, connection_client::ConnectionClient, Condition, Response};
 use tonic::{Request, Status};
 
 pub async fn send(condition: Condition) -> Result<tonic::Response<Response>, Status> {
-    let mut client = match gateway::connection_client::ConnectionClient::connect(
-        gateway::connect_server(),
-    )
-    .await
-    {
-        Ok(c) => c,
-        Err(_) => {
-            return Err(Status::new(
-                tonic::Code::Unavailable,
-                "cannot connect gateway",
-            ))
-        }
-    };
-
+    let mut client = ConnectionClient::connect(connect_server()).await.unwrap();
     client.send_condition(Request::new(condition)).await
 }
