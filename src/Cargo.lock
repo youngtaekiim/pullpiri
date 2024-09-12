@@ -806,6 +806,7 @@ dependencies = [
  "serde",
  "serde_yaml",
  "tar",
+ "tokio",
  "tonic-build",
 ]
 

@@ -42,3 +42,17 @@ pub async fn handle_scenario(scenario_name: &str) -> Result<scenario::Scenario, 
     }
     scenario::parse(&full_save_path)
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::file_handler;
+
+    #[tokio::test]
+    async fn downloading() {
+        let url = "http://sdv.lge.com:9001/piccolo/resources/packages/version-cli-1.tar";
+        let path = "/root/Music/test.tar";
+        let result = file_handler::download(url, path).await;
+        println!("{:?}", result);
+        assert!(result.is_ok());
+    }
+}
