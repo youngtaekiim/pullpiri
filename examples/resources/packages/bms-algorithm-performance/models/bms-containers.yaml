@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bms-containers
+  labels:
+    app: bms-containers
+spec:
+  containers:
+    - name: blis
+      image: localhost/blis:1.0
+    - name: mavd
+      image: localhost/mavd:1.0
+    - name: frism
+      image: localhost/frism:1.0
+  terminationGracePeriodSeconds: 0

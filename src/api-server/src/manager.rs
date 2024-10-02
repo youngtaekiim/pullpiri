@@ -4,9 +4,28 @@ use importer::parser::scenario::Scenario;
 
 pub async fn handle_package_msg(p: Package) -> Result<(), Box<dyn std::error::Error>> {
     let key_origin = format!("package/{}", p.name);
-    common::etcd::put(&format!("{key_origin}/models"), &p.models).await?;
+    /*common::etcd::put(&format!("{key_origin}/models"), &p.models).await?;
     common::etcd::put(&format!("{key_origin}/network"), &p.network).await?;
-    common::etcd::put(&format!("{key_origin}/volume"), &p.volume).await?;
+    common::etcd::put(&format!("{key_origin}/volume"), &p.volume).await?;*/
+
+    for i in 0..p.model_names.len() {
+        common::etcd::put(
+            &format!("{key_origin}/models/{}", p.model_names.get(i).unwrap()),
+            p.models.get(i).unwrap(),
+        )
+        .await?;
+        common::etcd::put(
+            &format!("{key_origin}/networks/{}", p.model_names.get(i).unwrap()),
+            p.networks.get(i).unwrap(),
+        )
+        .await?;
+        common::etcd::put(
+            &format!("{key_origin}/volumes/{}", p.model_names.get(i).unwrap()),
+            p.volumes.get(i).unwrap(),
+        )
+        .await?;
+    }
+
     Ok(())
 }
 

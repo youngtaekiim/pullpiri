@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Scenario
+metadata:
+  name: eco-mode
+spec:
+  conditions:
+    express: lt
+    value: "30"
+    operands:
+      type: DDS
+      name: battery_capacity
+      value: "rt/piccolo/Battery_Capacity"
+  actions:
+    - operation: update
+  targets:
+    - name: "bms-algorithm-eco"

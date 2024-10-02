@@ -23,27 +23,31 @@ clean:
 image:
 	podman build -t piccolo:1.0 -f containers/Dockerfile .
 
-.PHONY: install
-install:
+.PHONY: pre
+pre:
 	-mkdir /root/piccolo_yaml
 	-mkdir /root/piccolo_yaml/packages
 	-mkdir /root/piccolo_yaml/scenarios
 	-mkdir /etc/containers/systemd/piccolo/
+
+.PHONY: install
+install:
 	-cp -r ./piccolo.ini /etc/containers/systemd/piccolo/
 	-cp -r ./containers/piccolo.* /etc/containers/systemd/piccolo/
 	-cp -r ./etcd-data /etc/containers/systemd/piccolo/etcd-data/
 	systemctl daemon-reload
 	systemctl start piccolo
-#	podman-compose -f containers/docker-compose.yaml up -d
 
 .PHONY: uninstall
 uninstall:
 	-systemctl stop piccolo
-#	-rm -rf /root/piccolo_yaml/packages
-#	-rm -rf /root/piccolo_yaml/scenarios
-#	-rm -rf /etc/containers/systemd/piccolo/
 	systemctl daemon-reload
-#	podman-compose -f containers/docker-compose.yaml down
+
+.PHONY: post
+post:
+	-rm -rf /root/piccolo_yaml/packages
+	-rm -rf /root/piccolo_yaml/scenarios
+	-rm -rf /etc/containers/systemd/piccolo/
 
 .PHONY: tinstall
 tinstall:

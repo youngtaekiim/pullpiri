@@ -8,9 +8,10 @@ use std::io::prelude::*;
 #[derive(Debug)]
 pub struct Package {
     pub name: String,
-    pub models: String,
-    pub network: String,
-    pub volume: String,
+    pub model_names: Vec<String>,
+    pub models: Vec<String>,
+    pub networks: Vec<String>,
+    pub volumes: Vec<String>,
 }
 
 pub fn parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> {
@@ -21,31 +22,38 @@ pub fn parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> {
 
     let package: package::Package = serde_yaml::from_str(&contents)?;
     let name: String = package.get_name();
-    let model_name = package.get_model_name();
 
-    let package_model = package.get_models();
-    let mut model: package::model::Model = model_parse(path, &model_name[0]).unwrap();
+    let mut model_names: Vec<String> = Vec::new();
+    let mut models: Vec<String> = Vec::new();
+    let mut networks: Vec<String> = Vec::new();
+    let mut volumes: Vec<String> = Vec::new();
 
-    let network_yaml = &package_model[0].get_resources().get_network();
-    let networks = network_parse(path, network_yaml);
+    for m in package.get_models() {
+        let mut model: package::model::Model = model_parse(path, &m.get_name()).unwrap();
+        model_names.push(m.get_name());
 
-    let volume_yaml = &package_model[0].get_resources().get_volume();
-    let volumes = &volume_parse(path, volume_yaml);
+        let network_yaml = m.get_resources().get_network();
+        networks.push(serde_yaml::to_string(&network_parse(path, &network_yaml))?);
 
-    if let Some(volume_spec) = volumes {
-        model.spec.volumes.clone_from(volume_spec.get_volume());
+        let volume_yaml = m.get_resources().get_volume();
+        volumes.push(serde_yaml::to_string(&volume_parse(path, &volume_yaml))?);
+
+        if let Some(volume_spec) = &volume_parse(path, &volume_yaml) {
+            model.spec.volumes.clone_from(volume_spec.get_volume());
+        }
+
+        models.push(serde_yaml::to_string(&model)?);
+
+        //make kube,yaml file
+        file_handler::perform(&m.get_name(), &serde_yaml::to_string(&model)?, &name)?;
     }
-
-    let models = serde_yaml::to_string(&model)?;
-
-    //make kube,yaml file
-    file_handler::perform(&model_name[0], &models, &name)?;
 
     Ok(Package {
         name,
+        model_names,
         models,
-        network: serde_yaml::to_string(&networks)?,
-        volume: serde_yaml::to_string(&volumes)?,
+        networks,
+        volumes,
     })
 }
 

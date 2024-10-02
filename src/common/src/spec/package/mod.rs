@@ -33,6 +33,10 @@ pub struct Model {
 }
 
 impl Model {
+    pub fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
     pub fn get_resources(&self) -> &Resource {
         &self.resources
     }

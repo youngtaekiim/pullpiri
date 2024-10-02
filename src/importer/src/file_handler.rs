@@ -78,7 +78,11 @@ pub async fn download(url: &str, path: &str) -> Result<(), Box<dyn std::error::E
     let username = "admin";
     let password = Some("admin123".to_string());
     let client = reqwest::Client::new();
-    let response = client.get(url).basic_auth(username, password).send().await?;
+    let response = client
+        .get(url)
+        .basic_auth(username, password)
+        .send()
+        .await?;
     //let response = reqwest::get(url).await?;
 
     if response.status().is_success() {
