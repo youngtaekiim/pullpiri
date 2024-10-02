@@ -6,23 +6,25 @@ use dust_dds::{
 };
 use tokio::sync::mpsc::Sender;
 
+use vendor::lge::{daytime::DayTime, gearstate::GearState};
+
 // TOPIC NAME = /rt/piccolo/Gear_State
-#[allow(non_snake_case)]
+/*#[allow(non_snake_case)]
 pub mod GearState {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
         pub state: String,
     }
-}
+}*/
 
 // TOPIC NAME = /rt/piccolo/Day_Time
-#[allow(non_snake_case)]
+/*#[allow(non_snake_case)]
 pub mod DayTime {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct DataType {
         pub day: bool,
     }
-}
+}*/
 
 /*#[allow(non_snake_case)]
 pub mod LightState {

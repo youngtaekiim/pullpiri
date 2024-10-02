@@ -27,11 +27,13 @@ impl Filter {
         }
     }
 
-    pub async fn check(&mut self, data: DdsData) {
+    pub async fn check(&mut self, data: DdsData) -> bool {
         println!("{} {}", data.name, data.value);
         println!(
             "{} {} {} {} {}",
             self.name, self.express, self.target_value, self.topic, self.action_key
         );
+
+        true
     }
 }

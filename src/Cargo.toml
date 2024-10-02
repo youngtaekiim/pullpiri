@@ -12,6 +12,7 @@ members = [
     "common",
     "importer",
     "gateway",
+    "vendor",
 ]
 
 exclude = [

@@ -7,10 +7,10 @@ use common::statemanager::{connect_server, connection_client::ConnectionClient, 
 use tonic::{Request, Status};
 
 #[allow(dead_code)]
-pub async fn send(msg: &str) -> Result<tonic::Response<Response>, Status> {
-    println!("sending msg - '{}'\n", msg);
+pub async fn send(key: &str) -> Result<tonic::Response<Response>, Status> {
+    println!("sending msg - '{}'\n", key);
     let action = Action {
-        action: msg.to_string(),
+        action: key.to_string(),
     };
 
     let mut client = ConnectionClient::connect(connect_server()).await.unwrap();

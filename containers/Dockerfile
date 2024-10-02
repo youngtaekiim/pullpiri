@@ -12,6 +12,7 @@ COPY ./src/common/ /piccolo/common
 COPY ./src/gateway/ /piccolo/gateway
 COPY ./src/importer/ /piccolo/importer
 COPY ./src/statemanager/ /piccolo/statemanager
+COPY ./src/vendor/ /piccolo/vendor
 
 RUN apt update -y && \
     apt upgrade -y && \

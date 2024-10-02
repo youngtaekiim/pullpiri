@@ -66,7 +66,11 @@ async fn handle_dds(
         }
 
         for filter in filters.iter_mut() {
-            filter.check(data.clone()).await;
+            let result = filter.check(data.clone()).await;
+            if result {
+                use crate::grpc::sender;
+                let _ = sender::send(&filter.action_key).await;
+            }
         }
     }
 }
