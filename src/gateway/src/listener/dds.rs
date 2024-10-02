@@ -6,7 +6,7 @@ use dust_dds::{
 };
 use tokio::sync::mpsc::Sender;
 
-use vendor::lge::{daytime::DayTime, gearstate::GearState};
+use lge::{daytime::DayTime, gearstate::GearState};
 
 // TOPIC NAME = /rt/piccolo/Gear_State
 /*#[allow(non_snake_case)]

@@ -570,13 +570,13 @@ version = "0.1.0"
 dependencies = [
  "common",
  "dust_dds",
+ "lge",
  "prost",
  "serde",
  "serde_yaml",
  "tokio",
  "tonic",
  "tonic-build",
- "vendor",
 ]
 
 [[package]]
@@ -886,6 +886,13 @@ name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+
+[[package]]
+name = "lge"
+version = "0.1.0"
+dependencies = [
+ "dust_dds",
+]
 
 [[package]]
 name = "libc"
@@ -2115,13 +2122,6 @@ name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
-
-[[package]]
-name = "vendor"
-version = "0.1.0"
-dependencies = [
- "dust_dds",
-]
 
 [[package]]
 name = "version_check"

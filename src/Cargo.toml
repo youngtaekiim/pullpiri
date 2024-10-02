@@ -12,9 +12,9 @@ members = [
     "common",
     "importer",
     "gateway",
-    "vendor",
 ]
 
 exclude = [
     "tools",
+    "vendor"
 ]
