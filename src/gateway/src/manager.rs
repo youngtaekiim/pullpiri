@@ -24,8 +24,14 @@ impl Manager {
     }
 
     pub async fn run(&mut self) {
-        tokio::spawn(launch_dds("/rt/piccolo/Battery_Capacity", self.tx_dds.clone()));
-        tokio::spawn(launch_dds("/rt/piccolo/Charging_Status", self.tx_dds.clone()));
+        tokio::spawn(launch_dds(
+            "/rt/piccolo/Battery_Capacity",
+            self.tx_dds.clone(),
+        ));
+        tokio::spawn(launch_dds(
+            "/rt/piccolo/Charging_Status",
+            self.tx_dds.clone(),
+        ));
 
         let arc_rx_dds = Arc::clone(&self.rx_dds);
         let arc_filters = Arc::clone(&self.filters);
@@ -65,12 +71,17 @@ async fn handle_dds(
             continue;
         }
 
+        let mut keep: Vec<bool> = Vec::new();
         for filter in filters.iter_mut() {
             let result = filter.check(data.clone()).await;
+            keep.push(result);
             if result {
                 use crate::grpc::sender;
                 let _ = sender::send(&filter.action_key).await;
             }
         }
+
+        let mut iter = keep.iter();
+        filters.retain(|_| *iter.next().unwrap());
     }
 }

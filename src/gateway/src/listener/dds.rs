@@ -97,7 +97,8 @@ impl super::EventListener for DdsEventListener {
                         .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
                         .await
                     {
-                        let data: BatteryCapacity::BatteryCapacityMsg = data_samples[0].data().unwrap();
+                        let data: BatteryCapacity::BatteryCapacityMsg =
+                            data_samples[0].data().unwrap();
                         println!("Received:  battery capa {}\n", data.capacity);
 
                         let msg = DdsData {
@@ -135,7 +136,8 @@ impl super::EventListener for DdsEventListener {
                         .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
                         .await
                     {
-                        let data: ChargingStatus::ChargingStatusMsg = data_samples[0].data().unwrap();
+                        let data: ChargingStatus::ChargingStatusMsg =
+                            data_samples[0].data().unwrap();
                         println!("Received:  charging state {}\n", data.state);
 
                         let msg = DdsData {
