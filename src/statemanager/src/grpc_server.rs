@@ -45,37 +45,53 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn Error
     let action: common::spec::scenario::Action = serde_yaml::from_str(&value_action)?;
     let target: common::spec::scenario::Target = serde_yaml::from_str(&value_target)?;
 
-    let target_name = target.get_name();
-    let key_model = format!("package/{}/models", &target_name);
-    let value_model = etcd::get(&key_model).await?;
-    let model: common::spec::package::model::Model = serde_yaml::from_str(&value_model)?;
-
-    let model_name = model.get_name();
     let operation = &*action.get_operation();
+    let target_name = target.get_name();
 
-    println!("model name : {}\noperation : {}\n", model_name, operation);
+    let key_models = format!("package/{}/models", &target_name);
+    let (_, value_model) = common::etcd::get_all(&key_models).await?;
 
+    for v in value_model {
+        let model: common::spec::package::model::Model = serde_yaml::from_str(&v)?;
+        let model_name = model.get_name();
+
+        let node = common::etcd::get(&format!("package/{target_name}/nodes/{model_name}")).await?;
+
+        println!("model : {model_name}\noperation : {operation}\nnode : {node}\n");
+
+        handle_operation(operation, &model_name, &target_name, &node).await?;
+    }
+
+    Ok(format!("Done : {}\n", operation))
+}
+
+async fn handle_operation(
+    operation: &str,
+    model_name: &str,
+    target_name: &str,
+    node_name: &str,
+) -> Result<(), Box<dyn Error>> {
     match operation {
         "launch" => {
             // make symlink & reload
-            make_symlink_and_reload(&model_name, &target_name).await?;
+            make_symlink_and_reload(model_name, target_name).await?;
             // start service
-            try_service(&model_name, "START").await?;
+            try_service(node_name, model_name, "START").await?;
         }
         "terminate" => {
             // stop service
-            try_service(&model_name, "STOP").await?;
+            try_service(node_name, model_name, "STOP").await?;
             thread::sleep(Duration::from_secs(5));
             // delete symlink & reload
-            delete_symlink_and_reload(&model_name).await?;
+            delete_symlink_and_reload(model_name).await?;
         }
         "update" | "rollback" => {
             // delete symlink & reload
-            delete_symlink_and_reload(&model_name).await?;
+            let _ = delete_symlink_and_reload(model_name).await;
             // make symlink & reload
-            make_symlink_and_reload(&model_name, &target_name).await?;
+            let _ = make_symlink_and_reload(model_name, target_name).await;
             // restart service
-            try_service(&model_name, "RESTART").await?;
+            let _ = try_service(node_name, model_name, "RESTART").await;
         }
         "download" => {
             println!("do something");
@@ -85,7 +101,7 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn Error
         }
     }
 
-    Ok(format!("Done : {}\n", operation))
+    Ok(())
 }
 
 async fn delete_symlink_and_reload(model_name: &str) -> Result<(), Box<dyn Error>> {
@@ -117,10 +133,15 @@ async fn make_symlink_and_reload(
     Ok(())
 }
 
-async fn try_service(model_name: &str, act: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn try_service(
+    node_name: &str,
+    model_name: &str,
+    act: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     send_dbus(vec![
         act,
-        &common::get_conf("HOST_NODE"),
+        //&common::get_conf("HOST_NODE"),
+        node_name,
         &format!("{}.service", model_name),
     ])
     .await?;

@@ -15,6 +15,11 @@ pub async fn handle_package_msg(p: Package) -> Result<(), Box<dyn std::error::Er
         )
         .await?;
         common::etcd::put(
+            &format!("{key_origin}/nodes/{}", p.model_names.get(i).unwrap()),
+            p.nodes.get(i).unwrap(),
+        )
+        .await?;
+        common::etcd::put(
             &format!("{key_origin}/networks/{}", p.model_names.get(i).unwrap()),
             p.networks.get(i).unwrap(),
         )
