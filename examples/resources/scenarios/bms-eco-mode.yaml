@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: Scenario
 metadata:
-  name: eco-mode
+  name: bms
 spec:
   conditions:
     express: lt

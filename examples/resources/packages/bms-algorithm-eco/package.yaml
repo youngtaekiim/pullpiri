@@ -7,7 +7,23 @@ spec:
   pattern:
     - type: plain
   models:
-    - name: bms-containers
+    - name: bms-blis
+      node: ZcFront
+      resources:
+        volume: bms-volume
+        network: bms-network
+    - name: bms-frism
+      node: ZcFront
+      resources:
+        volume: bms-volume
+        network: bms-network
+    - name: bms-mavd
+      node: ZcFront
+      resources:
+        volume: bms-volume
+        network: bms-network
+    - name: bms-rdv
+      node: SoC1
       resources:
         volume: bms-volume
         network: bms-network

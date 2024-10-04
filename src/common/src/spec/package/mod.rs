@@ -29,12 +29,17 @@ struct Pattern {
 #[derive(Debug, serde::Deserialize, PartialEq)]
 pub struct Model {
     name: String,
+    node: String,
     resources: Resource,
 }
 
 impl Model {
     pub fn get_name(&self) -> String {
         self.name.clone()
+    }
+
+    pub fn get_node(&self) -> String {
+        self.node.clone()
     }
 
     pub fn get_resources(&self) -> &Resource {

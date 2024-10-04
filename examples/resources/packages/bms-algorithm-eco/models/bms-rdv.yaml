@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bms-rdv
+  annotations:
+    io.piccolo.annotations.package-type: default
+    io.piccolo.annotations.package-name: bms
+    io.piccolo.annotations.package-network: default
+  labels:
+    app: bms-rdv
+spec:
+  containers:
+    - name: rdv
+      image: localhost/rdv:1.0
+  terminationGracePeriodSeconds: 0

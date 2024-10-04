@@ -10,6 +10,7 @@ pub struct Package {
     pub name: String,
     pub model_names: Vec<String>,
     pub models: Vec<String>,
+    pub nodes: Vec<String>,
     pub networks: Vec<String>,
     pub volumes: Vec<String>,
 }
@@ -25,12 +26,15 @@ pub fn parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> {
 
     let mut model_names: Vec<String> = Vec::new();
     let mut models: Vec<String> = Vec::new();
+    let mut nodes: Vec<String> = Vec::new();
     let mut networks: Vec<String> = Vec::new();
     let mut volumes: Vec<String> = Vec::new();
 
     for m in package.get_models() {
         let mut model: package::model::Model = model_parse(path, &m.get_name()).unwrap();
         model_names.push(m.get_name());
+
+        nodes.push(m.get_node());
 
         let network_yaml = m.get_resources().get_network();
         networks.push(serde_yaml::to_string(&network_parse(path, &network_yaml))?);
@@ -52,6 +56,7 @@ pub fn parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> {
         name,
         model_names,
         models,
+        nodes,
         networks,
         volumes,
     })

@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: Scenario
 metadata:
-  name: high-performance
+  name: bms
 spec:
   conditions:
     express: ge
