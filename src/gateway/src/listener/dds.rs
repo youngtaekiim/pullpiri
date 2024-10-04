@@ -6,7 +6,7 @@ use dust_dds::{
 };
 use tokio::sync::mpsc::Sender;
 
-use lge::{daytime::DayTime, gearstate::GearState};
+use lge::{batterycapacity::BatteryCapacity, chargingstatus::ChargingStatus};
 
 // TOPIC NAME = /rt/piccolo/Gear_State
 /*#[allow(non_snake_case)]
@@ -70,11 +70,11 @@ impl super::EventListener for DdsEventListener {
             .unwrap();
 
         match self.name.as_str() {
-            "gear" => {
+            "capa" => {
                 let topic = participant
-                    .create_topic::<GearState::DataType>(
-                        "/rt/piccolo/Gear_State",
-                        "GearState::DataType",
+                    .create_topic::<BatteryCapacity::BatteryCapacityMsg>(
+                        "rt/piccolo/Battery_Capacity",
+                        "BatteryCapacity::BatteryCapacityMsg",
                         QosKind::Default,
                         None,
                         NO_STATUS,
@@ -82,7 +82,7 @@ impl super::EventListener for DdsEventListener {
                     .await
                     .unwrap();
                 let reader = subscriber
-                    .create_datareader::<GearState::DataType>(
+                    .create_datareader::<BatteryCapacity::BatteryCapacityMsg>(
                         &topic,
                         QosKind::Default,
                         None,
@@ -91,29 +91,29 @@ impl super::EventListener for DdsEventListener {
                     .await
                     .unwrap();
 
-                println!("make loop - gear");
+                println!("make loop - capa");
                 loop {
                     if let Ok(data_samples) = reader
                         .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
                         .await
                     {
-                        let data: GearState::DataType = data_samples[0].data().unwrap();
-                        println!("Received:  GEAR {}\n", data.state);
+                        let data: BatteryCapacity::BatteryCapacityMsg = data_samples[0].data().unwrap();
+                        println!("Received:  battery capa {}\n", data.capacity);
 
                         let msg = DdsData {
                             name: self.name.clone(),
-                            value: data.state,
+                            value: data.capacity,
                         };
                         let _ = self.tx.send(msg).await;
                     }
                     std::thread::sleep(std::time::Duration::from_millis(100));
                 }
             }
-            "day" => {
+            "charging" => {
                 let topic = participant
-                    .create_topic::<DayTime::DataType>(
-                        "/rt/piccolo/Day_Time",
-                        "DayTime::DataType",
+                    .create_topic::<ChargingStatus::ChargingStatusMsg>(
+                        "rt/piccolo/Charging_Status",
+                        "ChargingStatus::ChargingStatusMsg",
                         QosKind::Default,
                         None,
                         NO_STATUS,
@@ -121,7 +121,7 @@ impl super::EventListener for DdsEventListener {
                     .await
                     .unwrap();
                 let reader = subscriber
-                    .create_datareader::<DayTime::DataType>(
+                    .create_datareader::<ChargingStatus::ChargingStatusMsg>(
                         &topic,
                         QosKind::Default,
                         None,
@@ -129,21 +129,18 @@ impl super::EventListener for DdsEventListener {
                     )
                     .await
                     .unwrap();
-                println!("make loop - day");
+                println!("make loop - charging");
                 loop {
                     if let Ok(data_samples) = reader
                         .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
                         .await
                     {
-                        let data: DayTime::DataType = data_samples[0].data().unwrap();
-                        println!("Received:  DAY {}\n", data.day);
+                        let data: ChargingStatus::ChargingStatusMsg = data_samples[0].data().unwrap();
+                        println!("Received:  charging state {}\n", data.state);
 
                         let msg = DdsData {
                             name: self.name.clone(),
-                            value: match data.day {
-                                true => "day".to_string(),
-                                false => "night".to_string(),
-                            },
+                            value: data.state,
                         };
                         let _ = self.tx.send(msg).await;
                     }

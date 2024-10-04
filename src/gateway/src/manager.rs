@@ -24,8 +24,8 @@ impl Manager {
     }
 
     pub async fn run(&mut self) {
-        tokio::spawn(launch_dds("gear", self.tx_dds.clone()));
-        tokio::spawn(launch_dds("day", self.tx_dds.clone()));
+        tokio::spawn(launch_dds("capa", self.tx_dds.clone()));
+        tokio::spawn(launch_dds("charging", self.tx_dds.clone()));
 
         let arc_rx_dds = Arc::clone(&self.rx_dds);
         let arc_filters = Arc::clone(&self.filters);
