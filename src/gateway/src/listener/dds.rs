@@ -70,10 +70,10 @@ impl super::EventListener for DdsEventListener {
             .unwrap();
 
         match self.name.as_str() {
-            "capa" => {
+            "/rt/piccolo/Battery_Capacity" => {
                 let topic = participant
                     .create_topic::<BatteryCapacity::BatteryCapacityMsg>(
-                        "rt/piccolo/Battery_Capacity",
+                        self.name.as_str(),
                         "BatteryCapacity::BatteryCapacityMsg",
                         QosKind::Default,
                         None,
@@ -109,10 +109,10 @@ impl super::EventListener for DdsEventListener {
                     std::thread::sleep(std::time::Duration::from_millis(100));
                 }
             }
-            "charging" => {
+            "/rt/piccolo/Charging_Status" => {
                 let topic = participant
                     .create_topic::<ChargingStatus::ChargingStatusMsg>(
-                        "rt/piccolo/Charging_Status",
+                        self.name.as_str(),
                         "ChargingStatus::ChargingStatusMsg",
                         QosKind::Default,
                         None,

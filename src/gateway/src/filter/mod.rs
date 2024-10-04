@@ -1,4 +1,5 @@
 use crate::listener::DdsData;
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct Filter {
@@ -34,6 +35,57 @@ impl Filter {
             self.name, self.express, self.target_value, self.topic, self.action_key
         );
 
-        true
+        let topic = self.topic.clone();
+
+        match data.name.as_str() {
+            topic => {
+                match self.express.as_str() {
+                    "lt" => {
+                        let target_v = f32::from_str(self.target_value).unwrap;
+                        let current_v = f32::from_str(data.value).unwrap;
+                        if target_v < current_v {
+                            true
+                        }else{
+                            false
+                        }
+                    }
+                    "le" => {
+                        let target_v = f32::from_str(self.target_value).unwrap;
+                        let current_v = f32::from_str(data.value).unwrap;
+                        if target_v <= current_v {
+                            true
+                        }else{
+                            false
+                        }
+                    }
+                    "eq" => {
+                        if self.target_value.eq(data.value) {
+                            true
+                        }else{
+                            false
+                        }
+                    }
+                    "ge" => {
+                        let target_v = f32::from_str(self.target_value).unwrap;
+                        let current_v = f32::from_str(data.value).unwrap;
+                        if target_v >= current_v {
+                            true
+                        }else{
+                            false
+                        }
+                    }
+                    "gt" => {
+                        let target_v = f32::from_str(self.target_value).unwrap;
+                        let current_v = f32::from_str(data.value).unwrap;
+                        if target_v > current_v {
+                            true
+                        }else{
+                            false
+                        }
+                    }
+                    _ => false
+                }
+            }
+        }
     }
 }
