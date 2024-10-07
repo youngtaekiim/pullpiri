@@ -40,10 +40,10 @@ pub async fn list_scenario() -> Json<Vec<Scenario>> {
 
         let name = split.get(1).unwrap().to_string();
         let status = v.pop().unwrap_or_default();
-        let condition = common::etcd::get(&format!("condition/{}", name.clone()))
+        let condition = common::etcd::get(&format!("scenario/{name}/conditions"))
             .await
             .unwrap();
-        let action = common::etcd::get(&format!("action/{}", name.clone()))
+        let action = common::etcd::get(&format!("scenario/{name}/actions"))
             .await
             .unwrap();
         scenarios.push(Scenario {
