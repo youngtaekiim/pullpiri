@@ -34,11 +34,16 @@ pub async fn list_scenario() -> Json<Vec<Scenario>> {
     let (mut k, mut v) = common::etcd::get_all("scenario").await.unwrap_or_default();
 
     let mut scenarios: Vec<Scenario> = Vec::new();
+    let mut exist: Vec<String> = Vec::new();
     for _ in 0..k.len() {
         let key = k.pop().unwrap();
         let split: Vec<&str> = key.split('/').collect();
 
         let name = split.get(1).unwrap().to_string();
+        if exist.contains(&name) {
+            continue;
+        }
+        exist.push(name.clone());
         let status = v.pop().unwrap_or_default();
         let condition = common::etcd::get(&format!("scenario/{name}/conditions"))
             .await
