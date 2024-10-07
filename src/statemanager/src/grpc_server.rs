@@ -7,8 +7,9 @@ use crate::method_bluechi::send_dbus;
 use common::etcd;
 use common::statemanager::connection_server::Connection;
 use common::statemanager::{Action, Response};
+use ssh2::Session;
 use std::error::Error;
-use std::{thread, time::Duration};
+use std::{net::TcpStream, thread, time::Duration};
 
 const SYSTEMD_PATH: &str = "/etc/containers/systemd/";
 
@@ -74,7 +75,7 @@ async fn handle_operation(
     match operation {
         "launch" => {
             // make symlink & reload
-            make_symlink_and_reload(model_name, target_name).await?;
+            make_symlink_and_reload(node_name, model_name, target_name).await?;
             // start service
             try_service(node_name, model_name, "START").await?;
         }
@@ -89,7 +90,7 @@ async fn handle_operation(
             // delete symlink & reload
             let _ = delete_symlink_and_reload(model_name).await;
             // make symlink & reload
-            let _ = make_symlink_and_reload(model_name, target_name).await;
+            let _ = make_symlink_and_reload(node_name, model_name, target_name).await;
             // restart service
             let _ = try_service(node_name, model_name, "RESTART").await;
         }
@@ -105,9 +106,31 @@ async fn handle_operation(
 }
 
 async fn delete_symlink_and_reload(model_name: &str) -> Result<(), Box<dyn Error>> {
+    // host node
     let kube_symlink_path = format!("{}{}.kube", SYSTEMD_PATH, model_name);
-    let _ = std::fs::remove_file(kube_symlink_path);
+    let _ = std::fs::remove_file(&kube_symlink_path);
 
+    // guest node
+    let guest_ssh_ip = common::get_conf("GUEST_SSH_IP");
+    let tcp = TcpStream::connect(guest_ssh_ip)?;
+
+    let mut session = Session::new()?;
+    session.set_tcp_stream(tcp);
+    session.handshake()?;
+    let (id, pw) = (
+        common::get_conf("GUEST_NODE_ID"),
+        common::get_conf("GUEST_NODE_PW"),
+    );
+    session.userauth_password(&id, &pw).unwrap();
+    assert!(session.authenticated());
+
+    let mut channel = session.channel_session()?;
+    let command = format!("sudo rm -rf {kube_symlink_path}");
+    channel.exec(&command)?;
+    channel.wait_eof()?;
+    channel.wait_close()?;
+
+    // reload all nodes
     send_dbus(vec!["DAEMON_RELOAD"]).await?;
     thread::sleep(Duration::from_millis(100));
 
@@ -115,6 +138,7 @@ async fn delete_symlink_and_reload(model_name: &str) -> Result<(), Box<dyn Error
 }
 
 async fn make_symlink_and_reload(
+    node_name: &str,
     model_name: &str,
     target_name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -125,7 +149,29 @@ async fn make_symlink_and_reload(
         model_name
     );
     let link = format!("{}{}.kube", SYSTEMD_PATH, model_name);
-    std::os::unix::fs::symlink(original, link)?;
+
+    if node_name == common::get_conf("HOST_NODE") {
+        std::os::unix::fs::symlink(original, link)?;
+    } else {
+        let guest_ssh_ip = common::get_conf("GUEST_SSH_IP");
+        let tcp = TcpStream::connect(guest_ssh_ip)?;
+
+        let mut session = Session::new()?;
+        session.set_tcp_stream(tcp);
+        session.handshake()?;
+        let (id, pw) = (
+            common::get_conf("GUEST_NODE_ID"),
+            common::get_conf("GUEST_NODE_PW"),
+        );
+        session.userauth_password(&id, &pw).unwrap();
+        assert!(session.authenticated());
+
+        let mut channel = session.channel_session()?;
+        let command = format!("sudo ln -s {original} {link}");
+        channel.exec(&command).unwrap();
+        channel.wait_eof()?;
+        channel.wait_close()?;
+    }
 
     send_dbus(vec!["DAEMON_RELOAD"]).await?;
     thread::sleep(Duration::from_millis(100));

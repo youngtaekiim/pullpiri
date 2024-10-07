@@ -26,12 +26,15 @@ fn init_conf() -> config::Config {
                 .unwrap()
                 .set_default("YAML_STORAGE", "/root/piccolo_yaml")
                 .unwrap()
-                .set_default("HOST_NODE", "master")
+                .set_default("HOST_NODE", "SoC1")
                 .unwrap()
-                .set_default(
-                    "DOC_REGISTRY",
-                    "http://mod.lge.com/hub/piccolo/piccolo-bluechi/-/raw/main/examples/res",
-                )
+                .set_default("GUEST_NODE", "ZcFront")
+                .unwrap()
+                .set_default("GUEST_NODE_ID", "root")
+                .unwrap()
+                .set_default("GUEST_NODE_PW", "lge123")
+                .unwrap()
+                .set_default("DOC_REGISTRY", "http://0.0.0.0:41234")
                 .unwrap()
                 .build()
                 .unwrap(),

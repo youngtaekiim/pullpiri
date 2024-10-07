@@ -26,9 +26,9 @@ image:
 .PHONY: pre
 pre:
 	-mkdir /root/piccolo_yaml
-	-mkdir /root/piccolo_yaml/packages
-	-mkdir /root/piccolo_yaml/scenarios
+	-cp -r examples/resources/* /root/piccolo_yaml/
 	-mkdir /etc/containers/systemd/piccolo/
+	-podman-compose -f examples/nginx/docker-compose.yaml up -d
 
 .PHONY: install
 install:
@@ -45,9 +45,9 @@ uninstall:
 
 .PHONY: post
 post:
-	-rm -rf /root/piccolo_yaml/packages
-	-rm -rf /root/piccolo_yaml/scenarios
+	-rm -rf /root/piccolo_yaml
 	-rm -rf /etc/containers/systemd/piccolo/
+	-podman-compose -f examples/nginx/docker-compose.yaml down
 
 .PHONY: tinstall
 tinstall:
