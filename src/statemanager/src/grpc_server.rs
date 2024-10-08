@@ -87,6 +87,12 @@ async fn handle_operation(
             delete_symlink_and_reload(model_name).await?;
         }
         "update" | "rollback" => {
+            // stop previous service
+            if node_name == common::get_conf("HOST_NODE") {
+                let _ = try_service(&common::get_conf("GUEST_NODE"), model_name, "STOP").await;
+            } else {
+                let _ = try_service(&common::get_conf("HOST_NODE"), model_name, "STOP").await;
+            }
             // delete symlink & reload
             let _ = delete_symlink_and_reload(model_name).await;
             // make symlink & reload
