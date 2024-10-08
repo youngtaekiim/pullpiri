@@ -18,6 +18,7 @@ impl Pod {
             metadata: MetaData {
                 name: name.to_string(),
                 labels: None,
+                annotations: None,
             },
             spec: podspec,
         }

@@ -14,4 +14,5 @@ use config::Map;
 struct MetaData {
     name: String,
     labels: Option<Map<String, String>>,
+    annotations: Option<Map<String, String>>,
 }
