@@ -74,7 +74,7 @@ async fn handle_dds(
         let mut keep: Vec<bool> = Vec::new();
         for filter in filters.iter_mut() {
             let result = filter.check(data.clone()).await;
-            keep.push(result);
+            keep.push(!result);
             if result {
                 use crate::grpc::sender;
                 let _ = sender::send(&filter.action_key).await;
