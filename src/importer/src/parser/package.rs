@@ -52,6 +52,8 @@ pub fn parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> {
         file_handler::perform(&m.get_name(), &serde_yaml::to_string(&model)?, &name)?;
     }
 
+    file_handler::copy_to_remote_node(path)?;
+
     Ok(Package {
         name,
         model_names,

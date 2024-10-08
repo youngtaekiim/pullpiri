@@ -35,7 +35,7 @@ mod tests {
         assert!(result.is_ok());
     }*/
 
-    #[test]
+    /*#[test]
     fn test_ssh2() {
         use ssh2::Session;
         use std::net::TcpStream;
@@ -54,5 +54,44 @@ mod tests {
         //channel.send_eof().unwrap();
         channel.wait_eof().unwrap();
         channel.wait_close().unwrap();
+    }*/
+
+    use ssh2::Session;
+    use std::path::Path;
+    use std::{fs, io};
+
+    #[test]
+    fn test_ssh2_copy_foler() -> Result<(), Box<dyn std::error::Error>> {
+        let tcp = std::net::TcpStream::connect("10.157.19.221:47022")?;
+        let mut session = Session::new()?;
+        session.set_tcp_stream(tcp);
+        session.handshake().unwrap();
+        session.userauth_password("root", "lge123").unwrap();
+        assert!(session.authenticated());
+
+        let local_folder = Path::new("/root/demo/");
+        let remote_folder = "/root/demo/";
+        upload_folder(&session, local_folder, remote_folder)?;
+
+        Ok(())
+    }
+
+    fn upload_folder(session: &Session, local_path: &Path, remote_path: &str) -> io::Result<()> {
+        for entry in fs::read_dir(local_path)? {
+            let entry = entry?;
+            let path = entry.path();
+            let file_name = entry.file_name();
+            let remote_file_path = format!("{}/{}", remote_path, file_name.to_string_lossy());
+            let rfp = Path::new(&remote_file_path);
+            if path.is_dir() {
+                session.sftp()?.mkdir(rfp, 0o755)?;
+                upload_folder(session, &path, &remote_file_path)?;
+            } else {
+                let mut remote_file = session.sftp()?.create(&rfp)?;
+                let mut local_file = fs::File::open(&path)?;
+                io::copy(&mut local_file, &mut remote_file)?;
+            }
+        }
+        Ok(())
     }
 }
