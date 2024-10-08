@@ -3,11 +3,13 @@ syntax = "proto3";
 package apiserver.metric_notifier;
 
 message ImageList {
-  repeated string images = 1;
+  string node_name =1;
+  repeated string images = 2;
 }
 
 message ContainerList {
-  repeated ContainerInfo containers = 1;
+  string node_name =1;
+  repeated ContainerInfo containers = 2;
 }
 
 message ContainerInfo {
@@ -20,7 +22,8 @@ message ContainerInfo {
 }
 
 message PodList {
-  repeated PodInfo pods = 1;
+  string node_name =1;
+  repeated PodInfo pods = 2;
 }
 
 message PodInfo {

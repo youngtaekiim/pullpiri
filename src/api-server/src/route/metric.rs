@@ -1,6 +1,8 @@
 use axum::{routing::get, Json, Router};
 
-use crate::grpc::receiver::metric_notifier::{NewContainerList, NewImageList, NewPodList};
+use crate::grpc::receiver::metric_notifier::{
+    NewContainerInfo, NewContainerList, NewImageList, NewPodInfo, NewPodList,
+};
 
 pub fn get_route() -> Router {
     Router::new()
@@ -11,23 +13,48 @@ pub fn get_route() -> Router {
 }
 
 pub async fn list_image() -> Json<NewImageList> {
-    let s = common::etcd::get("metric/image").await.unwrap_or_default();
-    let image: NewImageList = serde_json::from_str(&s).unwrap_or_default();
-    Json(image)
+    /*let s = common::etcd::get("metric/image").await.unwrap_or_default();
+    let image: NewImageList = serde_json::from_str(&s).unwrap_or_default();*/
+    let mut list: Vec<String> = Vec::new();
+    let (_, v) = common::etcd::get_all("metric/image")
+        .await
+        .unwrap_or_default();
+    for s in v {
+        let mut each_list: NewImageList = serde_json::from_str(&s).unwrap_or_default();
+        list.append(&mut each_list.images);
+    }
+
+    Json(NewImageList { images: list })
 }
 
 pub async fn list_container() -> Json<NewContainerList> {
-    let s = common::etcd::get("metric/container")
+    /*let s = common::etcd::get("metric/container")
         .await
         .unwrap_or_default();
-    let container: NewContainerList = serde_json::from_str(&s).unwrap_or_default();
-    Json(container)
+    let container: NewContainerList = serde_json::from_str(&s).unwrap_or_default();*/
+    let mut list: Vec<NewContainerInfo> = Vec::new();
+    let (_, v) = common::etcd::get_all("metric/container")
+        .await
+        .unwrap_or_default();
+    for s in v {
+        let mut each_list: NewContainerList = serde_json::from_str(&s).unwrap_or_default();
+        list.append(&mut each_list.containers);
+    }
+    Json(NewContainerList { containers: list })
 }
 
 pub async fn list_pod() -> Json<NewPodList> {
-    let s = common::etcd::get("metric/pod").await.unwrap_or_default();
-    let pod: NewPodList = serde_json::from_str(&s).unwrap_or_default();
-    Json(pod)
+    /*let s = common::etcd::get("metric/pod").await.unwrap_or_default();
+    let pod: NewPodList = serde_json::from_str(&s).unwrap_or_default();*/
+    let mut list: Vec<NewPodInfo> = Vec::new();
+    let (_, v) = common::etcd::get_all("metric/pod")
+        .await
+        .unwrap_or_default();
+    for s in v {
+        let mut each_list: NewPodList = serde_json::from_str(&s).unwrap_or_default();
+        list.append(&mut each_list.pods);
+    }
+    Json(NewPodList { pods: list })
 }
 
 pub async fn list_scenario() -> Json<Vec<Scenario>> {

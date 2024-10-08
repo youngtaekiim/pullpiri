@@ -21,10 +21,12 @@ impl MetricConnection for GrpcMetricServer {
         println!("Got a request from {:?}", request.remote_addr());
 
         let image_list = request.into_inner();
+        let node_name = image_list.node_name.clone();
         let new_image_list = NewImageList::from(image_list);
         let j = serde_json::to_string(&new_image_list).unwrap();
         //println!("image\n{:#?}", j);
-        let _ = common::etcd::put("metric/image", &j).await;
+        let key = format!("metric/image/{node_name}");
+        let _ = common::etcd::put(&key, &j).await;
 
         Ok(tonic::Response::new(Response {
             resp: true.to_string(),
@@ -35,10 +37,12 @@ impl MetricConnection for GrpcMetricServer {
         println!("Got a request from {:?}", request.remote_addr());
 
         let container_list = request.into_inner();
+        let node_name = container_list.node_name.clone();
         let new_container_list = NewContainerList::from(container_list);
         let j = serde_json::to_string(&new_container_list).unwrap();
         //println!("container\n{:#?}", j);
-        let _ = common::etcd::put("metric/container", &j).await;
+        let key = format!("metric/container/{node_name}");
+        let _ = common::etcd::put(&key, &j).await;
 
         Ok(tonic::Response::new(Response {
             resp: true.to_string(),
@@ -49,10 +53,12 @@ impl MetricConnection for GrpcMetricServer {
         println!("Got a request from {:?}", request.remote_addr());
 
         let pod_list = request.into_inner();
+        let node_name = pod_list.node_name.clone();
         let new_pod_list = NewPodList::from(pod_list);
         let j = serde_json::to_string(&new_pod_list).unwrap();
         //println!("pod\n{:#?}", j);
-        let _ = common::etcd::put("metric/pod", &j).await;
+        let key = format!("metric/pod/{node_name}");
+        let _ = common::etcd::put(&key, &j).await;
 
         Ok(tonic::Response::new(Response {
             resp: true.to_string(),
