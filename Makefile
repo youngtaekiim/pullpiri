@@ -46,8 +46,13 @@ uninstall:
 .PHONY: post
 post:
 	-rm -rf /root/piccolo_yaml
-	-rm -rf /etc/containers/systemd/piccolo/
+	-rm -rf /etc/containers/systemd/*
 	-podman-compose -f examples/nginx/docker-compose.yaml down
+	-podman pod rm -f bms-blis
+	-podman pod rm -f bms-frism
+	-podman pod rm -f bms-mavd
+	-podman pod rm -f bms-rdv
+	systemctl daemon-reload
 
 .PHONY: tinstall
 tinstall:
