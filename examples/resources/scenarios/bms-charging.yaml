@@ -13,7 +13,7 @@ spec:
     operands:
       type: DDS
       name: charging_status
-      value: "rt/piccolo/Charging_Status"
+      value: "/rt/piccolo/Charging_Status"
   actions:
     - operation: update
   targets:

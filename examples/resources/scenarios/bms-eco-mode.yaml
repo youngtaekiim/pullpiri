@@ -13,7 +13,7 @@ spec:
     operands:
       type: DDS
       name: battery_capacity
-      value: "rt/piccolo/Battery_Capacity"
+      value: "/rt/piccolo/Battery_Capacity"
   actions:
     - operation: update
   targets:
