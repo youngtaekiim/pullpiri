@@ -8,22 +8,22 @@ spec:
     - type: plain
   models:
     - name: bms-blis
-      node: SoC1
+      node: HPC
       resources:
         volume: bms-volume
         network: bms-network
     - name: bms-frism
-      node: ZcFront
+      node: HPC
       resources:
         volume: bms-volume
         network: bms-network
     - name: bms-mavd
-      node: SoC1
+      node: HPC
       resources:
         volume: bms-volume
         network: bms-network
     - name: bms-rdv
-      node: ZcFront
+      node: ZONE
       resources:
         volume: bms-volume
         network: bms-network
