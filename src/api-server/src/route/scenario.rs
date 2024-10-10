@@ -34,7 +34,15 @@ pub async fn list_scenario() -> Json<Vec<Scenario>> {
 
 pub async fn inspect_scenario(Path(name): Path<String>) -> impl IntoResponse {
     println!("todo - inspect {name}");
-    return_ok()
+    let (k, _) = common::etcd::get_all("scenario").await.unwrap_or_default();
+    for key in k {
+        if key.contains(&name) {
+            return return_ok();
+        } else {
+            continue;
+        }
+    }
+    return_err()
 }
 
 pub async fn import_scenario(Path(name): Path<String>, body: String) -> impl IntoResponse {
@@ -72,7 +80,7 @@ fn return_ok() -> Response<Body> {
 
 fn return_err() -> Response<Body> {
     Response::builder()
-        .status(StatusCode::BAD_REQUEST)
+        .status(StatusCode::NOT_FOUND)
         .body(Body::from("Error".to_string()))
         .unwrap()
 }
