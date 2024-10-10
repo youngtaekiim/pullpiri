@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // TOPIC NAME = /rt/piccolo/Gear_State
 #[allow(non_snake_case)]
 pub mod GearState {

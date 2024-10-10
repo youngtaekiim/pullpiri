@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Piccolo resources
 
 Piccolo uses resources called `Package` and `Scenario` to manage vehicle services. The package actually represents the vehicle service, and the scenario represents the conditions, policies, etc. under which this service will be executed.

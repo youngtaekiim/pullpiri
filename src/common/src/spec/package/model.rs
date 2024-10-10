@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 use super::super::workload::podspec::PodSpec;
 use super::MetaData;
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 use super::DdsData;
 use dust_dds::{
     dds_async::domain_participant_factory::DomainParticipantFactoryAsync,

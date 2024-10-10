@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Scenario
 
 A scenario is a specification for performing given actions on a given target package when given conditions are met.

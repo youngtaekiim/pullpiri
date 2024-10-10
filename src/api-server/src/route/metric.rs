@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 use axum::{routing::get, Json, Router};
 
 use crate::grpc::receiver::metric_notifier::{

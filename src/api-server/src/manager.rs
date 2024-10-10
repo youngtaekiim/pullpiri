@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 use common::gateway;
 use importer::parser::package::Package;
 use importer::parser::scenario::Scenario;

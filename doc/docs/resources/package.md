@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Package
 
 A piccolo package exposes container image information, network, volume requirements, etc. By separating these resources, Piccolo aims to make it easier for users to assemble the services they want.

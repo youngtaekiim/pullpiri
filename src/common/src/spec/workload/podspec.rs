@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 #[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct PodSpec {

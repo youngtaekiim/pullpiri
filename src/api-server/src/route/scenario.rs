@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 use axum::{
     body::Body,
     extract::Path,

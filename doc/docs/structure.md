@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Structure
 
 <img alt="piccolo overview" src="../images/overview.png"

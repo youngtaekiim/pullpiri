@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # version-display example
 
 In this example, we will run a simple app as container that displays the version name.

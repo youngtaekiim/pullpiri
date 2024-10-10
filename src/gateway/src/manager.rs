@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 use crate::filter::Filter;
 use crate::listener::{DdsData, EventListener};
 use common::gateway::Condition;
