@@ -36,8 +36,12 @@ pub async fn handle_package_msg(p: Package) -> Result<(), Box<dyn std::error::Er
     Ok(())
 }
 
-pub async fn handle_scenario_msg(s: Scenario) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle_scenario_msg(
+    s: Scenario,
+    file_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let key_origin = format!("scenario/{}", s.name);
+    common::etcd::put(&format!("{key_origin}/file"), file_name).await?;
     common::etcd::put(&format!("{key_origin}/actions"), &s.actions).await?;
     common::etcd::put(&format!("{key_origin}/conditions"), &s.conditions).await?;
     common::etcd::put(&format!("{key_origin}/targets"), &s.targets).await?;
