@@ -11,6 +11,7 @@ metadata:
   labels:
     app: bms-mavd
 spec:
+  hostNetwork: true
   containers:
     - name: mavd
       image: localhost/mavd:1.0

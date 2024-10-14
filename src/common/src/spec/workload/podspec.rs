@@ -3,6 +3,7 @@
 #[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct PodSpec {
+    hostNetwork: Option<bool>,
     containers: Vec<Container>,
     pub volumes: Option<Vec<Volume>>,
     initContainers: Option<Vec<Container>>,

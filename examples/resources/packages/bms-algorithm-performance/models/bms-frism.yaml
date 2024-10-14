@@ -11,6 +11,7 @@ metadata:
   labels:
     app: bms-frism
 spec:
+  hostNetwork: true
   containers:
     - name: frism
       image: localhost/frism:1.0

@@ -11,6 +11,7 @@ metadata:
   labels:
     app: bms-rdv
 spec:
+  hostNetwork: true
   containers:
     - name: rdv
       image: localhost/rdv:1.0
