@@ -15,4 +15,7 @@ spec:
   containers:
     - name: mavd
       image: localhost/mavd:1.0
+      env:
+      - name: LGES_MAVD_MONITOR_SIM_MODE
+        value: 1
   terminationGracePeriodSeconds: 0
