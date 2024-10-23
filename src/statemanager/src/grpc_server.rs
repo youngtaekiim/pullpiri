@@ -128,7 +128,10 @@ async fn delete_symlink_and_reload(model_name: &str) -> Result<(), Box<dyn Error
         common::get_conf("GUEST_NODE_PW"),
     );
     session.userauth_password(&id, &pw).unwrap();
-    assert!(session.authenticated());
+    if !session.authenticated() {
+        println!("auth failed to remote node");
+        return Err("auth failed".into());
+    }
 
     let mut channel = session.channel_session()?;
     let command = format!("sudo rm -rf {kube_symlink_path}");
@@ -170,7 +173,10 @@ async fn make_symlink_and_reload(
             common::get_conf("GUEST_NODE_PW"),
         );
         session.userauth_password(&id, &pw).unwrap();
-        assert!(session.authenticated());
+        if !session.authenticated() {
+            println!("auth failed to remote node");
+            return Err("auth failed".into());
+        }
 
         let mut channel = session.channel_session()?;
         let command = format!("sudo ln -s {original} {link}");

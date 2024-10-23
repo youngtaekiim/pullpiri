@@ -118,7 +118,10 @@ pub fn copy_to_remote_node(path: &str) -> Result<(), Box<dyn std::error::Error>>
         common::get_conf("GUEST_NODE_PW"),
     );
     session.userauth_password(&id, &pw).unwrap();
-    assert!(session.authenticated());
+    if !session.authenticated() {
+        println!("auth failed to remote node");
+        return Err("auth failed".into());
+    }
 
     let local_folder = Path::new(path);
     let remote_folder = path;

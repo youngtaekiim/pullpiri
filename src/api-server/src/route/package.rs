@@ -9,11 +9,6 @@ use axum::{
     Json, Router,
 };
 
-#[derive(serde::Serialize)]
-pub struct Package {
-    name: String,
-}
-
 pub fn get_route() -> Router {
     Router::new()
         .route("/package/", get(list_package))
@@ -22,15 +17,8 @@ pub fn get_route() -> Router {
         .route("/package/:name", delete(delete_package))
 }
 
-pub async fn list_package() -> Json<Vec<Package>> {
-    let packages = vec![
-        Package {
-            name: "version".to_string(),
-        },
-        Package {
-            name: "display".to_string(),
-        },
-    ];
+pub async fn list_package() -> Json<Vec<String>> {
+    let packages = vec![String::new(), String::new()];
     Json(packages)
 }
 
