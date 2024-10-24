@@ -59,10 +59,10 @@ pub async fn list_pod() -> Json<NewPodList> {
     Json(NewPodList { pods: list })
 }
 
-pub async fn list_scenario() -> Json<Vec<Scenario>> {
+pub async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
     let (mut k, mut v) = common::etcd::get_all("scenario").await.unwrap_or_default();
 
-    let mut scenarios: Vec<Scenario> = Vec::new();
+    let mut scenarios: Vec<ScenarioInfo> = Vec::new();
     let mut exist: Vec<String> = Vec::new();
     for _ in 0..k.len() {
         let key = k.pop().unwrap();
@@ -70,6 +70,7 @@ pub async fn list_scenario() -> Json<Vec<Scenario>> {
 
         let name = split.get(1).unwrap().to_string();
         if exist.contains(&name) {
+            v.pop();
             continue;
         }
         exist.push(name.clone());
@@ -80,7 +81,7 @@ pub async fn list_scenario() -> Json<Vec<Scenario>> {
         let action = common::etcd::get(&format!("scenario/{name}/actions"))
             .await
             .unwrap();
-        scenarios.push(Scenario {
+        scenarios.push(ScenarioInfo {
             name,
             status,
             condition,
@@ -91,7 +92,7 @@ pub async fn list_scenario() -> Json<Vec<Scenario>> {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Default)]
-pub struct Scenario {
+pub struct ScenarioInfo {
     pub name: String,
     pub status: String,
     pub condition: String,

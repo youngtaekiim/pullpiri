@@ -7,12 +7,7 @@ syntax = "proto3";
 
 package apiserver;
 
-import "apiserver/scenario.proto";
 import "apiserver/metric_notifier.proto";
-
-service ScenarioConnection {
-  rpc SendScenario (scenario.Scenario) returns (Response);
-}
 
 service MetricConnection {
   rpc SendImageList (metric_notifier.ImageList) returns (Response);

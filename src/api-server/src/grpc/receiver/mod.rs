@@ -4,4 +4,3 @@
  */
 
 pub mod metric_notifier;
-pub mod scenario_handler;

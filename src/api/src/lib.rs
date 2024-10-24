@@ -6,9 +6,6 @@
 pub mod proto {
     pub mod apiserver {
         tonic::include_proto!("apiserver");
-        pub mod scenario {
-            tonic::include_proto!("apiserver.scenario");
-        }
         pub mod metric_notifier {
             tonic::include_proto!("apiserver.metric_notifier");
         }

@@ -18,7 +18,7 @@ pub struct GrpcMetricServer {}
 #[tonic::async_trait]
 impl MetricConnection for GrpcMetricServer {
     async fn send_image_list(&self, request: Request<ImageList>) -> GrpcResult {
-        println!("Got a request from {:?}", request.remote_addr());
+        //println!("Got a request from {:?}", request.remote_addr());
 
         let image_list = request.into_inner();
         let node_name = image_list.node_name.clone();
@@ -34,7 +34,7 @@ impl MetricConnection for GrpcMetricServer {
     }
 
     async fn send_container_list(&self, request: Request<ContainerList>) -> GrpcResult {
-        println!("Got a request from {:?}", request.remote_addr());
+        //println!("Got a request from {:?}", request.remote_addr());
 
         let container_list = request.into_inner();
         let node_name = container_list.node_name.clone();
@@ -50,7 +50,7 @@ impl MetricConnection for GrpcMetricServer {
     }
 
     async fn send_pod_list(&self, request: Request<PodList>) -> GrpcResult {
-        println!("Got a request from {:?}", request.remote_addr());
+        //println!("Got a request from {:?}", request.remote_addr());
 
         let pod_list = request.into_inner();
         let node_name = pod_list.node_name.clone();
@@ -66,6 +66,9 @@ impl MetricConnection for GrpcMetricServer {
     }
 }
 
+/*
+ * Copied structure for applying serde trait
+*/
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Default)]

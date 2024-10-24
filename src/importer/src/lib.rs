@@ -8,7 +8,7 @@ pub mod parser;
 use parser::{package, scenario};
 use std::{error::Error, path::Path};
 
-pub async fn handle_package(package_name: &str) -> Result<package::Package, Box<dyn Error>> {
+pub async fn parse_package(package_name: &str) -> Result<package::Package, Box<dyn Error>> {
     //url path
     let full_url: String = format!(
         "{}/packages/{}.tar",
@@ -40,7 +40,7 @@ pub async fn handle_package(package_name: &str) -> Result<package::Package, Box<
     package::parse(&parsing_path)
 }
 
-pub async fn handle_scenario(scenario_name: &str) -> Result<scenario::Scenario, Box<dyn Error>> {
+pub async fn parse_scenario(scenario_name: &str) -> Result<scenario::Scenario, Box<dyn Error>> {
     let full_url = format!(
         "{}/scenarios/{}.yaml",
         common::get_config().doc_registry,
