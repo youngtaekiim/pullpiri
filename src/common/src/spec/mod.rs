@@ -3,16 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+pub mod k8s;
 pub mod package;
-pub mod pod;
 pub mod scenario;
-pub mod workload;
 
-use config::Map;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 struct MetaData {
     name: String,
-    labels: Option<Map<String, String>>,
-    annotations: Option<Map<String, String>>,
+    labels: Option<HashMap<String, String>>,
+    annotations: Option<HashMap<String, String>>,
 }

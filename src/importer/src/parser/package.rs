@@ -33,7 +33,7 @@ pub fn parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> {
     let mut volumes: Vec<String> = Vec::new();
 
     for m in package.get_models() {
-        let mut model: package::model::Model = model_parse(path, &m.get_name()).unwrap();
+        let model: package::model::Model = model_parse(path, &m.get_name()).unwrap();
         model_names.push(m.get_name());
 
         nodes.push(m.get_node());
@@ -45,7 +45,7 @@ pub fn parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> {
         volumes.push(serde_yaml::to_string(&volume_parse(path, &volume_yaml))?);
 
         if let Some(volume_spec) = &volume_parse(path, &volume_yaml) {
-            model.spec.volumes.clone_from(volume_spec.get_volume());
+            model.get_podspec().volumes.clone_from(volume_spec.get_volume());
         }
 
         models.push(serde_yaml::to_string(&model)?);

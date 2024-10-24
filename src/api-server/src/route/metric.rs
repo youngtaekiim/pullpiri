@@ -16,11 +16,11 @@ pub fn get_route() -> Router {
 
 async fn list_image() -> Json<NewImageList> {
     let mut list: Vec<String> = Vec::new();
-    let (_, v) = common::etcd::get_all("metric/image")
+    let kvs = common::etcd::get_all_with_prefix("metric/image")
         .await
         .unwrap_or_default();
-    for s in v {
-        let mut each_list: NewImageList = serde_json::from_str(&s).unwrap_or_default();
+    for kv in kvs {
+        let mut each_list: NewImageList = serde_json::from_str(&kv.value).unwrap_or_default();
         list.append(&mut each_list.images);
     }
 
@@ -29,11 +29,11 @@ async fn list_image() -> Json<NewImageList> {
 
 async fn list_container() -> Json<NewContainerList> {
     let mut list: Vec<NewContainerInfo> = Vec::new();
-    let (_, v) = common::etcd::get_all("metric/container")
+    let kvs = common::etcd::get_all_with_prefix("metric/container")
         .await
         .unwrap_or_default();
-    for s in v {
-        let mut each_list: NewContainerList = serde_json::from_str(&s).unwrap_or_default();
+    for kv in kvs {
+        let mut each_list: NewContainerList = serde_json::from_str(&kv.value).unwrap_or_default();
         list.append(&mut each_list.containers);
     }
     Json(NewContainerList { containers: list })
@@ -41,32 +41,34 @@ async fn list_container() -> Json<NewContainerList> {
 
 async fn list_pod() -> Json<NewPodList> {
     let mut list: Vec<NewPodInfo> = Vec::new();
-    let (_, v) = common::etcd::get_all("metric/pod")
+    let kvs = common::etcd::get_all_with_prefix("metric/pod")
         .await
         .unwrap_or_default();
-    for s in v {
-        let mut each_list: NewPodList = serde_json::from_str(&s).unwrap_or_default();
+    for kv in kvs {
+        let mut each_list: NewPodList = serde_json::from_str(&kv.value).unwrap_or_default();
         list.append(&mut each_list.pods);
     }
     Json(NewPodList { pods: list })
 }
 
 async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
-    let (mut k, mut v) = common::etcd::get_all("scenario").await.unwrap_or_default();
-
+    let mut kvs = common::etcd::get_all_with_prefix("scenario")
+        .await
+        .unwrap_or_default();
     let mut scenarios: Vec<ScenarioInfo> = Vec::new();
     let mut exist: Vec<String> = Vec::new();
-    for _ in 0..k.len() {
-        let key = k.pop().unwrap();
-        let split: Vec<&str> = key.split('/').collect();
+
+    for _ in 0..kvs.len() {
+        let kv = kvs.pop().unwrap();
+        let split: Vec<&str> = kv.key.split('/').collect();
 
         let name = split.get(1).unwrap().to_string();
         if exist.contains(&name) {
-            v.pop();
             continue;
         }
+
         exist.push(name.clone());
-        let status = v.pop().unwrap_or_default();
+        let status = kv.value;
         let condition = common::etcd::get(&format!("scenario/{name}/conditions"))
             .await
             .unwrap();

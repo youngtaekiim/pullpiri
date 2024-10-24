@@ -50,16 +50,15 @@ pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn Error
     let target_name = target.get_name();
 
     let key_models = format!("package/{}/models", &target_name);
-    let (_, value_model) = common::etcd::get_all(&key_models).await?;
+    //let (_, value_model) = common::etcd::get_all_with_prefix(&key_models).await?;
+    let kvs_model = common::etcd::get_all_with_prefix(&key_models).await?;
 
-    for v in value_model {
-        let model: common::spec::package::model::Model = serde_yaml::from_str(&v)?;
+    for kv in kvs_model {
+        let model: common::spec::package::model::Model = serde_yaml::from_str(&kv.value)?;
         let model_name = model.get_name();
-
         let node = common::etcd::get(&format!("package/{target_name}/nodes/{model_name}")).await?;
 
         println!("model : {model_name}\noperation : {operation}\nnode : {node}\n");
-
         handle_operation(operation, &model_name, &target_name, &node).await?;
     }
 

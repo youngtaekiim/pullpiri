@@ -4,7 +4,7 @@
  */
 
 //use super::workload::podspec::PodSpec;
-use super::MetaData;
+use crate::spec::MetaData;
 
 #[allow(non_snake_case)]
 #[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]

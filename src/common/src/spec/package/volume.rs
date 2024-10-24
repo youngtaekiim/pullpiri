@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use super::super::workload::podspec;
-use super::MetaData;
+use crate::spec::k8s::pod;
+use crate::spec::MetaData;
 
 #[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
@@ -14,7 +14,7 @@ pub struct Volume {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct VolumeSpec {
-    volumes: Option<Vec<podspec::Volume>>,
+    volumes: Option<Vec<pod::Volume>>,
 }
 
 impl Volume {
@@ -24,7 +24,7 @@ impl Volume {
 }
 
 impl VolumeSpec {
-    pub fn get_volume(&self) -> &Option<Vec<podspec::Volume>> {
+    pub fn get_volume(&self) -> &Option<Vec<pod::Volume>> {
         &self.volumes
     }
 }

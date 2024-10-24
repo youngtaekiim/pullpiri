@@ -13,6 +13,11 @@ async fn get_client() -> Result<Client, Error> {
     Client::connect([open_server()], None).await
 }
 
+pub struct KV {
+    pub key: String,
+    pub value: String,
+}
+
 pub async fn put(key: &str, value: &str) -> Result<(), Error> {
     let mut client = get_client().await?;
     client.put(key, value, None).await?;
@@ -24,25 +29,26 @@ pub async fn get(key: &str) -> Result<String, Error> {
     let resp = client.get(key, None).await?;
 
     if let Some(kv) = resp.clone().kvs().first() {
-        Ok(kv.value_str()?.to_owned())
+        Ok(kv.value_str()?.to_string())
     } else {
-        Err(etcd_client::Error::InvalidArgs("".to_owned()))
+        Err(etcd_client::Error::InvalidArgs("".to_string()))
     }
 }
 
-pub async fn get_all(key: &str) -> Result<(Vec<String>, Vec<String>), Error> {
+pub async fn get_all_with_prefix(key: &str) -> Result<Vec<KV>, Error> {
     let mut client = get_client().await?;
     let option = Some(GetOptions::new().with_prefix());
     let resp = client.get(key, option).await?;
 
-    let mut k = Vec::<String>::new();
-    let mut v = Vec::<String>::new();
+    let mut vec_kv = Vec::<KV>::new();
     for kv in resp.clone().kvs() {
-        k.push(kv.key_str()?.to_string());
-        v.push(kv.value_str()?.to_string());
+        vec_kv.push(KV {
+            key: kv.key_str()?.to_string(),
+            value: kv.value_str()?.to_string(),
+        })
     }
 
-    Ok((k, v))
+    Ok(vec_kv)
 }
 
 pub async fn delete(key: &str) -> Result<(), Error> {
@@ -51,7 +57,7 @@ pub async fn delete(key: &str) -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn delete_all(key: &str) -> Result<(), Error> {
+pub async fn delete_all_with_prefix(key: &str) -> Result<(), Error> {
     let mut client = get_client().await?;
     let option = Some(DeleteOptions::new().with_prefix());
     client.delete(key, option).await?;

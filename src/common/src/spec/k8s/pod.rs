@@ -1,5 +1,31 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::spec::MetaData;
+
+#[allow(non_snake_case)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct Pod {
+    apiVersion: String,
+    kind: String,
+    metadata: MetaData,
+    spec: PodSpec,
+}
+
+impl Pod {
+    pub fn new(name: &str, podspec: PodSpec) -> Pod {
+        Pod {
+            apiVersion: "v1".to_string(),
+            kind: "Pod".to_string(),
+            metadata: MetaData {
+                name: name.to_string(),
+                labels: None,
+                annotations: None,
+            },
+            spec: podspec,
+        }
+    }
+}
+
 #[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct PodSpec {

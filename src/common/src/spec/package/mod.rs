@@ -16,6 +16,23 @@ pub struct Package {
     status: Option<PackageStatus>,
 }
 
+impl Package {
+    pub fn get_models(&self) -> &Vec<Model> {
+        &self.spec.models
+    }
+    pub fn get_model_name(&self) -> Vec<String> {
+        let mut ret: Vec<String> = Vec::new();
+        for m in &self.spec.models {
+            ret.push(m.name.clone());
+        }
+        ret
+    }
+
+    pub fn get_name(&self) -> String {
+        self.metadata.name.clone()
+    }
+}
+
 #[allow(non_snake_case)]
 #[derive(Debug, serde::Deserialize, PartialEq)]
 pub struct PackageSpec {
@@ -46,23 +63,6 @@ impl Model {
 
     pub fn get_resources(&self) -> &Resource {
         &self.resources
-    }
-}
-
-impl Package {
-    pub fn get_models(&self) -> &Vec<Model> {
-        &self.spec.models
-    }
-    pub fn get_model_name(&self) -> Vec<String> {
-        let mut ret: Vec<String> = Vec::new();
-        for m in &self.spec.models {
-            ret.push(m.name.clone());
-        }
-        ret
-    }
-
-    pub fn get_name(&self) -> String {
-        self.metadata.name.clone()
     }
 }
 
