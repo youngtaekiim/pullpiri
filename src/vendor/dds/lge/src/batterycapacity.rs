@@ -2,9 +2,9 @@
 
 // TOPIC NAME = /rt/piccolo/Battery_Capacity
 #[allow(non_snake_case)]
-pub mod BatteryCapacity{
+pub mod BatteryCapacity {
     #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
     pub struct BatteryCapacityMsg {
-        pub capacity:String,
+        pub capacity: String,
     }
 }
