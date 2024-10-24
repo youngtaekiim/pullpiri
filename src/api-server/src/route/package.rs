@@ -17,19 +17,19 @@ pub fn get_route() -> Router {
         .route("/package/:name", delete(delete_package))
 }
 
-pub async fn list_package() -> Json<Vec<String>> {
+async fn list_package() -> Json<Vec<String>> {
     // TODO
     let packages = vec![String::new(), String::new()];
     Json(packages)
 }
 
-pub async fn inspect_package(Path(name): Path<String>) -> impl IntoResponse {
+async fn inspect_package(Path(name): Path<String>) -> impl IntoResponse {
     // TODO
     println!("todo - inspect {name}");
     return_ok()
 }
 
-pub async fn import_package(Path(name): Path<String>, body: String) -> impl IntoResponse {
+async fn import_package(Path(name): Path<String>, body: String) -> impl IntoResponse {
     let package = importer::parse_package(&body).await;
 
     println!("POST : package {name} is called.");
@@ -43,7 +43,7 @@ pub async fn import_package(Path(name): Path<String>, body: String) -> impl Into
     }
 }
 
-pub async fn delete_package(Path(name): Path<String>) -> impl IntoResponse {
+async fn delete_package(Path(name): Path<String>) -> impl IntoResponse {
     // TODO
     println!("todo - delete {name}");
     return_ok()
@@ -65,7 +65,7 @@ fn return_err() -> Response<Body> {
 
 use importer::parser::package::Package;
 
-pub async fn write_package_info_to_etcd(p: Package) -> Result<(), Box<dyn std::error::Error>> {
+async fn write_package_info_to_etcd(p: Package) -> Result<(), Box<dyn std::error::Error>> {
     let key_origin = format!("package/{}", p.name);
 
     for i in 0..p.model_names.len() {

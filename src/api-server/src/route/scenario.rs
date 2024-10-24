@@ -20,13 +20,13 @@ pub fn get_route() -> Router {
         )
 }
 
-pub async fn list_scenario() -> Json<Vec<String>> {
+async fn list_scenario() -> Json<Vec<String>> {
     // TODO
     let scenarios = vec![String::new(), String::new()];
     Json(scenarios)
 }
 
-pub async fn inspect_scenario(
+async fn inspect_scenario(
     Path((scenario_name, file_name)): Path<(String, String)>,
 ) -> impl IntoResponse {
     let key = format!("scenario/{scenario_name}/file");
@@ -39,7 +39,7 @@ pub async fn inspect_scenario(
     }
 }
 
-pub async fn import_scenario(
+async fn import_scenario(
     Path((scenario_name, file_name)): Path<(String, String)>,
     body: String,
 ) -> impl IntoResponse {
@@ -59,7 +59,7 @@ pub async fn import_scenario(
     }
 }
 
-pub async fn delete_scenario(
+async fn delete_scenario(
     Path((scenario_name, file_name)): Path<(String, String)>,
 ) -> impl IntoResponse {
     // TODO
@@ -85,7 +85,7 @@ fn return_err() -> Response<Body> {
 use common::gateway;
 use importer::parser::scenario::Scenario;
 
-pub async fn write_scenario_info_to_etcd(
+async fn write_scenario_info_to_etcd(
     s: Scenario,
     file_name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {

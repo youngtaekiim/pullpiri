@@ -14,9 +14,7 @@ pub fn get_route() -> Router {
         .route("/metric/scenario", get(list_scenario))
 }
 
-pub async fn list_image() -> Json<NewImageList> {
-    /*let s = common::etcd::get("metric/image").await.unwrap_or_default();
-    let image: NewImageList = serde_json::from_str(&s).unwrap_or_default();*/
+async fn list_image() -> Json<NewImageList> {
     let mut list: Vec<String> = Vec::new();
     let (_, v) = common::etcd::get_all("metric/image")
         .await
@@ -29,11 +27,7 @@ pub async fn list_image() -> Json<NewImageList> {
     Json(NewImageList { images: list })
 }
 
-pub async fn list_container() -> Json<NewContainerList> {
-    /*let s = common::etcd::get("metric/container")
-        .await
-        .unwrap_or_default();
-    let container: NewContainerList = serde_json::from_str(&s).unwrap_or_default();*/
+async fn list_container() -> Json<NewContainerList> {
     let mut list: Vec<NewContainerInfo> = Vec::new();
     let (_, v) = common::etcd::get_all("metric/container")
         .await
@@ -45,9 +39,7 @@ pub async fn list_container() -> Json<NewContainerList> {
     Json(NewContainerList { containers: list })
 }
 
-pub async fn list_pod() -> Json<NewPodList> {
-    /*let s = common::etcd::get("metric/pod").await.unwrap_or_default();
-    let pod: NewPodList = serde_json::from_str(&s).unwrap_or_default();*/
+async fn list_pod() -> Json<NewPodList> {
     let mut list: Vec<NewPodInfo> = Vec::new();
     let (_, v) = common::etcd::get_all("metric/pod")
         .await
@@ -59,7 +51,7 @@ pub async fn list_pod() -> Json<NewPodList> {
     Json(NewPodList { pods: list })
 }
 
-pub async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
+async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
     let (mut k, mut v) = common::etcd::get_all("scenario").await.unwrap_or_default();
 
     let mut scenarios: Vec<ScenarioInfo> = Vec::new();
@@ -92,9 +84,9 @@ pub async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Default)]
-pub struct ScenarioInfo {
-    pub name: String,
-    pub status: String,
-    pub condition: String,
-    pub action: String,
+struct ScenarioInfo {
+    name: String,
+    status: String,
+    condition: String,
+    action: String,
 }
