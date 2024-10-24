@@ -8,40 +8,92 @@ pub mod etcd;
 pub mod gateway;
 pub mod spec;
 pub mod statemanager;
-
 pub mod constants {
     pub use api::proto::constants::*;
 }
 
 use std::sync::OnceLock;
-static CONFIG: OnceLock<config::Config> = OnceLock::new();
+static SETTINGS: OnceLock<Settings> = OnceLock::new();
 
-fn init_conf() -> config::Config {
-    config::Config::builder()
-        .add_source(config::File::with_name("piccolo"))
-        .build()
-        .unwrap_or(
-            config::Config::builder()
-                .set_default("HOST_IP", "0.0.0.0")
-                .unwrap()
-                .set_default("YAML_STORAGE", "/root/piccolo_yaml")
-                .unwrap()
-                .set_default("HOST_NODE", "HPC")
-                .unwrap()
-                .set_default("GUEST_NODE", "ZONE")
-                .unwrap()
-                .set_default("GUEST_NODE_ID", "root")
-                .unwrap()
-                .set_default("GUEST_NODE_PW", "lge123")
-                .unwrap()
-                .set_default("DOC_REGISTRY", "http://0.0.0.0:41234")
-                .unwrap()
-                .build()
-                .unwrap(),
-        )
+#[derive(serde::Deserialize)]
+pub struct Settings {
+    pub yaml_storage: String,
+    pub doc_registry: String,
+    pub host: HostSettings,
+    pub guest: Option<Vec<GuestSettings>>,
 }
 
-pub fn get_conf(key: &str) -> String {
-    let conf = CONFIG.get_or_init(init_conf);
-    conf.get_string(key).unwrap()
+#[derive(serde::Deserialize)]
+pub struct HostSettings {
+    pub name: String,
+    pub ip: String,
+}
+
+#[derive(serde::Deserialize)]
+pub struct GuestSettings {
+    pub name: String,
+    pub ip: String,
+    pub ssh_port: String,
+    pub id: String,
+    pub pw: String,
+}
+
+fn parse_settings_yaml() -> Settings {
+    let s: Settings = Settings {
+        yaml_storage: String::from("/root/piccolo_yaml"),
+        doc_registry: String::from("http://0.0.0.0:41234"),
+        host: HostSettings {
+            name: String::from("HPC"),
+            ip: String::from("0.0.0.0"),
+        },
+        /*guest: Some(vec![GuestSettings {
+            name: String::from("ZONE"),
+            ip: String::from("192.168.50.239"),
+            ssh_port: String::from("22"),
+            id: String::from("root"),
+            pw: String::from("lge123"),
+        }]),*/
+        guest: None,
+    };
+
+    let settings = config::Config::builder()
+        .add_source(config::File::with_name("/piccolo/settings.yaml"))
+        .build();
+
+    match settings {
+        Ok(result) => result.try_deserialize::<Settings>().unwrap_or(s),
+        Err(_) => s,
+    }
+}
+
+pub fn get_config() -> &'static Settings {
+    SETTINGS.get_or_init(parse_settings_yaml)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::OnceLock;
+    static CONFIG: OnceLock<config::Config> = OnceLock::new();
+
+    fn init_conf() -> config::Config {
+        config::Config::builder()
+            .add_source(config::File::with_name("piccolo"))
+            .build()
+            .unwrap_or(
+                config::Config::builder()
+                    .set_default("HOST_IP", "0.0.0.0")
+                    .unwrap()
+                    .set_default("HOST_NODE", "HPC")
+                    .unwrap()
+                    .build()
+                    .unwrap(),
+            )
+    }
+
+    #[test]
+    pub fn get_conf() {
+        let conf = CONFIG.get_or_init(init_conf);
+        assert_eq!(conf.get_string("HOST_IP").unwrap(), "0.0.0.0");
+        assert_eq!(conf.get_string("HOST_NODE").unwrap(), "HPC");
+    }
 }

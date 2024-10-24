@@ -6,7 +6,7 @@
 pub use etcd_client::{Client, DeleteOptions, Error, GetOptions};
 
 pub fn open_server() -> String {
-    format!("{}:2379", crate::get_conf("HOST_IP"))
+    format!("{}:2379", crate::get_config().host.ip)
 }
 
 async fn get_client() -> Result<Client, Error> {

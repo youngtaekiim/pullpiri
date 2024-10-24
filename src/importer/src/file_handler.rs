@@ -63,7 +63,7 @@ pub fn perform(
 ) -> Result<(), Box<dyn Error>> {
     let directory = format!(
         "{}/packages/{}/{}",
-        common::get_conf("YAML_STORAGE"),
+        common::get_config().yaml_storage,
         package_name,
         model_name
     );
@@ -108,24 +108,26 @@ pub fn extract(path: &str) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn copy_to_remote_node(path: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let guest_ssh_ip = common::get_conf("GUEST_SSH_IP");
-    let tcp = std::net::TcpStream::connect(guest_ssh_ip)?;
-    let mut session = Session::new()?;
-    session.set_tcp_stream(tcp);
-    session.handshake().unwrap();
-    let (id, pw) = (
-        common::get_conf("GUEST_NODE_ID"),
-        common::get_conf("GUEST_NODE_PW"),
-    );
-    session.userauth_password(&id, &pw).unwrap();
-    if !session.authenticated() {
-        println!("auth failed to remote node");
-        return Err("auth failed".into());
-    }
+    if let Some(guests) = &common::get_config().guest {
+        for guest in guests {
+            let guest_ssh_ip = format!("{}:{}", guest.ip, guest.ssh_port);
+            let tcp = std::net::TcpStream::connect(guest_ssh_ip)?;
+            let mut session = Session::new()?;
+            session.set_tcp_stream(tcp);
+            session.handshake().unwrap();
+            session.userauth_password(&guest.id, &guest.pw).unwrap();
+            if !session.authenticated() {
+                println!("auth failed to remote node");
+                return Err("auth failed".into());
+            }
 
-    let local_folder = Path::new(path);
-    let remote_folder = path;
-    upload_to_remote_node(&session, local_folder, remote_folder)?;
+            let local_folder = Path::new(path);
+            let remote_folder = path;
+            upload_to_remote_node(&session, local_folder, remote_folder)?;
+        }
+    } else {
+        println!("There is no guest node.");
+    }
 
     Ok(())
 }

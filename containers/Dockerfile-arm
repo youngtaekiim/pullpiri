@@ -23,7 +23,7 @@ RUN apt update -y && \
 FROM arm64v8/alpine:3.20
 WORKDIR /piccolo
 
-COPY ./piccolo.ini .
+COPY ./settings.yaml .
 
 COPY --from=builder \
     /piccolo/target/release/api-server \

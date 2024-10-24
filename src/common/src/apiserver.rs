@@ -6,9 +6,9 @@
 pub use api::proto::apiserver::*;
 
 pub fn open_server() -> String {
-    format!("{}:47001", crate::get_conf("HOST_IP"))
+    format!("{}:47001", crate::get_config().host.ip)
 }
 
 pub fn connect_server() -> String {
-    format!("http://{}:47001", crate::get_conf("HOST_IP"))
+    format!("http://{}:47001", crate::get_config().host.ip)
 }

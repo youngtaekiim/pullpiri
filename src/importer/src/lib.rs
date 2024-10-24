@@ -10,13 +10,19 @@ use std::{error::Error, path::Path};
 
 pub async fn handle_package(package_name: &str) -> Result<package::Package, Box<dyn Error>> {
     //url path
-    let base_url = common::get_conf("DOC_REGISTRY");
-    let full_url: String = format!("{}/packages/{}.tar", base_url, package_name);
+    let full_url: String = format!(
+        "{}/packages/{}.tar",
+        common::get_config().doc_registry,
+        package_name
+    );
     println!("full url : {}", full_url);
 
     //save path
-    let save_path: String = common::get_conf("YAML_STORAGE");
-    let full_save_path = format!("{}/packages/{}.tar", save_path, package_name);
+    let full_save_path = format!(
+        "{}/packages/{}.tar",
+        common::get_config().yaml_storage,
+        package_name
+    );
     println!("full save path : {}", full_save_path);
 
     //download, decompress
@@ -26,16 +32,25 @@ pub async fn handle_package(package_name: &str) -> Result<package::Package, Box<
     file_handler::extract(&full_save_path)?;
 
     //parsing
-    let parsing_path = format!("{}/packages/{}", save_path, package_name);
+    let parsing_path = format!(
+        "{}/packages/{}",
+        common::get_config().yaml_storage,
+        package_name
+    );
     package::parse(&parsing_path)
 }
 
 pub async fn handle_scenario(scenario_name: &str) -> Result<scenario::Scenario, Box<dyn Error>> {
-    let base_url = common::get_conf("DOC_REGISTRY");
-    let full_url = format!("{}/scenarios/{}.yaml", base_url, scenario_name);
-
-    let save_path: String = common::get_conf("YAML_STORAGE");
-    let full_save_path = format!("{}/scenarios/{}.yaml", save_path, scenario_name);
+    let full_url = format!(
+        "{}/scenarios/{}.yaml",
+        common::get_config().doc_registry,
+        scenario_name
+    );
+    let full_save_path = format!(
+        "{}/scenarios/{}.yaml",
+        common::get_config().yaml_storage,
+        scenario_name
+    );
 
     if !Path::new(&full_save_path).exists() {
         file_handler::download(&full_url, &full_save_path).await?;

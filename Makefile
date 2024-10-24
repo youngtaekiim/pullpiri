@@ -32,7 +32,7 @@ pre:
 
 .PHONY: install
 install:
-	-cp -r ./piccolo.ini /etc/containers/systemd/piccolo/
+	-cp -r ./settings.yaml /etc/containers/systemd/piccolo/
 	-cp -r ./containers/piccolo.* /etc/containers/systemd/piccolo/
 	-cp -r ./etcd-data /etc/containers/systemd/piccolo/etcd-data/
 	systemctl daemon-reload

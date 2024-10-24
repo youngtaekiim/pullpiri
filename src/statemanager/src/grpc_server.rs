@@ -88,10 +88,11 @@ async fn handle_operation(
         }
         "update" | "rollback" => {
             // stop previous service
-            if node_name == common::get_conf("HOST_NODE") {
-                let _ = try_service(&common::get_conf("GUEST_NODE"), model_name, "STOP").await;
-            } else {
-                let _ = try_service(&common::get_conf("HOST_NODE"), model_name, "STOP").await;
+            let _ = try_service(&common::get_config().host.name, model_name, "STOP").await;
+            if let Some(guests) = &common::get_config().guest {
+                for guest in guests {
+                    let _ = try_service(&guest.name, model_name, "STOP").await;
+                }
             }
             // delete symlink & reload
             let _ = delete_symlink_and_reload(model_name).await;
@@ -117,27 +118,27 @@ async fn delete_symlink_and_reload(model_name: &str) -> Result<(), Box<dyn Error
     let _ = std::fs::remove_file(&kube_symlink_path);
 
     // guest node
-    let guest_ssh_ip = common::get_conf("GUEST_SSH_IP");
-    let tcp = TcpStream::connect(guest_ssh_ip)?;
+    if let Some(guests) = &common::get_config().guest {
+        for guest in guests {
+            let guest_ssh_ip = format!("{}:{}", guest.ip, guest.ssh_port);
+            let tcp = TcpStream::connect(guest_ssh_ip)?;
 
-    let mut session = Session::new()?;
-    session.set_tcp_stream(tcp);
-    session.handshake()?;
-    let (id, pw) = (
-        common::get_conf("GUEST_NODE_ID"),
-        common::get_conf("GUEST_NODE_PW"),
-    );
-    session.userauth_password(&id, &pw).unwrap();
-    if !session.authenticated() {
-        println!("auth failed to remote node");
-        return Err("auth failed".into());
+            let mut session = Session::new()?;
+            session.set_tcp_stream(tcp);
+            session.handshake()?;
+            session.userauth_password(&guest.id, &guest.pw).unwrap();
+            if !session.authenticated() {
+                println!("auth failed to remote node");
+                return Err("auth failed".into());
+            }
+
+            let mut channel = session.channel_session()?;
+            let command = format!("sudo rm -rf {kube_symlink_path}");
+            channel.exec(&command)?;
+            channel.wait_eof()?;
+            channel.wait_close()?;
+        }
     }
-
-    let mut channel = session.channel_session()?;
-    let command = format!("sudo rm -rf {kube_symlink_path}");
-    channel.exec(&command)?;
-    channel.wait_eof()?;
-    channel.wait_close()?;
 
     // reload all nodes
     send_dbus(vec!["DAEMON_RELOAD"]).await?;
@@ -153,36 +154,41 @@ async fn make_symlink_and_reload(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let original = format!(
         "{0}/packages/{1}/{2}/{2}.kube",
-        common::get_conf("YAML_STORAGE"),
+        common::get_config().yaml_storage,
         target_name,
         model_name
     );
     let link = format!("{}{}.kube", SYSTEMD_PATH, model_name);
 
-    if node_name == common::get_conf("HOST_NODE") {
+    if node_name == common::get_config().host.name {
         std::os::unix::fs::symlink(original, link)?;
-    } else {
-        let guest_ssh_ip = common::get_conf("GUEST_SSH_IP");
-        let tcp = TcpStream::connect(guest_ssh_ip)?;
+    } else if let Some(guests) = &common::get_config().guest {
+        for guest in guests {
+            if node_name != guest.name {
+                continue;
+            }
+            let guest_ssh_ip = format!("{}:{}", guest.ip, guest.ssh_port);
+            let tcp = TcpStream::connect(guest_ssh_ip)?;
 
-        let mut session = Session::new()?;
-        session.set_tcp_stream(tcp);
-        session.handshake()?;
-        let (id, pw) = (
-            common::get_conf("GUEST_NODE_ID"),
-            common::get_conf("GUEST_NODE_PW"),
-        );
-        session.userauth_password(&id, &pw).unwrap();
-        if !session.authenticated() {
-            println!("auth failed to remote node");
-            return Err("auth failed".into());
+            let mut session = Session::new()?;
+            session.set_tcp_stream(tcp);
+            session.handshake()?;
+            session.userauth_password(&guest.id, &guest.pw).unwrap();
+            if !session.authenticated() {
+                println!("auth failed to remote node");
+                return Err("auth failed".into());
+            }
+
+            let mut channel = session.channel_session()?;
+            let command = format!("sudo ln -s {original} {link}");
+            channel.exec(&command).unwrap();
+            channel.wait_eof()?;
+            channel.wait_close()?;
+            break;
         }
-
-        let mut channel = session.channel_session()?;
-        let command = format!("sudo ln -s {original} {link}");
-        channel.exec(&command).unwrap();
-        channel.wait_eof()?;
-        channel.wait_close()?;
+        return Err(format!("there is not node name {}", node_name).into());
+    } else {
+        return Err("there is no guest nodes".into());
     }
 
     send_dbus(vec!["DAEMON_RELOAD"]).await?;
@@ -196,13 +202,7 @@ async fn try_service(
     model_name: &str,
     act: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    send_dbus(vec![
-        act,
-        //&common::get_conf("HOST_NODE"),
-        node_name,
-        &format!("{}.service", model_name),
-    ])
-    .await?;
+    send_dbus(vec![act, node_name, &format!("{}.service", model_name)]).await?;
     thread::sleep(Duration::from_millis(100));
 
     Ok(())
