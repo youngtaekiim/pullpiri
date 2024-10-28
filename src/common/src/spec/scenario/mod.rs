@@ -96,11 +96,11 @@ struct Operand {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Target {
-    name: String,
+    package: String,
 }
 
 impl Target {
     pub fn get_name(&self) -> String {
-        self.name.clone()
+        self.package.clone()
     }
 }

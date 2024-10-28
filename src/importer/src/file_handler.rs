@@ -113,17 +113,16 @@ pub fn copy_to_remote_node(path: &str) -> Result<(), Box<dyn std::error::Error>>
             let guest_ssh_ip = format!("{}:{}", guest.ip, guest.ssh_port);
             let tcp = std::net::TcpStream::connect(guest_ssh_ip)?;
             let mut session = Session::new()?;
+
             session.set_tcp_stream(tcp);
-            session.handshake().unwrap();
-            session.userauth_password(&guest.id, &guest.pw).unwrap();
+            session.handshake()?;
+            session.userauth_password(&guest.id, &guest.pw)?;
             if !session.authenticated() {
                 println!("auth failed to remote node");
                 return Err("auth failed".into());
             }
 
-            let local_folder = Path::new(path);
-            let remote_folder = path;
-            upload_to_remote_node(&session, local_folder, remote_folder)?;
+            recursive_copy(&session, &PathBuf::from(path))?;
         }
     } else {
         println!("There is no guest node.");
@@ -132,24 +131,19 @@ pub fn copy_to_remote_node(path: &str) -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
-fn upload_to_remote_node(
-    session: &Session,
-    local_path: &Path,
-    remote_path: &str,
-) -> io::Result<()> {
-    for entry in fs::read_dir(local_path)? {
+fn recursive_copy(session: &Session, path: &Path) -> io::Result<()> {
+    for entry in fs::read_dir(path)? {
         let entry = entry?;
-        let path = entry.path();
-        let file_name = entry.file_name();
-        let remote_file_path = format!("{}/{}", remote_path, file_name.to_string_lossy());
-        let rfp = Path::new(&remote_file_path);
-        if path.is_dir() {
-            session.sftp()?.mkdir(rfp, 0o755)?;
-            upload_to_remote_node(session, &path, &remote_file_path)?;
+        let entry_path = entry.path();
+
+        if entry_path.is_dir() {
+            session.sftp()?.mkdir(&entry_path, 0o755)?;
+            recursive_copy(session, &entry_path)?;
         } else {
-            let mut remote_file = session.sftp()?.create(rfp)?;
-            let mut local_file = fs::File::open(&path)?;
-            io::copy(&mut local_file, &mut remote_file)?;
+            // entry_path is file
+            let mut guest_file = session.sftp()?.create(&entry_path)?;
+            let mut host_file = fs::File::open(&entry_path)?;
+            io::copy(&mut host_file, &mut guest_file)?;
         }
     }
     Ok(())

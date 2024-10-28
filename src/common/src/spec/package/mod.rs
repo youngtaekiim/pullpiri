@@ -61,22 +61,22 @@ impl Model {
         self.node.clone()
     }
 
-    pub fn get_resources(&self) -> &Resource {
-        &self.resources
+    pub fn get_resources(&self) -> Resource {
+        self.resources.clone()
     }
 }
 
-#[derive(Debug, serde::Deserialize, PartialEq)]
+#[derive(Clone, Debug, serde::Deserialize, PartialEq)]
 pub struct Resource {
-    volume: String,
-    network: String,
+    volume: Option<String>,
+    network: Option<String>,
 }
 
 impl Resource {
-    pub fn get_volume(&self) -> String {
+    pub fn get_volume(&self) -> Option<String> {
         self.volume.clone()
     }
-    pub fn get_network(&self) -> String {
+    pub fn get_network(&self) -> Option<String> {
         self.network.clone()
     }
 }

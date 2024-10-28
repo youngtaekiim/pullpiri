@@ -8,12 +8,12 @@ mod manager;
 use common::gateway::Condition;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
-async fn running_manager(rx: Receiver<Condition>) {
+async fn launch_manager(rx: Receiver<Condition>) {
     let mut manager = manager::Manager::new(rx);
     manager.run().await;
 }
 
-async fn running_grpc(tx: Sender<Condition>) {
+async fn launch_grpc(tx: Sender<Condition>) {
     use common::gateway::connection_server::ConnectionServer;
     use tonic::transport::Server;
 
@@ -35,8 +35,8 @@ async fn running_grpc(tx: Sender<Condition>) {
 #[tokio::main]
 async fn main() {
     let (tx_grpc, rx_grpc) = channel::<Condition>(50);
-    let f_grpc = running_grpc(tx_grpc);
-    let f_manage = running_manager(rx_grpc);
+    let f_grpc = launch_grpc(tx_grpc);
+    let f_manage = launch_manager(rx_grpc);
 
     tokio::join!(f_grpc, f_manage);
 }

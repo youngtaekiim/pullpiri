@@ -17,4 +17,4 @@ spec:
   actions:
     - operation: update
   targets:
-    - name: "bms-algorithm-performance"
+    - package: "bms-algorithm-performance"

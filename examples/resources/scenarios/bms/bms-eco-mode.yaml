@@ -17,4 +17,4 @@ spec:
   actions:
     - operation: update
   targets:
-    - name: "bms-algorithm-eco"
+    - package: "bms-algorithm-eco"

@@ -45,7 +45,10 @@ pub fn parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> {
         volumes.push(serde_yaml::to_string(&volume_parse(path, &volume_yaml))?);
 
         if let Some(volume_spec) = &volume_parse(path, &volume_yaml) {
-            model.get_podspec().volumes.clone_from(volume_spec.get_volume());
+            model
+                .get_podspec()
+                .volumes
+                .clone_from(volume_spec.get_volume());
         }
 
         models.push(serde_yaml::to_string(&model)?);
@@ -82,15 +85,19 @@ fn model_parse(path: &str, name: &str) -> Result<package::model::Model, Box<dyn 
     parse_yaml(path, name, "models")
 }
 
-fn network_parse(path: &str, name: &str) -> Option<package::network::NetworkSpec> {
-    let network: package::network::Network = parse_yaml(path, name, "networks").unwrap();
-    network.get_spec().clone()
+fn network_parse(path: &str, name: &Option<String>) -> Option<package::network::NetworkSpec> {
+    if let Some(n) = name {
+        let network: package::network::Network = parse_yaml(path, n, "networks").unwrap();
+        return network.get_spec().clone();
+    }
+    None
 }
 
-fn volume_parse(path: &str, name: &str) -> Option<package::volume::VolumeSpec> {
-    if let Ok(volume) = parse_yaml::<package::volume::Volume>(path, name, "volumes") {
-        volume.get_spec().clone()
-    } else {
-        None
+fn volume_parse(path: &str, name: &Option<String>) -> Option<package::volume::VolumeSpec> {
+    if let Some(n) = name {
+        if let Ok(volume) = parse_yaml::<package::volume::Volume>(path, n, "volumes") {
+            return volume.get_spec().clone();
+        }
     }
+    None
 }
