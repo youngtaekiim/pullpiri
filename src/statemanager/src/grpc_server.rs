@@ -38,7 +38,7 @@ impl Connection for StateManagerGrpcServer {
     }
 }
 
-pub async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn Error>> {
+async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn Error>> {
     let key_action = format!("{key}/actions");
     let key_target = format!("{key}/targets");
     let value_action = etcd::get(&key_action).await?;
@@ -128,6 +128,7 @@ async fn delete_symlink_and_reload(model_name: &str) -> Result<(), Box<dyn Error
             session.userauth_password(&guest.id, &guest.pw).unwrap();
             if !session.authenticated() {
                 println!("auth failed to remote node");
+                reload_all_node().await?;
                 return Err("auth failed".into());
             }
 
@@ -138,7 +139,6 @@ async fn delete_symlink_and_reload(model_name: &str) -> Result<(), Box<dyn Error
             channel.wait_close()?;
         }
     }
-    thread::sleep(Duration::from_millis(100));
 
     reload_all_node().await?;
     Ok(())
@@ -183,11 +183,9 @@ async fn make_symlink_and_reload(
             channel.wait_close()?;
             break;
         }
-        return Err(format!("there is not node name {}", node_name).into());
     } else {
         return Err("there is no guest nodes".into());
     }
-    thread::sleep(Duration::from_millis(100));
 
     reload_all_node().await?;
     Ok(())
