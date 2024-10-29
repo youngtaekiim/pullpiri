@@ -138,11 +138,9 @@ async fn delete_symlink_and_reload(model_name: &str) -> Result<(), Box<dyn Error
             channel.wait_close()?;
         }
     }
-
-    // reload all nodes
-    send_dbus(vec!["DAEMON_RELOAD"]).await?;
     thread::sleep(Duration::from_millis(100));
 
+    reload_all_node().await?;
     Ok(())
 }
 
@@ -189,7 +187,13 @@ async fn make_symlink_and_reload(
     } else {
         return Err("there is no guest nodes".into());
     }
+    thread::sleep(Duration::from_millis(100));
 
+    reload_all_node().await?;
+    Ok(())
+}
+
+async fn reload_all_node() -> Result<(), Box<dyn std::error::Error>> {
     send_dbus(vec!["DAEMON_RELOAD"]).await?;
     thread::sleep(Duration::from_millis(100));
 
