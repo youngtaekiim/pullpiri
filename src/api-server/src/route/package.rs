@@ -1,19 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::{
-    body::Body,
     extract::Path,
-    http::StatusCode,
-    response::{IntoResponse, Response},
+    response::IntoResponse,
     routing::{delete, get, post},
     Json, Router,
 };
 
 pub fn get_route() -> Router {
     Router::new()
-        .route("/package/", get(list_package))
+        .route("/package", get(list_package))
         .route("/package/:name", get(inspect_package))
-        .route("/package/:name", post(import_package))
+        .route("/package", post(import_package))
         .route("/package/:name", delete(delete_package))
 }
 
@@ -26,41 +24,25 @@ async fn list_package() -> Json<Vec<String>> {
 async fn inspect_package(Path(name): Path<String>) -> impl IntoResponse {
     // TODO
     println!("todo - inspect {name}");
-    return_ok()
+    super::status_ok()
 }
 
-async fn import_package(Path(name): Path<String>, body: String) -> impl IntoResponse {
+async fn import_package(body: String) -> impl IntoResponse {
+    println!("POST : package {body} is called.");
     let package = importer::parse_package(&body).await;
 
-    println!("POST : package {name} is called.");
-    println!("       Path is {body}.\n");
-
     if write_package_info_to_etcd(package.unwrap()).await.is_ok() {
-        return_ok()
+        super::status_ok()
     } else {
         println!("error: writing package in etcd");
-        return_err()
+        super::status_err()
     }
 }
 
 async fn delete_package(Path(name): Path<String>) -> impl IntoResponse {
     // TODO
     println!("todo - delete {name}");
-    return_ok()
-}
-
-fn return_ok() -> Response<Body> {
-    Response::builder()
-        .status(StatusCode::OK)
-        .body(Body::from("Ok".to_string()))
-        .unwrap()
-}
-
-fn return_err() -> Response<Body> {
-    Response::builder()
-        .status(StatusCode::BAD_REQUEST)
-        .body(Body::from("Error".to_string()))
-        .unwrap()
+    super::status_ok()
 }
 
 use importer::parser::package::Package;

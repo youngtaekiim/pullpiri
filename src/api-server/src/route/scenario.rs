@@ -1,19 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::{
-    body::Body,
     extract::Path,
-    http::StatusCode,
-    response::{IntoResponse, Response},
+    response::IntoResponse,
     routing::{delete, get, post},
     Json, Router,
 };
 
 pub fn get_route() -> Router {
     Router::new()
-        .route("/scenario/", get(list_scenario))
+        .route("/scenario", get(list_scenario))
         .route("/scenario/:scenario_name/:file_name", get(inspect_scenario))
-        .route("/scenario/:scenario_name/:file_name", post(import_scenario))
+        .route("/scenario", post(import_scenario))
         .route(
             "/scenario/:scenario_name/:file_name",
             delete(delete_scenario),
@@ -33,29 +31,25 @@ async fn inspect_scenario(
     let v = common::etcd::get(&key).await.unwrap_or_default();
 
     if file_name == v {
-        return_ok()
+        super::status_ok()
     } else {
-        return_err()
+        super::status_err()
     }
 }
 
-async fn import_scenario(
-    Path((scenario_name, file_name)): Path<(String, String)>,
-    body: String,
-) -> impl IntoResponse {
+async fn import_scenario(body: String) -> impl IntoResponse {
+    println!("POST : scenario {body} is called.\n");
     let scenario = importer::parse_scenario(&body).await;
 
-    println!("POST : scenario {scenario_name} is called.\n");
-    println!("       Path is {body}.\n");
-
-    if write_scenario_info_to_etcd(scenario.unwrap(), &file_name)
+    let scenario_path: Vec<&str> = body.split('/').collect();
+    if write_scenario_info_to_etcd(scenario.unwrap(), scenario_path[1])
         .await
         .is_ok()
     {
-        return_ok()
+        super::status_ok()
     } else {
         println!("error: writing scenario in etcd");
-        return_err()
+        super::status_err()
     }
 }
 
@@ -65,28 +59,11 @@ async fn delete_scenario(
     // TODO
     let path = format!("{scenario_name}/{file_name}");
     println!("todo - delete {path}");
-    return_ok()
+    super::status_ok()
 }
-
-fn return_ok() -> Response<Body> {
-    Response::builder()
-        .status(StatusCode::OK)
-        .body(Body::from("Ok".to_string()))
-        .unwrap()
-}
-
-fn return_err() -> Response<Body> {
-    Response::builder()
-        .status(StatusCode::NOT_FOUND)
-        .body(Body::from("Error".to_string()))
-        .unwrap()
-}
-
-use common::gateway;
-use importer::parser::scenario::Scenario;
 
 async fn write_scenario_info_to_etcd(
-    s: Scenario,
+    s: importer::parser::scenario::Scenario,
     file_name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let key_origin = format!("scenario/{}", s.name);
@@ -96,7 +73,7 @@ async fn write_scenario_info_to_etcd(
     common::etcd::put(&format!("{key_origin}/targets"), &s.targets).await?;
     common::etcd::put(&format!("{key_origin}/full"), &s.scene).await?;
 
-    let condition = gateway::Condition {
+    let condition = common::gateway::Condition {
         name: format!("scenario/{}", &s.name),
     };
 
