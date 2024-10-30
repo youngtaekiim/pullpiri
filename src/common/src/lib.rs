@@ -48,7 +48,7 @@ fn parse_settings_yaml() -> Settings {
         },
         /*guest: Some(vec![GuestSettings {
             name: String::from("ZONE"),
-            ip: String::from("192.168.50.239"),
+            ip: String::from("192.168.10.239"),
             ssh_port: String::from("22"),
             id: String::from("root"),
             pw: String::from("lge123"),

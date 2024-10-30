@@ -7,7 +7,7 @@ host:
   ip: 0.0.0.0
 guest:
   - name: ZONE
-    ip: 192.168.50.239
+    ip: 192.168.10.239
     ssh_port: 22
     id: root
     pw: lge123
