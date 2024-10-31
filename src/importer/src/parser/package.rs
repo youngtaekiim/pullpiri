@@ -18,6 +18,8 @@ pub struct Package {
 }
 
 pub fn parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> {
+    file_handler::create_exist_folder(path)?;
+
     let package_yaml = format!("{}/package.yaml", path);
     let mut f = File::open(package_yaml)?;
     let mut contents = String::new();

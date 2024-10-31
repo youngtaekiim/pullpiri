@@ -107,6 +107,13 @@ pub fn extract(path: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+pub fn create_exist_folder(path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    if !Path::new(path).exists() {
+        fs::create_dir_all(path)?;
+    }
+    Ok(())
+}
+
 pub fn copy_to_remote_node(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     if let Some(guests) = &common::get_config().guest {
         for guest in guests {
@@ -122,6 +129,7 @@ pub fn copy_to_remote_node(path: &str) -> Result<(), Box<dyn std::error::Error>>
                 return Err("auth failed".into());
             }
 
+            session.sftp()?.mkdir(&PathBuf::from(path), 0o755)?;
             recursive_copy(&session, &PathBuf::from(path))?;
         }
     } else {

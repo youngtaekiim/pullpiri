@@ -11,7 +11,7 @@ pub fn get_route() -> Router {
     Router::new()
         .route("/package", get(list_package))
         .route("/package/:name", get(inspect_package))
-        .route("/package", post(import_package))
+        .route("/package", post(handle_post))
         .route("/package/:name", delete(delete_package))
 }
 
@@ -27,15 +27,22 @@ async fn inspect_package(Path(name): Path<String>) -> impl IntoResponse {
     super::status_ok()
 }
 
-async fn import_package(body: String) -> impl IntoResponse {
-    println!("POST : package {body} is called.");
-    let package = importer::parse_package(&body).await;
+async fn handle_post(body: String) -> impl IntoResponse {
+    println!("POST : package {body} is called.\n");
+    let result = import_package(body).await;
 
-    if write_package_info_to_etcd(package.unwrap()).await.is_ok() {
-        super::status_ok()
+    if let Err(msg) = result {
+        super::status_err(&msg.to_string())
     } else {
-        super::status_err("cannot write package in etcd")
+        super::status_ok()
     }
+}
+
+async fn import_package(body: String) -> Result<(), Box<dyn std::error::Error>> {
+    let package = importer::parse_package(&body).await?;
+    write_package_info_to_etcd(package).await?;
+
+    Ok(())
 }
 
 async fn delete_package(Path(name): Path<String>) -> impl IntoResponse {
