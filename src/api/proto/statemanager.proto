@@ -14,7 +14,7 @@ service Connection {
 }
 
 message Action {
-  string action = 2;
+  string action = 1;
 }
 
 message Response {

@@ -13,9 +13,9 @@ pub fn status_ok() -> Response<Body> {
         .unwrap()
 }
 
-pub fn status_err() -> Response<Body> {
+pub fn status_err(msg: &str) -> Response<Body> {
     Response::builder()
         .status(StatusCode::NOT_FOUND)
-        .body(Body::from("Error".to_string()))
+        .body(Body::from(msg.to_string()))
         .unwrap()
 }

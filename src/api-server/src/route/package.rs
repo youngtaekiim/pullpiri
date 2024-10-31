@@ -34,8 +34,7 @@ async fn import_package(body: String) -> impl IntoResponse {
     if write_package_info_to_etcd(package.unwrap()).await.is_ok() {
         super::status_ok()
     } else {
-        println!("error: writing package in etcd");
-        super::status_err()
+        super::status_err("cannot write package in etcd")
     }
 }
 
@@ -51,23 +50,24 @@ async fn write_package_info_to_etcd(p: Package) -> Result<(), Box<dyn std::error
     let key_origin = format!("package/{}", p.name);
 
     for i in 0..p.model_names.len() {
+        let model_name = p.model_names.get(i).unwrap();
         common::etcd::put(
-            &format!("{key_origin}/models/{}", p.model_names.get(i).unwrap()),
+            &format!("{key_origin}/models/{}", model_name),
             p.models.get(i).unwrap(),
         )
         .await?;
         common::etcd::put(
-            &format!("{key_origin}/nodes/{}", p.model_names.get(i).unwrap()),
+            &format!("{key_origin}/nodes/{}", model_name),
             p.nodes.get(i).unwrap(),
         )
         .await?;
         common::etcd::put(
-            &format!("{key_origin}/networks/{}", p.model_names.get(i).unwrap()),
+            &format!("{key_origin}/networks/{}", model_name),
             p.networks.get(i).unwrap(),
         )
         .await?;
         common::etcd::put(
-            &format!("{key_origin}/volumes/{}", p.model_names.get(i).unwrap()),
+            &format!("{key_origin}/volumes/{}", model_name),
             p.volumes.get(i).unwrap(),
         )
         .await?;

@@ -12,6 +12,7 @@ service Connection {
 }
 
 message Condition {
+  string crud = 1;
   string name = 2;
 }
 

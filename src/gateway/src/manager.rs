@@ -42,18 +42,37 @@ impl Manager {
         let arc_rx_grpc = Arc::clone(&self.rx_grpc);
         let mut rx_grpc = arc_rx_grpc.lock().await;
         while let Some(condition) = rx_grpc.recv().await {
-            self.launch_filter(&condition).await;
+            /*if condition.crud == "CREATE" {
+                self.launch_filter(&condition).await;
+            }*/
+            match condition.crud.as_str() {
+                "CREATE" => self.launch_filter(&condition.name).await,
+                "DELETE" => self.remove_filter(&condition.name).await,
+                _ => todo!(),
+            }
             // TODO : need remove function
         }
     }
 
-    async fn launch_filter(&mut self, condition: &Condition) {
-        println!("launch filter {}\n", &condition.name);
+    async fn launch_filter(&mut self, name: &str) {
+        println!("launch filter {}\n", name);
 
-        let f = Filter::new(&condition.name).await;
+        let f = Filter::new(name).await;
         let arc_filters = Arc::clone(&self.filters);
         let mut filters = arc_filters.lock().await;
         filters.push(f);
+    }
+
+    async fn remove_filter(&mut self, name: &str) {
+        println!("remove filter {}\n", name);
+
+        let arc_filters = Arc::clone(&self.filters);
+        let mut filters = arc_filters.lock().await;
+        for filter in filters.iter_mut() {
+            if filter.name == name {
+                //filters.
+            }
+        }
     }
 }
 
