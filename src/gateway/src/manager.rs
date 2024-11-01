@@ -68,10 +68,9 @@ impl Manager {
 
         let arc_filters = Arc::clone(&self.filters);
         let mut filters = arc_filters.lock().await;
-        for filter in filters.iter_mut() {
-            if filter.name == name {
-                //filters.
-            }
+        let index = filters.iter().position(|f| f.name == name);
+        if let Some(i) = index {
+            filters.remove(i);
         }
     }
 }
@@ -92,17 +91,17 @@ async fn handle_dds(
             continue;
         }
 
-        let mut keep: Vec<bool> = Vec::new();
+        // TODO : apply policy (once, sticky, and so on...)
+        //let mut keep: Vec<bool> = Vec::new();
         for filter in filters.iter_mut() {
             let result = filter.check(data.clone()).await;
-            keep.push(!result);
+            //keep.push(!result);
             if result {
                 use crate::grpc::sender;
                 let _ = sender::send(&filter.action_key).await;
             }
         }
-
-        let mut iter = keep.iter();
-        filters.retain(|_| *iter.next().unwrap());
+        //let mut iter = keep.iter();
+        //filters.retain(|_| *iter.next().unwrap());
     }
 }
