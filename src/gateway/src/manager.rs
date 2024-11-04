@@ -42,15 +42,11 @@ impl Manager {
         let arc_rx_grpc = Arc::clone(&self.rx_grpc);
         let mut rx_grpc = arc_rx_grpc.lock().await;
         while let Some(condition) = rx_grpc.recv().await {
-            /*if condition.crud == "CREATE" {
-                self.launch_filter(&condition).await;
-            }*/
             match condition.crud.as_str() {
                 "CREATE" => self.launch_filter(&condition.name).await,
                 "DELETE" => self.remove_filter(&condition.name).await,
                 _ => todo!(),
             }
-            // TODO : need remove function
         }
     }
 
