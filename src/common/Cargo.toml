@@ -11,8 +11,8 @@ edition = "2021"
 
 [dependencies]
 api = { path = "../api" }
-const_format = "0.2.32"
-config = "0.14.0"
+const_format = "0.2.33"
+config = "0.14.1"
 etcd-client = "0.14.0"
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0.214", features = ["derive"] }
 serde_yaml = "0.9"
