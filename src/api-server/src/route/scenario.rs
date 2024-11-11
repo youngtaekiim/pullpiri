@@ -2,7 +2,7 @@
 
 use axum::{
     extract::Path,
-    response::IntoResponse,
+    response::Response,
     routing::{delete, get, post},
     Json, Router,
 };
@@ -21,9 +21,7 @@ async fn list_scenario() -> Json<Vec<String>> {
     Json(scenarios)
 }
 
-async fn inspect_scenario(
-    Path((scenario_name, file_name)): Path<(String, String)>,
-) -> impl IntoResponse {
+async fn inspect_scenario(Path((scenario_name, file_name)): Path<(String, String)>) -> Response {
     let key = format!("scenario/{scenario_name}/file");
     let v = common::etcd::get(&key).await.unwrap_or_default();
 
@@ -34,7 +32,7 @@ async fn inspect_scenario(
     }
 }
 
-async fn handle_post(body: String) -> impl IntoResponse {
+async fn handle_post(body: String) -> Response {
     println!("POST : scenario {body} is called.\n");
     let result = import_scenario(body).await;
 
@@ -61,7 +59,7 @@ async fn import_scenario(body: String) -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
-async fn handle_delete(Path(scenario_name): Path<String>) -> impl IntoResponse {
+async fn handle_delete(Path(scenario_name): Path<String>) -> Response {
     println!("DELETE : scenario {scenario_name} is called.\n");
     let result = delete_scenario(&scenario_name).await;
 

@@ -2,7 +2,7 @@
 
 use axum::{
     extract::Path,
-    response::IntoResponse,
+    response::Response,
     routing::{delete, get, post},
     Json, Router,
 };
@@ -21,13 +21,13 @@ async fn list_package() -> Json<Vec<String>> {
     Json(packages)
 }
 
-async fn inspect_package(Path(name): Path<String>) -> impl IntoResponse {
+async fn inspect_package(Path(name): Path<String>) -> Response {
     // TODO
     println!("todo - inspect {name}");
     super::status_ok()
 }
 
-async fn handle_post(body: String) -> impl IntoResponse {
+async fn handle_post(body: String) -> Response {
     println!("POST : package {body} is called.\n");
     let result = import_package(body).await;
 
@@ -45,7 +45,7 @@ async fn import_package(body: String) -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
-async fn delete_package(Path(name): Path<String>) -> impl IntoResponse {
+async fn delete_package(Path(name): Path<String>) -> Response {
     // TODO
     println!("todo - delete {name}");
     super::status_ok()
