@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: antipinch-core
+  annotations:
+    io.piccolo.annotations.package-type: default
+    io.piccolo.annotations.package-name: antipinch
+    io.piccolo.annotations.package-network: default
+  labels:
+    app: antipinch-core
+spec:
+  hostNetwork: true
+  containers:
+    - name: core
+      image: sdv.lge.com/demo/antipinch-core:1.0
+  terminationGracePeriodSeconds: 0
