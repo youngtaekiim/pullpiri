@@ -6,7 +6,7 @@ metadata:
   name: antipinch-core
   annotations:
     io.piccolo.annotations.package-type: default
-    io.piccolo.annotations.package-name: antipinch
+    io.piccolo.annotations.package-name: antipinch-disable
     io.piccolo.annotations.package-network: default
   labels:
     app: antipinch-core

@@ -59,7 +59,9 @@ pub fn parse(path: &str) -> Result<Package, Box<dyn std::error::Error>> {
         file_handler::perform(&m.get_name(), &serde_yaml::to_string(&model)?, &name)?;
     }
 
-    file_handler::copy_to_remote_node(path)?;
+    if let Err(e) = file_handler::copy_to_remote_node(path) {
+        println!("[E] cannot copy package files to remote node: {:?}", e);
+    }
 
     Ok(Package {
         name,
