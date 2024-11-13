@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# API
+# Supported Bluechi APIs
 
 Refer to [BlueChi API document](https://github.com/eclipse-bluechi/bluechi/blob/main/doc/docs/api/description.md).
 
