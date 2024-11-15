@@ -16,7 +16,7 @@ pub fn get_route() -> Router {
 }
 
 async fn list_scenario() -> Json<Vec<String>> {
-    // TODO
+    // TODO - /metric/scenario will be moved here
     let scenarios = vec![String::new(), String::new()];
     Json(scenarios)
 }
