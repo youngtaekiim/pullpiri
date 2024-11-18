@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-FROM rust:1.78.0-slim AS builder
+FROM public.ecr.aws/docker/library/rust:1.78.0-slim AS builder
 WORKDIR /piccolo
 
 COPY ./src/Cargo.lock \
@@ -20,7 +20,7 @@ RUN apt update -y && \
     cargo build --release
 
 
-FROM arm64v8/alpine:3.20
+FROM public.ecr.aws/docker/library/alpine:3.20
 WORKDIR /piccolo
 
 COPY ./settings.yaml .
@@ -28,7 +28,7 @@ COPY ./settings.yaml .
 COPY --from=builder \
     /piccolo/target/release/api-server \
     /piccolo/target/release/gateway \
-    /piccolo/target/release/statemanager \
+    /piccolo/target/release/statemanager ./
 
 COPY --from=builder \
     /lib/aarch64-linux-gnu/libc.so.6 \
