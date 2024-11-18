@@ -90,6 +90,7 @@ async fn write_scenario_info_in_etcd(
     common::etcd::put(&format!("{key_origin}/file"), file_name).await?;
     common::etcd::put(&format!("{key_origin}/actions"), &s.actions).await?;
     common::etcd::put(&format!("{key_origin}/conditions"), &s.conditions).await?;
+    common::etcd::put(&format!("{key_origin}/status"), "inactive").await?;
     common::etcd::put(&format!("{key_origin}/targets"), &s.targets).await?;
     common::etcd::put(&format!("{key_origin}/full"), &s.scene).await?;
 

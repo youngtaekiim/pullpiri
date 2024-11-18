@@ -68,6 +68,7 @@ impl Manager {
         if let Some(i) = index {
             filters.remove(i);
         }
+        let _ = common::etcd::delete_all_with_prefix(&format!("scenario/{}", name)).await;
     }
 }
 
@@ -92,10 +93,13 @@ async fn handle_dds(
         for filter in filters.iter_mut() {
             let result = filter.check(data.clone()).await;
             //keep.push(!result);
+            let mut status = "inactive";
             if result {
+                status = "active";
                 use crate::grpc::sender;
                 let _ = sender::send(&filter.action_key).await;
             }
+            let _ = common::etcd::put(&format!("scenario/{}/status", filter.name), status).await;
         }
         //let mut iter = keep.iter();
         //filters.retain(|_| *iter.next().unwrap());
