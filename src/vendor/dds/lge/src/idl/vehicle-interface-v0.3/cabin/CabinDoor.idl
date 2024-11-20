@@ -1,0 +1,39 @@
+struct CabinLeftDoorControl {
+	// type: actuator
+	// command : 0 = CLOSE, 1 = OPEN
+
+	long command;
+};
+
+struct CabinLeftDoorStatus {
+	// type: sensor
+	// command : 0 = CLOSE, 1 = OPEN
+	// status  : 0 = IDLE, 1 = START, 2 = ACTING, 3 = END
+	// progress: 0 ~ 100
+	// uistatus: 0 = IS_ACTING, 1 = DOOR_IS_CLOSED, 2 = DOOR_IS_OPENED
+
+	long command;
+	long status;
+	long progress;
+	long uistatus;
+};
+
+struct CabinRightDoorControl {
+	// type: actuator
+	// command : 0 = CLOSE, 1 = OPEN
+
+	long command;
+};
+
+struct CabinRightDoorStatus {
+	// type: sensor
+	// command : 0 = CLOSE, 1 = OPEN
+	// status  : 0 = IDLE, 1 = START, 2 = ACTING, 3 = END
+	// progress: 0 ~ 100
+	// uistatus: 0 = IS_ACTING, 1 = DOOR_IS_CLOSED, 2 = DOOR_IS_OPENED
+
+	long command;
+	long status;
+	long progress;
+	long uistatus;
+};
