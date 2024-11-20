@@ -6,7 +6,6 @@ pub mod volume;
 
 use super::MetaData;
 
-#[allow(non_snake_case)]
 #[derive(Debug, serde::Deserialize, PartialEq)]
 pub struct Package {
     apiVersion: String,
@@ -33,7 +32,6 @@ impl Package {
     }
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, serde::Deserialize, PartialEq)]
 pub struct PackageSpec {
     pattern: Vec<Pattern>,
