@@ -8,12 +8,12 @@ metadata:
   name: bms
 spec:
   conditions:
-    express: lt
-    value: "30"
+    express: eq
+    value: neutral
     operands:
       type: DDS
-      name: battery_capacity
-      value: "/rt/piccolo/Battery_Capacity"
+      name: gear
+      value: "PowertrainTransmissionCurrentGear"
   actions:
     - operation: update
   targets:

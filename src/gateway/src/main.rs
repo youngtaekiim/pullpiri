@@ -2,7 +2,6 @@
 
 mod filter;
 mod grpc;
-mod listener;
 mod manager;
 
 use common::gateway::Condition;

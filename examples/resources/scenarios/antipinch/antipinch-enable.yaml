@@ -8,12 +8,6 @@ metadata:
   name: antipinch
 spec:
   conditions:
-    express: lt
-    value: "30"
-    operands:
-      type: DDS
-      name: battery_capacity
-      value: "/rt/piccolo/Battery_Capacity"
   actions:
     - operation: update
   targets:

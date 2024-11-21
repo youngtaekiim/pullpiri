@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::filter::Filter;
-use crate::listener::{DdsData, EventListener};
 use common::gateway::Condition;
+use lge::DdsData;
 use std::sync::Arc;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
@@ -26,14 +26,7 @@ impl Manager {
     }
 
     pub async fn run(&mut self) {
-        tokio::spawn(launch_dds(
-            "/rt/piccolo/Battery_Capacity",
-            self.tx_dds.clone(),
-        ));
-        tokio::spawn(launch_dds(
-            "/rt/piccolo/Charging_Status",
-            self.tx_dds.clone(),
-        ));
+        lge::run(self.tx_dds.clone()).await;
 
         let arc_rx_dds = Arc::clone(&self.rx_dds);
         let arc_filters = Arc::clone(&self.filters);
@@ -42,9 +35,11 @@ impl Manager {
         let arc_rx_grpc = Arc::clone(&self.rx_grpc);
         let mut rx_grpc = arc_rx_grpc.lock().await;
         while let Some(condition) = rx_grpc.recv().await {
+            // if new filter has same name, previous filter is deleted
+            self.remove_filter(&condition.name).await;
             match condition.crud.as_str() {
                 "CREATE" => self.launch_filter(&condition.name).await,
-                "DELETE" => self.remove_filter(&condition.name).await,
+                //"DELETE" => self.remove_filter(&condition.name).await,
                 _ => todo!(),
             }
         }
@@ -68,13 +63,7 @@ impl Manager {
         if let Some(i) = index {
             filters.remove(i);
         }
-        let _ = common::etcd::delete_all_with_prefix(&format!("scenario/{}", name)).await;
     }
-}
-
-async fn launch_dds(name: &str, tx_dds: Sender<DdsData>) {
-    let l = crate::listener::dds::DdsEventListener::new(name, tx_dds);
-    l.run().await;
 }
 
 async fn handle_dds(

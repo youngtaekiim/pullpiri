@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::listener::DdsData;
+use lge::DdsData;
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -18,15 +18,26 @@ impl Filter {
         let conditions = common::etcd::get(&format!("{name}/conditions"))
             .await
             .unwrap();
-        let condition: common::spec::scenario::Condition =
-            serde_yaml::from_str(&conditions).unwrap();
 
-        Filter {
-            name: name.to_string(),
-            express: condition.get_express(),
-            target_value: condition.get_value(),
-            topic: condition.get_operand_value(),
-            action_key,
+        if let Ok(condition) =
+            serde_yaml::from_str::<common::spec::scenario::Condition>(&conditions)
+        {
+            Filter {
+                name: name.to_string(),
+                express: condition.get_express(),
+                target_value: condition.get_value(),
+                topic: condition.get_operand_value(),
+                action_key,
+            }
+        } else {
+            let _ = crate::grpc::sender::send(&action_key).await;
+            Filter {
+                name: name.to_string(),
+                express: "".to_string(),
+                target_value: "".to_string(),
+                topic: "".to_string(),
+                action_key,
+            }
         }
     }
 

@@ -1,12 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
 #![allow(non_snake_case)]
 
-pub mod batterycapacity;
-pub mod chargingstatus;
-pub mod daytime;
-pub mod gearstate;
+//pub mod batterycapacity;
+//pub mod chargingstatus;
+//pub mod daytime;
+//pub mod gearstate;
 
 pub mod vehicle_interface;
+
+#[derive(Debug, Clone)]
+pub struct DdsData {
+    pub name: String,
+    pub value: String,
+}
+
+use tokio::sync::mpsc::Sender;
+pub async fn run(tx: Sender<DdsData>) {
+    //tokio::spawn(batterycapacity::run(tx.clone()));
+    //tokio::spawn(chargingstatus::run(tx.clone()));
+    tokio::spawn(vehicle_interface::powertrain::PowertrainTransmission::run(tx.clone()));
+}
 
 #[cfg(test)]
 mod tests {
