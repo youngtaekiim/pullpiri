@@ -3,7 +3,6 @@
 use crate::spec::k8s::pod;
 use crate::spec::MetaData;
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Volume {
     apiVersion: String,

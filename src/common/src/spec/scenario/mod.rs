@@ -6,7 +6,6 @@
 //use super::workload::podspec::PodSpec;
 use crate::spec::MetaData;
 
-#[allow(non_snake_case)]
 #[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Scenario {
     apiVersion: String,
@@ -75,7 +74,6 @@ impl Condition {
     }
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Action {
     operation: String,

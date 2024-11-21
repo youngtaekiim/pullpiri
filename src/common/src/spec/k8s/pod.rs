@@ -2,7 +2,6 @@
 
 use crate::spec::MetaData;
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Pod {
     apiVersion: String,
@@ -26,7 +25,6 @@ impl Pod {
     }
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct PodSpec {
     hostNetwork: Option<bool>,
@@ -39,7 +37,6 @@ pub struct PodSpec {
     runtimeClassName: Option<String>,
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Container {
     name: String,
@@ -52,7 +49,6 @@ pub struct Container {
     resources: Option<Resources>,
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Volume {
     name: String,
@@ -64,7 +60,6 @@ pub struct HostPath {
     path: String,
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct VolumeMount {
     name: String,
@@ -77,20 +72,17 @@ pub struct Env {
     value: String,
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Port {
     containerPort: Option<i32>,
     hostPort: Option<i32>,
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Resources {
     requests: Option<Requests>,
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Requests {
     cpu: Option<String>,

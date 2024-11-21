@@ -16,7 +16,7 @@ pub fn get_route() -> Router {
 }
 
 async fn list_scenario() -> Json<Vec<String>> {
-    // TODO
+    // TODO - /metric/scenario will be moved here
     let scenarios = vec![String::new(), String::new()];
     Json(scenarios)
 }
@@ -46,22 +46,22 @@ async fn handle_post(body: String) -> Response {
 async fn import_scenario(body: String) -> Result<(), Box<dyn std::error::Error>> {
     let scenario = importer::parse_scenario(&body).await?;
     let scenario_path: Vec<&str> = body.split('/').collect();
-    let (scenario_name, scenario_file) = (scenario_path[0], scenario_path[1]);
+    let (_scenario_name, scenario_file) = (scenario_path[0], scenario_path[1]);
 
     write_scenario_info_in_etcd(scenario, scenario_file).await?;
 
     let condition = common::gateway::Condition {
         crud: "CREATE".to_string(),
-        name: format!("scenario/{}", scenario_name),
+        name: format!("scenario/{}", scenario_file),
     };
     crate::grpc::sender::gateway::send(condition).await?;
 
     Ok(())
 }
 
-async fn handle_delete(Path(scenario_name): Path<String>) -> Response {
-    println!("DELETE : scenario {scenario_name} is called.\n");
-    let result = delete_scenario(&scenario_name).await;
+async fn handle_delete(Path(file_name): Path<String>) -> Response {
+    println!("DELETE : scenario {file_name} is called.\n");
+    let result = delete_scenario(&file_name).await;
 
     if let Err(msg) = result {
         super::status_err(&msg.to_string())
@@ -70,12 +70,12 @@ async fn handle_delete(Path(scenario_name): Path<String>) -> Response {
     }
 }
 
-async fn delete_scenario(scenario_name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    delete_scenario_info_in_etcd(scenario_name).await?;
+async fn delete_scenario(file_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    delete_scenario_info_in_etcd(file_name).await?;
 
     let condition = common::gateway::Condition {
         crud: "DELETE".to_string(),
-        name: format!("scenario/{}", scenario_name),
+        name: format!("scenario/{}", file_name),
     };
     crate::grpc::sender::gateway::send(condition).await?;
 
@@ -86,10 +86,12 @@ async fn write_scenario_info_in_etcd(
     s: importer::parser::scenario::Scenario,
     file_name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let key_origin = format!("scenario/{}", s.name);
-    common::etcd::put(&format!("{key_origin}/file"), file_name).await?;
+    //let key_origin = format!("scenario/{}", s.name);
+    let key_origin = format!("scenario/{}", file_name);
+    //common::etcd::put(&format!("{key_origin}/file"), file_name).await?;
     common::etcd::put(&format!("{key_origin}/actions"), &s.actions).await?;
     common::etcd::put(&format!("{key_origin}/conditions"), &s.conditions).await?;
+    common::etcd::put(&format!("{key_origin}/status"), "inactive").await?;
     common::etcd::put(&format!("{key_origin}/targets"), &s.targets).await?;
     common::etcd::put(&format!("{key_origin}/full"), &s.scene).await?;
 
