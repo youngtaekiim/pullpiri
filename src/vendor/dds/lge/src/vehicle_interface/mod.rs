@@ -24,17 +24,22 @@ pub mod ui;
         pub const PHOTO_RESISTOR: &str = "ExteriorLightIntensity";
         pub const BATTERY_COVER_CTRL: &str = "PowerTrainBatteryChargingChargePortFlapControl";
         pub const BATTERY_COVER_STAT: &str = "PowerTrainBatteryChargingChargePortFlapStatus";
-        pub const GEAR_CURRENT: &str = "PowertrainTransmissionCurrentGear";
+        pub const CURRENT_GEAR: &str = "PowertrainTransmissionCurrentGear";
         pub const MR_UI_CTRL: &str = "MRUiControl";
         pub const TIME_OFFSET: &str = "NetworkTimesyncStatus";
         pub const NODE_DISCONNECT: &str = "NetworkNodeDIsocnnnectionStatus";
     }
 
-    pub enum UsedTopic {
+    pub enum CurrentUsedTopic {
+        PHOTO_RESISTOR,
+        CURRENT_GEAR,
+    }
+
+    pub enum WillBeUsedTopic {
         PhotoResistor,
         ObstacleDetect,
         HeadlampStat,
-        GearCurrent,
+        CurrentGear,
         BatteryCoverStat,
         TrunkStat,
     }

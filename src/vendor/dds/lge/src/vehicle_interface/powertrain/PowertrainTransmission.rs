@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use tokio::sync::mpsc::Sender;
 use crate::DdsData;
 use dust_dds::{
     dds_async::domain_participant_factory::DomainParticipantFactoryAsync,
     infrastructure::{qos::QosKind, status::NO_STATUS},
     subscription::sample_info::{ANY_INSTANCE_STATE, ANY_SAMPLE_STATE, ANY_VIEW_STATE},
 };
+use tokio::sync::mpsc::Sender;
 
 #[derive(Debug, dust_dds::topic_definition::type_support::DdsType)]
 pub struct PowertrainTransmissionCurrentGear {
@@ -47,14 +47,13 @@ pub async fn run(tx: Sender<DdsData>) {
         .await
         .unwrap();
 
-    println!("make loop - capa");
+    println!("make loop - PowertrainTransmissionCurrentGear");
     loop {
         if let Ok(data_samples) = reader
             .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
             .await
         {
-            let data: PowertrainTransmissionCurrentGear =
-                data_samples[0].data().unwrap();
+            let data: PowertrainTransmissionCurrentGear = data_samples[0].data().unwrap();
             println!("Received:  charging state {}\n", data.value);
 
             let gear = match data.value {
@@ -75,4 +74,3 @@ pub async fn run(tx: Sender<DdsData>) {
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
 }
-

@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #![allow(non_snake_case)]
 
-//pub mod batterycapacity;
-//pub mod chargingstatus;
-//pub mod daytime;
-//pub mod gearstate;
-
 pub mod vehicle_interface;
+
+use tokio::sync::mpsc::Sender;
+use vehicle_interface::*;
 
 #[derive(Debug, Clone)]
 pub struct DdsData {
@@ -14,11 +12,9 @@ pub struct DdsData {
     pub value: String,
 }
 
-use tokio::sync::mpsc::Sender;
 pub async fn run(tx: Sender<DdsData>) {
-    //tokio::spawn(batterycapacity::run(tx.clone()));
-    //tokio::spawn(chargingstatus::run(tx.clone()));
-    tokio::spawn(vehicle_interface::powertrain::PowertrainTransmission::run(tx.clone()));
+    tokio::spawn(powertrain::PowertrainTransmission::run(tx.clone()));
+    tokio::spawn(exterior::Exterior::run(tx.clone()));
 }
 
 #[cfg(test)]
