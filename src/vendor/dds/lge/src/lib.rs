@@ -4,7 +4,10 @@
 pub mod vehicle_interface;
 
 use tokio::sync::mpsc::Sender;
-use vehicle_interface::*;
+use vehicle_interface::{
+    exterior::Exterior::ExteriorLightIntensity,
+    powertrain::PowertrainTransmission::PowertrainTransmissionCurrentGear, receive_dds,
+};
 
 #[derive(Debug, Clone)]
 pub struct DdsData {
@@ -12,9 +15,15 @@ pub struct DdsData {
     pub value: String,
 }
 
+pub trait Piccoloable {
+    fn to_piccolo_dds_data(&self) -> DdsData;
+    fn topic_name() -> String;
+    fn type_name() -> String;
+}
+
 pub async fn run(tx: Sender<DdsData>) {
-    tokio::spawn(powertrain::PowertrainTransmission::run(tx.clone()));
-    tokio::spawn(exterior::Exterior::run(tx.clone()));
+    tokio::spawn(receive_dds::<PowertrainTransmissionCurrentGear>(tx.clone()));
+    tokio::spawn(receive_dds::<ExteriorLightIntensity>(tx.clone()));
 }
 
 #[cfg(test)]
