@@ -17,3 +17,26 @@ pub struct PowertrainBatteryStateOfChargeCurrent {
 pub struct PowertrainBatteryRange {
     pub value: i32,
 }
+
+impl crate::Piccoloable for PowertrainBatteryChargingChargePortFlapStatus {
+    fn to_piccolo_dds_data(&self) -> crate::DdsData {
+        let cover = match self.uistatus {
+            // uistatus: 0 = IS_ACTING, 1 = CHARGING_PORT_IS_CLOSED, 2 = CHARGING_PORT_IS_OPENED
+            0 => "is_acting",
+            1 => "close",
+            2 => "open",
+            _ => "unknown",
+        };
+
+        crate::DdsData {
+            name: String::from("PowertrainBatteryChargingChargePortFlapStatus"),
+            value: cover.to_string(),
+        }
+    }
+    fn topic_name() -> String {
+        String::from("PowertrainBatteryChargingChargePortFlapStatus")
+    }
+    fn type_name() -> String {
+        String::from("PowertrainBatteryChargingChargePortFlapStatus")
+    }
+}

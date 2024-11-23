@@ -5,8 +5,14 @@ pub mod vehicle_interface;
 
 use tokio::sync::mpsc::Sender;
 use vehicle_interface::{
+    adas::ADASObstacleDetection::ADASObstacleDetectionIsEnabled,
+    body::{BodyLightsHeadLamp::BodyLightsHeadLampStatus, BodyTrunk::BodyTrunkStatus},
     exterior::Exterior::ExteriorLightIntensity,
-    powertrain::PowertrainTransmission::PowertrainTransmissionCurrentGear, receive_dds,
+    powertrain::{
+        PowertrainBattery::PowertrainBatteryChargingChargePortFlapStatus,
+        PowertrainTransmission::PowertrainTransmissionCurrentGear,
+    },
+    receive_dds,
 };
 
 #[derive(Debug, Clone)]
@@ -22,8 +28,12 @@ pub trait Piccoloable {
 }
 
 pub async fn run(tx: Sender<DdsData>) {
-    tokio::spawn(receive_dds::<PowertrainTransmissionCurrentGear>(tx.clone()));
+    tokio::spawn(receive_dds::<ADASObstacleDetectionIsEnabled>(tx.clone()));
+    tokio::spawn(receive_dds::<BodyLightsHeadLampStatus>(tx.clone()));
+    tokio::spawn(receive_dds::<BodyTrunkStatus>(tx.clone()));
     tokio::spawn(receive_dds::<ExteriorLightIntensity>(tx.clone()));
+    tokio::spawn(receive_dds::<PowertrainTransmissionCurrentGear>(tx.clone()));
+    tokio::spawn(receive_dds::<PowertrainBatteryChargingChargePortFlapStatus>(tx.clone()));
 }
 
 #[cfg(test)]
