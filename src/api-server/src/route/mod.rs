@@ -16,6 +16,7 @@ pub struct ResponseData {
 }
 
 pub fn status_ok() -> Response {
+    println!("StatusCode::OK, resp: Ok");
     let response = ResponseData {
         resp: "Ok".to_string(),
     };
@@ -23,6 +24,7 @@ pub fn status_ok() -> Response {
 }
 
 pub fn status_err(msg: &str) -> Response {
+    println!("StatusCode::NOT_FOUND, resp: {msg}");
     let response = ResponseData {
         resp: msg.to_string(),
     };

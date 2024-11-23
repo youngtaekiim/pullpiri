@@ -42,11 +42,7 @@ impl Filter {
     }
 
     pub async fn check(&mut self, data: DdsData) -> bool {
-        println!("{} {}", data.name, data.value);
-        println!(
-            "{} {} {} {} {}",
-            self.name, self.express, self.target_value, self.topic, self.action_key
-        );
+        println!("{:?}", self);
 
         if data.name.eq(&self.topic) {
             match self.express.as_str() {
