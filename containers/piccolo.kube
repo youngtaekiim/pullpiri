@@ -1,6 +1,6 @@
 [Unit]
 Description=Piccolo service
-Before=local-fs.target
+After=network.target
 
 [Install]
 # Start by default on boot
@@ -11,3 +11,4 @@ Yaml=/etc/containers/systemd/piccolo/piccolo.yaml
 
 [Service]
 Restart=always
+ExecStartPost=/bin/bash /etc/containers/systemd/piccolo/input_package.sh
