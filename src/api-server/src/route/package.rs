@@ -28,7 +28,7 @@ async fn inspect_package(Path(name): Path<String>) -> Response {
 }
 
 async fn handle_post(body: String) -> Response {
-    println!("POST : package {body} is called.\n");
+    println!("\nPOST : package {body} is called.");
     let result = import_package(body).await;
 
     if let Err(msg) = result {

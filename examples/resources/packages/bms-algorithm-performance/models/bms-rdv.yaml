@@ -5,7 +5,7 @@ kind: Pod
 metadata:
   name: bms-rdv
   annotations:
-    io.piccolo.annotations.package-type: default
+    io.piccolo.annotations.package-type: rdv
     io.piccolo.annotations.package-name: bms
     io.piccolo.annotations.package-network: default
   labels:

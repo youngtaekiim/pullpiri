@@ -68,7 +68,9 @@ async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
         }
 
         exist.push(name.clone());
-        let status = kv.value;
+        let status = common::etcd::get(&format!("scenario/{name}/status"))
+            .await
+            .unwrap();
         let condition = common::etcd::get(&format!("scenario/{name}/conditions"))
             .await
             .unwrap();

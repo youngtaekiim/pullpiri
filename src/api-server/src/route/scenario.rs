@@ -52,7 +52,7 @@ async fn import_scenario(body: String) -> Result<(), Box<dyn std::error::Error>>
 
     let condition = common::gateway::Condition {
         crud: "CREATE".to_string(),
-        name: format!("scenario/{}", scenario_file),
+        name: scenario_file.to_string(),
     };
     crate::grpc::sender::gateway::send(condition).await?;
 
@@ -75,7 +75,7 @@ async fn delete_scenario(file_name: &str) -> Result<(), Box<dyn std::error::Erro
 
     let condition = common::gateway::Condition {
         crud: "DELETE".to_string(),
-        name: format!("scenario/{}", file_name),
+        name: file_name.to_string(),
     };
     crate::grpc::sender::gateway::send(condition).await?;
 

@@ -39,8 +39,8 @@ impl Connection for StateManagerGrpcServer {
 }
 
 async fn make_action_for_scenario(key: &str) -> Result<String, Box<dyn Error>> {
-    let key_action = format!("{key}/actions");
-    let key_target = format!("{key}/targets");
+    let key_action = format!("scenario/{key}/actions");
+    let key_target = format!("scenario/{key}/targets");
     let value_action = etcd::get(&key_action).await?;
     let value_target = etcd::get(&key_target).await?;
     let action: common::spec::scenario::Action = serde_yaml::from_str(&value_action)?;

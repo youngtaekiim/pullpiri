@@ -5,7 +5,7 @@ kind: Pod
 metadata:
   name: bms-frism
   annotations:
-    io.piccolo.annotations.package-type: default
+    io.piccolo.annotations.package-type: frism
     io.piccolo.annotations.package-name: bms
     io.piccolo.annotations.package-network: default
   labels:
