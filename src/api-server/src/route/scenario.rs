@@ -33,7 +33,7 @@ async fn inspect_scenario(Path((scenario_name, file_name)): Path<(String, String
 }
 
 async fn handle_post(body: String) -> Response {
-    println!("POST : scenario {body} is called.\n");
+    println!("\nPOST : scenario {body} is called.");
     let result = import_scenario(body).await;
 
     if let Err(msg) = result {
@@ -91,7 +91,24 @@ async fn write_scenario_info_in_etcd(
     //common::etcd::put(&format!("{key_origin}/file"), file_name).await?;
     common::etcd::put(&format!("{key_origin}/actions"), &s.actions).await?;
     common::etcd::put(&format!("{key_origin}/conditions"), &s.conditions).await?;
-    common::etcd::put(&format!("{key_origin}/status"), "inactive").await?;
+
+    // TODO - temp code
+    if file_name.contains("antipinch") {
+        if common::etcd::get("scenario/antipinch-enable/status")
+            .await
+            .is_ok()
+        {
+            common::etcd::put("scenario/antipinch-enable/status", "inactive").await?;
+        };
+        if common::etcd::get("scenario/antipinch-disable/status")
+            .await
+            .is_ok()
+        {
+            common::etcd::put("scenario/antipinch-disable/status", "inactive").await?;
+        };
+    }
+    common::etcd::put(&format!("{key_origin}/status"), "active").await?;
+
     common::etcd::put(&format!("{key_origin}/targets"), &s.targets).await?;
     common::etcd::put(&format!("{key_origin}/full"), &s.scene).await?;
 

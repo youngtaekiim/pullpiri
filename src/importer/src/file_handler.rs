@@ -31,7 +31,7 @@ fn make_kube_file(dir: &str, name: &str) -> Result<(), Box<dyn Error>> {
     let kube_contents = format!(
         r#"[Unit]
 Description=A kubernetes yaml based {} service
-Before=local-fs.target
+After=network.target
 
 [Install]
 # Start by default on boot

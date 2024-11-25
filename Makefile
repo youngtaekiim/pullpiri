@@ -27,6 +27,7 @@ pre:
 	-mkdir /root/piccolo_yaml
 	-cp -r examples/resources/* /root/piccolo_yaml/
 	-mkdir /etc/containers/systemd/piccolo/
+	-cp -r containers/input_package.sh /etc/containers/systemd/piccolo/
 	-podman-compose -f examples/nginx/docker-compose.yaml up -d
 
 .PHONY: install

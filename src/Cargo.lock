@@ -69,6 +69,7 @@ dependencies = [
  "prost",
  "serde",
  "serde_json",
+ "serde_yaml",
  "tokio",
  "tonic",
  "tonic-build",

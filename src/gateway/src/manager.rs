@@ -80,6 +80,9 @@ async fn handle_dds(
         // TODO : apply policy (once, sticky, and so on...)
         //let mut keep: Vec<bool> = Vec::new();
         for filter in filters.iter_mut() {
+            if filter.express == "" {
+                continue;
+            }
             let result = filter.check(data.clone()).await;
             //keep.push(!result);
             let mut status = "inactive";
