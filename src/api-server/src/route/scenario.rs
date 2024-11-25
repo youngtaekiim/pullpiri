@@ -106,8 +106,9 @@ async fn write_scenario_info_in_etcd(
         {
             common::etcd::put("scenario/antipinch-disable/status", "inactive").await?;
         };
+        common::etcd::put(&format!("{key_origin}/status"), "active").await?;
     }
-    common::etcd::put(&format!("{key_origin}/status"), "active").await?;
+    common::etcd::put(&format!("{key_origin}/status"), "inactive").await?;
 
     common::etcd::put(&format!("{key_origin}/targets"), &s.targets).await?;
     common::etcd::put(&format!("{key_origin}/full"), &s.scene).await?;

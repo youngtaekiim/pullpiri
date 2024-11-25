@@ -83,14 +83,24 @@ async fn handle_dds(
             if filter.express == "" {
                 continue;
             }
+
+            if data.name != filter.topic {
+                continue;
+            }
+
             let result = filter.check(data.clone()).await;
             //keep.push(!result);
             let mut status = "inactive";
             if result {
                 status = "active";
-                use crate::grpc::sender;
-                let _ = sender::send(&filter.action_key).await;
+                let current_status = common::etcd::get(&format!("scenario/{}/status", filter.name)).await.unwrap();
+                println!("result true : {current_status}");
+                if current_status == "inactive" {
+                    use crate::grpc::sender;
+                    let _ = sender::send(&filter.action_key).await;
+                }
             }
+            println!("outside: {status}");
             let _ = common::etcd::put(&format!("scenario/{}/status", filter.name), status).await;
         }
         //let mut iter = keep.iter();
