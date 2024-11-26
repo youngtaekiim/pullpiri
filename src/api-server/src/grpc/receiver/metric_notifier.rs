@@ -39,8 +39,15 @@ impl MetricConnection for GrpcMetricServer {
         let container_list = request.into_inner();
         let node_name = container_list.node_name.clone();
         let new_container_list = NewContainerList::from(container_list);
-        let j = serde_json::to_string(&new_container_list).unwrap();
-        //println!("container\n{:#?}", j);
+
+        let renew_container_list = NewContainerList {
+            containers: new_container_list.containers.into_iter()
+                .filter(|container| container.annotation.contains_key("io.piccolo.annotations.package-name"))
+                .collect(),
+        };
+
+        let j = serde_json::to_string(&renew_container_list).unwrap();
+        println!("container\n{:#?}", j);
         let key = format!("metric/container/{node_name}");
         let _ = common::etcd::put(&key, &j).await;
 
