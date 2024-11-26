@@ -80,11 +80,7 @@ async fn handle_dds(
         // TODO : apply policy (once, sticky, and so on...)
         //let mut keep: Vec<bool> = Vec::new();
         for filter in filters.iter_mut() {
-            if filter.express == "" {
-                continue;
-            }
-
-            if data.name != filter.topic {
+            if filter.express.is_empty() || data.name != filter.topic {
                 continue;
             }
 
@@ -93,14 +89,14 @@ async fn handle_dds(
             let mut status = "inactive";
             if result {
                 status = "active";
-                let current_status = common::etcd::get(&format!("scenario/{}/status", filter.name)).await.unwrap();
-                println!("result true : {current_status}");
+                let current_status = common::etcd::get(&format!("scenario/{}/status", filter.name))
+                    .await
+                    .unwrap();
                 if current_status == "inactive" {
                     use crate::grpc::sender;
                     let _ = sender::send(&filter.action_key).await;
                 }
             }
-            println!("outside: {status}");
             let _ = common::etcd::put(&format!("scenario/{}/status", filter.name), status).await;
         }
         //let mut iter = keep.iter();

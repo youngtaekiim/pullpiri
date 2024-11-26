@@ -27,7 +27,7 @@ async fn inspect_package(Path(name): Path<String>) -> Response {
     super::status_ok()
 }
 
-async fn handle_post(body: String) -> Response {
+pub async fn handle_post(body: String) -> Response {
     println!("\nPOST : package {body} is called.");
     let result = import_package(body).await;
 

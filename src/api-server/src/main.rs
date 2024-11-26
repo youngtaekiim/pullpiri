@@ -44,7 +44,27 @@ async fn launch_rest() {
     axum::serve(listener, app).await.unwrap();
 }
 
+async fn deploy_exist_package() {
+    let package_path = format!("{}/packages", common::get_config().yaml_storage);
+    let entries = std::fs::read_dir(package_path).unwrap();
+
+    for entry in entries {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        if path.is_file() {
+            if let Some(extension) = path.extension() {
+                if extension == "tar" {
+                    if let Some(file_name) = path.file_stem() {
+                        let name = file_name.to_string_lossy().to_string();
+                        crate::route::package::handle_post(name).await;
+                    }
+                }
+            }
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
-    tokio::join!(launch_grpc(), launch_rest());
+    tokio::join!(launch_grpc(), launch_rest(), deploy_exist_package());
 }
