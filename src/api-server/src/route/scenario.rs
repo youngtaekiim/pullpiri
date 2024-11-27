@@ -14,6 +14,8 @@ pub fn get_route() -> Router {
         .route("/scenario", post(handle_post_path))
         .route("/scenario/yaml", post(handle_post_yaml))
         .route("/scenario/:scenario_name", delete(handle_delete))
+        // temporary
+        .route("/scenario/reset", get(reset_all))
 }
 
 async fn list_scenario() -> Json<Vec<String>> {
@@ -124,4 +126,10 @@ async fn delete_scenario_info_in_etcd(name: &str) -> Result<(), Box<dyn std::err
     common::etcd::delete_all_with_prefix(&key_prefix).await?;
 
     Ok(())
+}
+
+// emergency reset button
+async fn reset_all() -> Response {
+    // TODO - run shell script?
+    super::status_ok()
 }
