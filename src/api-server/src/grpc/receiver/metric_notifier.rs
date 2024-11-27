@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+use std::collections::HashMap;
+
 use common::apiserver::metric_connection_server::MetricConnection;
 use common::apiserver::metric_notifier::{
     ContainerInfo, ContainerList, ImageList, PodContainerInfo, PodInfo, PodList,
@@ -41,21 +43,31 @@ impl MetricConnection for GrpcMetricServer {
         let etcd_key = format!("metric/container/{node_name}");
         let new_container_list = NewContainerList::from(container_list);
 
-        let renew_container_list = NewContainerList {
-            containers: new_container_list
-                .containers
-                .into_iter()
-                .filter(|container| {
-                    container
-                        .annotation
-                        .contains_key("io.piccolo.annotations.package-name")
-                })
-                .collect(),
-        };
+        // fake metric - start
+        let mut vec_new_container_info: Vec<NewContainerInfo> = new_container_list
+            .containers
+            .into_iter()
+            .filter(|container| {
+                container
+                    .annotation
+                    .contains_key("io.piccolo.annotations.package-name")
+            })
+            .collect();
+        let mut vec_fake_container_info: Vec<NewContainerInfo> = vec![
+            NewContainerInfo::make_dummy("Battery Management", 1),
+            NewContainerInfo::make_dummy("Metric Notifier", 2),
+        ];
 
+        vec_new_container_info.append(&mut vec_fake_container_info);
+        let renew_container_list = NewContainerList {
+            containers: vec_new_container_info,
+        };
+        // fake metric - end
+
+        // TODO : renew -> new
         let j = serde_json::to_string(&renew_container_list).unwrap();
-        println!("container\n{:#?}", j);
-        
+        //println!("container\n{:#?}", j);
+
         let _ = common::etcd::put(&etcd_key, &j).await;
 
         Ok(tonic::Response::new(Response {
@@ -109,9 +121,9 @@ pub struct NewContainerInfo {
     pub id: String,
     pub names: Vec<String>,
     pub image: String,
-    pub state: std::collections::HashMap<String, String>,
-    pub config: std::collections::HashMap<String, String>,
-    pub annotation: std::collections::HashMap<String, String>,
+    pub state: HashMap<String, String>,
+    pub config: HashMap<String, String>,
+    pub annotation: HashMap<String, String>,
 }
 
 impl From<ContainerList> for NewContainerList {
@@ -137,6 +149,24 @@ impl From<ContainerInfo> for NewContainerInfo {
         }
     }
 }
+
+// fake metric - start
+impl NewContainerInfo {
+    fn make_dummy(name: &str, index: i32) -> Self {
+        let dummy_str = format!("dummy{index}");
+        let dummy_hashmap =
+            HashMap::<String, String>::from([(dummy_str.clone(), dummy_str.clone())]);
+        NewContainerInfo {
+            id: dummy_str.clone(),
+            names: vec![String::from(name)],
+            image: dummy_str.clone(),
+            state: dummy_hashmap.clone(),
+            config: dummy_hashmap.clone(),
+            annotation: dummy_hashmap.clone(),
+        }
+    }
+}
+// fake metric - end
 
 #[derive(Deserialize, Serialize, Default)]
 pub struct NewPodList {

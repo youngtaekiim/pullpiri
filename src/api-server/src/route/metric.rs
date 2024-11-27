@@ -58,7 +58,7 @@ async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
         .await
         .unwrap_or_default();
     let mut scenarios: Vec<ScenarioInfo> = Vec::new();
-    
+
     let mut exist: HashSet<&str> = HashSet::new();
     for kv in kvs.iter() {
         let split: Vec<&str> = kv.key.split('/').collect();
