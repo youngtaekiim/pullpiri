@@ -52,22 +52,24 @@ async fn list_pod() -> Json<NewPodList> {
 }
 
 async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
-    let mut kvs = common::etcd::get_all_with_prefix("scenario")
+    use std::collections::HashSet;
+
+    let kvs = common::etcd::get_all_with_prefix("scenario")
         .await
         .unwrap_or_default();
     let mut scenarios: Vec<ScenarioInfo> = Vec::new();
-    let mut exist: Vec<String> = Vec::new();
-
-    for _ in 0..kvs.len() {
-        let kv = kvs.pop().unwrap();
+    
+    let mut exist: HashSet<&str> = HashSet::new();
+    for kv in kvs.iter() {
         let split: Vec<&str> = kv.key.split('/').collect();
-
-        let name = split.get(1).unwrap().to_string();
-        if exist.contains(&name) {
+        let name = match split.get(1) {
+            Some(&item) => item,
+            None => continue,
+        };
+        if !exist.insert(name) {
             continue;
         }
 
-        exist.push(name.clone());
         let status = common::etcd::get(&format!("scenario/{name}/status"))
             .await
             .unwrap();
@@ -98,7 +100,7 @@ async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
         }
 
         scenarios.push(ScenarioInfo {
-            name,
+            name: String::from(name),
             status,
             condition: metric_condition,
             action,

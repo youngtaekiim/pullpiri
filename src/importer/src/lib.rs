@@ -48,22 +48,28 @@ pub async fn parse_package(package_name: &str) -> Result<package::Package, Box<d
     package::parse(&parsing_path)
 }
 
-pub async fn parse_scenario(scenario_name: &str) -> Result<scenario::Scenario, Box<dyn Error>> {
+pub async fn get_scenario_from_file(
+    scenario_path: &str,
+) -> Result<scenario::Scenario, Box<dyn Error>> {
     let full_url = format!(
         "{}/scenarios/{}.yaml",
         common::get_config().doc_registry,
-        scenario_name
+        scenario_path
     );
     let full_save_path = format!(
         "{}/scenarios/{}.yaml",
         common::get_config().yaml_storage,
-        scenario_name
+        scenario_path
     );
 
     if !Path::new(&full_save_path).exists() {
         file_handler::download(&full_url, &full_save_path).await?;
     }
-    scenario::parse(&full_save_path)
+    scenario::parse_from_yaml_path(&full_save_path)
+}
+
+pub async fn get_scenario_from_yaml(yaml_str: &str) -> Result<scenario::Scenario, Box<dyn Error>> {
+    scenario::parse_from_yaml_string(yaml_str)
 }
 
 #[cfg(test)]

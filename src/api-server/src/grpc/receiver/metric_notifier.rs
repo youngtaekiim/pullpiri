@@ -21,12 +21,12 @@ impl MetricConnection for GrpcMetricServer {
         //println!("Got a request from {:?}", request.remote_addr());
 
         let image_list = request.into_inner();
-        let node_name = image_list.node_name.clone();
+        let node_name = &image_list.node_name;
+        let etcd_key = format!("metric/image/{node_name}");
         let new_image_list = NewImageList::from(image_list);
-        let j = serde_json::to_string(&new_image_list).unwrap();
+        let json_string = serde_json::to_string(&new_image_list).unwrap();
         //println!("image\n{:#?}", j);
-        let key = format!("metric/image/{node_name}");
-        let _ = common::etcd::put(&key, &j).await;
+        let _ = common::etcd::put(&etcd_key, &json_string).await;
 
         Ok(tonic::Response::new(Response {
             resp: true.to_string(),
@@ -37,19 +37,26 @@ impl MetricConnection for GrpcMetricServer {
         //println!("Got a request from {:?}", request.remote_addr());
 
         let container_list = request.into_inner();
-        let node_name = container_list.node_name.clone();
+        let node_name = &container_list.node_name;
+        let etcd_key = format!("metric/container/{node_name}");
         let new_container_list = NewContainerList::from(container_list);
 
         let renew_container_list = NewContainerList {
-            containers: new_container_list.containers.into_iter()
-                .filter(|container| container.annotation.contains_key("io.piccolo.annotations.package-name"))
+            containers: new_container_list
+                .containers
+                .into_iter()
+                .filter(|container| {
+                    container
+                        .annotation
+                        .contains_key("io.piccolo.annotations.package-name")
+                })
                 .collect(),
         };
 
         let j = serde_json::to_string(&renew_container_list).unwrap();
         println!("container\n{:#?}", j);
-        let key = format!("metric/container/{node_name}");
-        let _ = common::etcd::put(&key, &j).await;
+        
+        let _ = common::etcd::put(&etcd_key, &j).await;
 
         Ok(tonic::Response::new(Response {
             resp: true.to_string(),
@@ -60,12 +67,13 @@ impl MetricConnection for GrpcMetricServer {
         //println!("Got a request from {:?}", request.remote_addr());
 
         let pod_list = request.into_inner();
-        let node_name = pod_list.node_name.clone();
+        let node_name = &pod_list.node_name;
+        let etcd_key = format!("metric/pod/{node_name}");
         let new_pod_list = NewPodList::from(pod_list);
-        let j = serde_json::to_string(&new_pod_list).unwrap();
+        let json_string = serde_json::to_string(&new_pod_list).unwrap();
         //println!("pod\n{:#?}", j);
-        let key = format!("metric/pod/{node_name}");
-        let _ = common::etcd::put(&key, &j).await;
+
+        let _ = common::etcd::put(&etcd_key, &json_string).await;
 
         Ok(tonic::Response::new(Response {
             resp: true.to_string(),
@@ -108,11 +116,11 @@ pub struct NewContainerInfo {
 
 impl From<ContainerList> for NewContainerList {
     fn from(value: ContainerList) -> Self {
-        let mut nv = Vec::<NewContainerInfo>::new();
-        let iter = value.containers.iter();
-        for v in iter {
-            nv.push(NewContainerInfo::from(v.clone()))
-        }
+        let nv = value
+            .containers
+            .into_iter()
+            .map(NewContainerInfo::from)
+            .collect::<Vec<NewContainerInfo>>();
         NewContainerList { containers: nv }
     }
 }
@@ -154,22 +162,23 @@ pub struct NewPodContainerInfo {
 
 impl From<PodList> for NewPodList {
     fn from(value: PodList) -> Self {
-        let mut nv = Vec::<NewPodInfo>::new();
-        let iter = value.pods.iter();
-        for v in iter {
-            nv.push(NewPodInfo::from(v.clone()))
-        }
+        let nv = value
+            .pods
+            .into_iter()
+            .map(NewPodInfo::from)
+            .collect::<Vec<NewPodInfo>>();
         NewPodList { pods: nv }
     }
 }
 
 impl From<PodInfo> for NewPodInfo {
     fn from(value: PodInfo) -> Self {
-        let mut nv = Vec::<NewPodContainerInfo>::new();
-        let iter = value.containers.iter();
-        for v in iter {
-            nv.push(NewPodContainerInfo::from(v.clone()))
-        }
+        let nv = value
+            .containers
+            .into_iter()
+            .map(NewPodContainerInfo::from)
+            .collect::<Vec<NewPodContainerInfo>>();
+
         NewPodInfo {
             id: value.id,
             name: value.name,

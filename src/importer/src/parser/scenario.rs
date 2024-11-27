@@ -12,12 +12,16 @@ pub struct Scenario {
     pub scene: String,
 }
 
-pub fn parse(path: &str) -> Result<Scenario, Box<dyn std::error::Error>> {
+pub fn parse_from_yaml_path(path: &str) -> Result<Scenario, Box<dyn std::error::Error>> {
     let mut f = File::open(path)?;
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
 
-    let scene: common::spec::scenario::Scenario = serde_yaml::from_str(&contents)?;
+    parse_from_yaml_string(&contents)
+}
+
+pub fn parse_from_yaml_string(yaml: &str) -> Result<Scenario, Box<dyn std::error::Error>> {
+    let scene: common::spec::scenario::Scenario = serde_yaml::from_str(yaml)?;
     let name: String = scene.get_name();
     let conditions: &Option<common::spec::scenario::Condition> = &scene.get_conditions();
     let actions: &common::spec::scenario::Action = &scene.get_actions()[0];

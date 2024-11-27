@@ -11,7 +11,8 @@ pub fn get_route() -> Router {
     Router::new()
         .route("/scenario", get(list_scenario))
         .route("/scenario/:scenario_name/:file_name", get(inspect_scenario))
-        .route("/scenario", post(handle_post))
+        .route("/scenario", post(handle_post_path))
+        .route("/scenario/yaml", post(handle_post_yaml))
         .route("/scenario/:scenario_name", delete(handle_delete))
 }
 
@@ -32,9 +33,9 @@ async fn inspect_scenario(Path((scenario_name, file_name)): Path<(String, String
     }
 }
 
-async fn handle_post(body: String) -> Response {
+async fn handle_post_path(body: String) -> Response {
     println!("\nPOST : scenario {body} is called.");
-    let result = import_scenario(body).await;
+    let result = import_scenario_from_path(body).await;
 
     if let Err(msg) = result {
         super::status_err(&msg.to_string())
@@ -43,16 +44,36 @@ async fn handle_post(body: String) -> Response {
     }
 }
 
-async fn import_scenario(body: String) -> Result<(), Box<dyn std::error::Error>> {
-    let scenario = importer::parse_scenario(&body).await?;
-    let scenario_path: Vec<&str> = body.split('/').collect();
-    let (_scenario_name, scenario_file) = (scenario_path[0], scenario_path[1]);
+async fn handle_post_yaml(body: String) -> Response {
+    println!("\nPOST : maked scenario is called.");
+    let result = import_scenario_from_yaml(body).await;
 
-    write_scenario_info_in_etcd(scenario, scenario_file).await?;
+    if let Err(msg) = result {
+        super::status_err(&msg.to_string())
+    } else {
+        super::status_ok()
+    }
+}
 
+async fn import_scenario_from_path(path: String) -> Result<(), Box<dyn std::error::Error>> {
+    let scenario = importer::get_scenario_from_file(&path).await?;
+    let scenario_file = path.split('/').collect::<Vec<&str>>()[1];
+    internal_import_scenario(&scenario, scenario_file).await
+}
+
+async fn import_scenario_from_yaml(yaml: String) -> Result<(), Box<dyn std::error::Error>> {
+    let scenario = importer::get_scenario_from_file(&yaml).await?;
+    internal_import_scenario(&scenario, &scenario.name).await
+}
+
+async fn internal_import_scenario(
+    s: &importer::parser::scenario::Scenario,
+    file_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    write_scenario_info_in_etcd(s, file_name).await?;
     let condition = common::gateway::Condition {
-        crud: "CREATE".to_string(),
-        name: scenario_file.to_string(),
+        crud: String::from("CREATE"),
+        name: file_name.to_string(),
     };
     crate::grpc::sender::gateway::send(condition).await?;
 
@@ -83,7 +104,7 @@ async fn delete_scenario(file_name: &str) -> Result<(), Box<dyn std::error::Erro
 }
 
 async fn write_scenario_info_in_etcd(
-    s: importer::parser::scenario::Scenario,
+    s: &importer::parser::scenario::Scenario,
     file_name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     //let key_origin = format!("scenario/{}", s.name);

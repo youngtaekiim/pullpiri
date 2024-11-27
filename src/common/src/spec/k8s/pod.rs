@@ -90,12 +90,11 @@ pub struct Requests {
 }
 
 impl PodSpec {
-    pub fn get_image(&self) -> String {
-        //self.podSpec.containers[0].image.clone()
-        self.containers[0].image.clone()
+    pub fn get_image(&self) -> &str {
+        &self.containers[0].image
     }
 
-    pub fn get_volume(&mut self) -> Option<Vec<Volume>> {
-        self.volumes.clone()
+    pub fn get_volume(&mut self) -> &Option<Vec<Volume>> {
+        &self.volumes
     }
 }
