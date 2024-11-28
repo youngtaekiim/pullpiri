@@ -173,6 +173,11 @@ impl From<ContainerInfo> for NewContainerInfo {
 impl NewContainerInfo {
     fn make_dummy(name: &str, index: i32) -> Self {
         let dummy_str = format!("dummy{index}");
+        let dummy_node = if index > 7 {
+            String::from("ZONE")
+        } else {
+            String::from("HPC")
+        };
         let dummy_hashmap =
             HashMap::<String, String>::from([(dummy_str.clone(), dummy_str.clone())]);
         NewContainerInfo {
@@ -180,7 +185,7 @@ impl NewContainerInfo {
             names: vec![String::from(name)],
             image: dummy_str.clone(),
             state: dummy_hashmap.clone(),
-            config: dummy_hashmap.clone(),
+            config: HashMap::<String, String>::from([(String::from("Hostname"), dummy_node)]),
             annotation: dummy_hashmap.clone(),
         }
     }
