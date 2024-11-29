@@ -195,7 +195,7 @@ impl NewContainerInfo {
             image: dummy_str.clone(),
             state: HashMap::<String, String>::from([(dummy_str.clone(), dummy_str.clone())]),
             config: HashMap::<String, String>::from([(String::from("Hostname"), dummy_node)]),
-            annotation: dummy_anno.clone(),
+            annotation: dummy_anno,
         }
     }
 }
