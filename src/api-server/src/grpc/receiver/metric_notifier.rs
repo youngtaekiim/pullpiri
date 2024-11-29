@@ -178,15 +178,24 @@ impl NewContainerInfo {
         } else {
             String::from("HPC")
         };
-        let dummy_hashmap =
-            HashMap::<String, String>::from([(dummy_str.clone(), dummy_str.clone())]);
+        let dummy_anno = HashMap::<String, String>::from([
+            (
+                String::from("io.piccolo.annotations.package-name"),
+                String::from("dummy"),
+            ),
+            (
+                String::from("io.piccolo.annotations.package-type"),
+                String::from(name),
+            ),
+        ]);
+
         NewContainerInfo {
             id: dummy_str.clone(),
             names: vec![String::from(name)],
             image: dummy_str.clone(),
-            state: dummy_hashmap.clone(),
+            state: HashMap::<String, String>::from([(dummy_str.clone(), dummy_str.clone())]),
             config: HashMap::<String, String>::from([(String::from("Hostname"), dummy_node)]),
-            annotation: dummy_hashmap.clone(),
+            annotation: dummy_anno.clone(),
         }
     }
 }
