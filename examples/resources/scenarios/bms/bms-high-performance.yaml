@@ -9,7 +9,7 @@ metadata:
 spec:
   conditions:
     express: eq
-    value: driving
+    value: "D"
     operands:
       type: DDS
       name: gear

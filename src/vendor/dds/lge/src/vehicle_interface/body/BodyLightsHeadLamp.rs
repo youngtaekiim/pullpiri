@@ -15,8 +15,8 @@ impl crate::Piccoloable for BodyLightsHeadLampStatus {
         let lamp = match self.uistatus {
             // uistatus: 0 = IS_ACTING, 1 = HEADLIGHT_IS_OFF, 2 = HEADLIGHT_IS_ON
             0 => "is_acting",
-            1 => "off",
-            2 => "on",
+            1 => "OFF",
+            2 => "ON",
             _ => "unknown",
         };
 

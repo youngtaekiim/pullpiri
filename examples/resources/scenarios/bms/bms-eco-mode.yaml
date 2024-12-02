@@ -9,7 +9,7 @@ metadata:
 spec:
   conditions:
     express: eq
-    value: neutral
+    value: "N"
     operands:
       type: DDS
       name: gear

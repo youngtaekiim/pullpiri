@@ -82,14 +82,15 @@ pub async fn receive_dds<
     }
 
     pub enum CurrentUsedTopic {
-        PHOTO_RESISTOR,
+        BATTERY_COVER_STAT,
         CURRENT_GEAR,
-    }
-
-    pub enum WillBeUsedTopic {
-        ObstacleDetect,
-        HeadlampStat,
-        BatteryCoverStat,
-        TrunkStat,
+        HEADLAMP_STAT,
+        PHOTO_RESISTOR,
+        LWINDOW_STAT,
+        RWINDOW_STAT,
+        LDOOR_STAT,
+        RDOOR_STAT,
+        TRUNK_STAT,
+        OBSTACLE_DETECT,
     }
 */

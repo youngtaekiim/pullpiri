@@ -7,7 +7,7 @@ pub struct ExteriorLightIntensity {
 
 impl crate::Piccoloable for ExteriorLightIntensity {
     fn to_piccolo_dds_data(&self) -> crate::DdsData {
-        let day_night = if self.value < 100.0 { "night" } else { "day" };
+        let day_night = if self.value < 100.0 { "Night" } else { "Day" };
 
         crate::DdsData {
             name: String::from("ExteriorLightIntensity"),

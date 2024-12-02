@@ -5,9 +5,10 @@ pub struct ADASObstacleDetectionIsEnabled {
 
 impl crate::Piccoloable for ADASObstacleDetectionIsEnabled {
     fn to_piccolo_dds_data(&self) -> crate::DdsData {
+        let v = if self.value { "ON" } else { "OFF" };
         crate::DdsData {
             name: String::from("ADASObstacleDetectionIsEnabled"),
-            value: self.value.to_string(),
+            value: v.to_string(),
         }
     }
     fn topic_name() -> String {
