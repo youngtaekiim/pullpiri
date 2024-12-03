@@ -45,11 +45,17 @@ async fn launch_rest() {
 }
 
 async fn deploy_exist_package() {
+    let _ = internal_deploy_exist_package().await;
+}
+
+async fn internal_deploy_exist_package() -> Result<(), Box<dyn std::error::Error>> {
+    std::thread::sleep(std::time::Duration::from_millis(3000));
+
     let package_path = format!("{}/packages", common::get_config().yaml_storage);
-    let entries = std::fs::read_dir(package_path).unwrap();
+    let entries = std::fs::read_dir(package_path)?;
 
     for entry in entries {
-        let entry = entry.unwrap();
+        let entry = entry?;
         let path = entry.path();
         if path.is_file() {
             if let Some(extension) = path.extension() {
@@ -62,6 +68,8 @@ async fn deploy_exist_package() {
             }
         }
     }
+
+    Ok(())
 }
 
 #[tokio::main]

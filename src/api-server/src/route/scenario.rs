@@ -132,4 +132,16 @@ async fn delete_scenario_info_in_etcd(name: &str) -> Result<(), Box<dyn std::err
 async fn reset_all() -> Response {
     // TODO - run shell script?
     super::status_ok()
+
+    // use std::process::Command;
+    // let result = Command::new("sh")
+    //     .arg("-C")
+    //     .arg("/etc/containers/systemd/piccolo/reset_piccolo.sh")
+    //     .spawn();
+
+    // if let Err(msg) = result {
+    //     super::status_err(&msg.to_string())
+    // } else {
+    //     super::status_ok()
+    // }
 }
