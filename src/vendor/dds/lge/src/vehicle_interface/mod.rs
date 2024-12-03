@@ -45,7 +45,7 @@ pub async fn receive_dds<
     println!("make loop - {topic_name}");
     loop {
         if let Ok(data_samples) = reader
-            .take(10, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
+            .take(50, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
             .await
         {
             let data: T = data_samples[0].data().unwrap();
@@ -53,7 +53,7 @@ pub async fn receive_dds<
             println!("Received: {:?}", msg);
             let _ = tx.send(msg).await;
         }
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        std::thread::sleep(std::time::Duration::from_millis(500));
     }
 }
 

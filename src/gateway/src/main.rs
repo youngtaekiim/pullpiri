@@ -33,7 +33,7 @@ async fn launch_grpc(tx: Sender<Condition>) {
 
 #[tokio::main]
 async fn main() {
-    let (tx_grpc, rx_grpc) = channel::<Condition>(50);
+    let (tx_grpc, rx_grpc) = channel::<Condition>(100);
     let f_grpc = launch_grpc(tx_grpc);
     let f_manage = launch_manager(rx_grpc);
 
