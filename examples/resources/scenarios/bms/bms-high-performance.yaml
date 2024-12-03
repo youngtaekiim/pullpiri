@@ -9,12 +9,12 @@ metadata:
 spec:
   conditions:
     express: eq
-    value: "D"
+    value: D
     operands:
       type: DDS
       name: gear
-      value: "PowertrainTransmissionCurrentGear"
+      value: PowertrainTransmissionCurrentGear
   actions:
     - operation: update
   targets:
-    - package: "bms-algorithm-performance"
+    - package: bms-algorithm-performance

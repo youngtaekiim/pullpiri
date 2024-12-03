@@ -64,7 +64,7 @@ async fn import_scenario_from_path(path: String) -> Result<(), Box<dyn std::erro
 }
 
 async fn import_scenario_from_yaml(yaml: String) -> Result<(), Box<dyn std::error::Error>> {
-    let scenario = importer::get_scenario_from_file(&yaml).await?;
+    let scenario = importer::get_scenario_from_yaml(&yaml).await?;
     internal_import_scenario(&scenario, &scenario.name).await
 }
 

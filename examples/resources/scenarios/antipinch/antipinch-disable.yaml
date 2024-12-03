@@ -11,4 +11,4 @@ spec:
   actions:
     - operation: update
   targets:
-    - package: "antipinch-disable"
+    - package: antipinch-disable
