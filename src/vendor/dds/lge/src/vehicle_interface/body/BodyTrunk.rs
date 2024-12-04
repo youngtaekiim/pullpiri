@@ -15,8 +15,8 @@ impl crate::Piccoloable for BodyTrunkStatus {
         let trunk = match self.uistatus {
             // uistatus: 0 = IS_ACTING, 1 = TRUNK_IS_CLOSED, 2 = TRUNK_IS_OPENED
             0 => "is_acting",
-            1 => "Close",
-            2 => "Open",
+            1 => "close",
+            2 => "open",
             _ => "unknown",
         };
 

@@ -23,8 +23,8 @@ impl crate::Piccoloable for PowertrainBatteryChargingChargePortFlapStatus {
         let cover = match self.uistatus {
             // uistatus: 0 = IS_ACTING, 1 = CHARGING_PORT_IS_CLOSED, 2 = CHARGING_PORT_IS_OPENED
             0 => "is_acting",
-            1 => "Close",
-            2 => "Open",
+            1 => "close",
+            2 => "open",
             _ => "unknown",
         };
 

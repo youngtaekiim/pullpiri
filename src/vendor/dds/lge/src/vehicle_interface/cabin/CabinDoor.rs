@@ -26,8 +26,8 @@ impl crate::Piccoloable for CabinLeftDoorStatus {
         let ldoor = match self.uistatus {
             // uistatus: 0 = IS_ACTING, 1 = CHARGING_PORT_IS_CLOSED, 2 = CHARGING_PORT_IS_OPENED
             0 => "is_acting",
-            1 => "Close",
-            2 => "Open",
+            1 => "close",
+            2 => "open",
             _ => "unknown",
         };
 
@@ -49,8 +49,8 @@ impl crate::Piccoloable for CabinRightDoorStatus {
         let rdoor = match self.uistatus {
             // uistatus: 0 = IS_ACTING, 1 = CHARGING_PORT_IS_CLOSED, 2 = CHARGING_PORT_IS_OPENED
             0 => "is_acting",
-            1 => "Close",
-            2 => "Open",
+            1 => "close",
+            2 => "open",
             _ => "unknown",
         };
 
