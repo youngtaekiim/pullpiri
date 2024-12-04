@@ -83,7 +83,7 @@ async fn internal_import_scenario(
 }
 
 async fn handle_delete(Path(file_name): Path<String>) -> Response {
-    println!("DELETE : scenario {file_name} is called.\n");
+    println!("\nDELETE : scenario {file_name} is called.");
     let result = delete_scenario(&file_name).await;
 
     if let Err(msg) = result {
