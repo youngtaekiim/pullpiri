@@ -39,6 +39,9 @@ WantedBy=multi-user.target default.target
 
 [Kube]
 Yaml={}
+
+[Service]
+Restart=no
 "#,
         name, yaml_file_path
     );
