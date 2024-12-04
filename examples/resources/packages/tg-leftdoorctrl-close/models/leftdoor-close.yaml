@@ -12,3 +12,4 @@ spec:
     - name: leftdoor-close
       image: sdv.lge.com/demo/tg-leftdoorctrl-close:1.0
   terminationGracePeriodSeconds: 0
+  restartPolicy: Never

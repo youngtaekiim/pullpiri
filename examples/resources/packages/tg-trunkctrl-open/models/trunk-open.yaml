@@ -12,3 +12,4 @@ spec:
     - name: trunk-open
       image: sdv.lge.com/demo/tg-trunkctrl-open:1.0
   terminationGracePeriodSeconds: 0
+  restartPolicy: Never

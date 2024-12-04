@@ -12,3 +12,4 @@ spec:
     - name: leftwindow-close
       image: sdv.lge.com/demo/tg-leftwinctrl-close:1.0
   terminationGracePeriodSeconds: 0
+  restartPolicy: Never

@@ -12,3 +12,4 @@ spec:
     - name: rightdoor-open
       image: sdv.lge.com/demo/tg-rightdoorctrl-open:1.0
   terminationGracePeriodSeconds: 0
+  restartPolicy: Never
