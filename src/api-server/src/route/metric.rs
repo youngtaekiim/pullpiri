@@ -106,6 +106,7 @@ async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
 fn get_condition_key(operand_name: &str) -> String {
     match operand_name {
         "gear" => String::from("Gear"),
+        "daynight" => String::from("Daynight"),
         "sensor" => String::from("Proximity sensors"),
         "headlampstt" => String::from("Head Lamp"),
         "bttportstt" => String::from("Charger"),
