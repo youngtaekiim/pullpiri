@@ -72,12 +72,12 @@ async fn handle_operation(
     node_name: &str,
 ) -> Result<(), Box<dyn Error>> {
     match operation {
-        "launch" => {
-            // make symlink & reload
-            make_symlink_and_reload(node_name, model_name, target_name).await?;
-            // start service
-            try_service(node_name, model_name, "START").await?;
-        }
+        // "launch" => {
+        //     // make symlink & reload
+        //     make_symlink_and_reload(node_name, model_name, target_name).await?;
+        //     // start service
+        //     try_service(node_name, model_name, "START").await?;
+        // }
         "terminate" => {
             // stop service
             try_service(node_name, model_name, "STOP").await?;
@@ -85,7 +85,8 @@ async fn handle_operation(
             // delete symlink & reload
             delete_symlink_and_reload(model_name).await?;
         }
-        "update" | "rollback" => {
+        // TODO - temporary routing. launch -> update
+        "launch" | "update" | "rollback" => {
             // stop previous service
             let _ = try_service(&common::get_config().host.name, model_name, "STOP").await;
             if let Some(guests) = &common::get_config().guest {
