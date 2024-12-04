@@ -4,6 +4,7 @@
  */
 
 pub use etcd_client::{Client, DeleteOptions, Error, GetOptions};
+use etcd_client::{SortOrder, SortTarget};
 
 pub fn open_server() -> String {
     format!("{}:2379", crate::get_config().host.ip)
@@ -37,7 +38,11 @@ pub async fn get(key: &str) -> Result<String, Error> {
 
 pub async fn get_all_with_prefix(key: &str) -> Result<Vec<KV>, Error> {
     let mut client = get_client().await?;
-    let option = Some(GetOptions::new().with_prefix());
+    let option = Some(
+        GetOptions::new()
+            .with_prefix()
+            .with_sort(SortTarget::Create, SortOrder::Ascend),
+    );
     let resp = client.get(key, option).await?;
 
     let mut vec_kv = Vec::<KV>::new();

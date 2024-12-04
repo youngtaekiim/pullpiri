@@ -87,18 +87,6 @@ async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
             );
         }
 
-        // TODO - temp code
-        // let mut action = HashMap::new();
-        // if name.contains("high-performance") {
-        //     action.insert("Power".to_string(), "On".to_string());
-        // } else if name.contains("eco") {
-        //     action.insert("Eco".to_string(), "On".to_string());
-        // } else if name.contains("enable") {
-        //     action.insert("antipinch-enable".to_string(), "v2.0".to_string());
-        // } else if name.contains("disable") {
-        //     action.insert("antipinch-disable".to_string(), "v1.0".to_string());
-        // }
-
         let mut metric_action = HashMap::new();
         let action_str = common::etcd::get(&format!("scenario/{name}/targets"))
             .await
