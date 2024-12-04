@@ -82,31 +82,97 @@ async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
             serde_yaml::from_str::<common::spec::scenario::Condition>(&condition_str)
         {
             metric_condition.insert(
-                capitalize_first_letter(&condition.get_operand_name()),
-                capitalize_first_letter_only(&condition.get_value()),
+                get_condition_key(&condition.get_operand_name()),
+                capitalize_first_letter(&condition.get_value()),
             );
         }
 
         // TODO - temp code
-        let mut action = HashMap::new();
-        if name.contains("high-performance") {
-            action.insert("Power".to_string(), "On".to_string());
-        } else if name.contains("eco") {
-            action.insert("Eco".to_string(), "On".to_string());
-        } else if name.contains("enable") {
-            action.insert("antipinch-enable".to_string(), "v2.0".to_string());
-        } else if name.contains("disable") {
-            action.insert("antipinch-disable".to_string(), "v1.0".to_string());
-        }
+        // let mut action = HashMap::new();
+        // if name.contains("high-performance") {
+        //     action.insert("Power".to_string(), "On".to_string());
+        // } else if name.contains("eco") {
+        //     action.insert("Eco".to_string(), "On".to_string());
+        // } else if name.contains("enable") {
+        //     action.insert("antipinch-enable".to_string(), "v2.0".to_string());
+        // } else if name.contains("disable") {
+        //     action.insert("antipinch-disable".to_string(), "v1.0".to_string());
+        // }
+
+        let mut metric_action = HashMap::new();
+        let action_str = common::etcd::get(&format!("scenario/{name}/targets"))
+            .await
+            .unwrap();
+        metric_action.insert(get_action_key(&action_str), get_action_value(&action_str));
 
         scenarios.push(ScenarioInfo {
             name: String::from(name),
             status,
             condition: metric_condition,
-            action,
+            action: metric_action,
         });
     }
     Json(scenarios)
+}
+
+fn get_condition_key(operand_name: &str) -> String {
+    match operand_name {
+        "sensor" => String::from("Proximity sensors"),
+        "headlampstt" => String::from("Head Lamp"),
+        "bttportstt" => String::from("Charger"),
+        "trunkstt" => String::from("Trunk"),
+        "leftwinstt" => String::from("Driver Window"),
+        "rightwinstt" => String::from("Passenger Window"),
+        "leftdoorstt" => String::from("Driver Door"),
+        "rightdoorstt" => String::from("Passenger Door"),
+        _ => String::new(),
+    }
+}
+
+fn get_action_key(target_str: &str) -> String {
+    if target_str.contains("performance") {
+        String::from("Power")
+    } else if target_str.contains("eco") {
+        String::from("Eco")
+    } else if target_str.contains("antipinch") {
+        String::from("Anti pinch")
+    } else if target_str.contains("headlamp") {
+        String::from("Head Lamp")
+    } else if target_str.contains("trunk") {
+        String::from("Trunk")
+    } else if target_str.contains("bttport") {
+        String::from("Charger")
+    } else if target_str.contains("leftdoor") {
+        String::from("Driver Door")
+    } else if target_str.contains("rightdoor") {
+        String::from("Passenger Door")
+    } else if target_str.contains("leftwin") {
+        String::from("Driver Window")
+    } else if target_str.contains("rightwin") {
+        String::from("Passenger Window")
+    } else {
+        String::new()
+    }
+}
+
+fn get_action_value(target_str: &str) -> String {
+    if target_str.contains("bms") {
+        String::from("ON")
+    } else if target_str.contains("antipinch-enable") {
+        String::from("Update")
+    } else if target_str.contains("antipinch-disable") {
+        String::from("Rollback")
+    } else if target_str.contains("-open") {
+        String::from("Open")
+    } else if target_str.contains("-close") {
+        String::from("Close")
+    } else if target_str.contains("-on") {
+        String::from("On")
+    } else if target_str.contains("-off") {
+        String::from("Off")
+    } else {
+        String::new()
+    }
 }
 
 fn capitalize_first_letter(s: &str) -> String {
@@ -117,13 +183,13 @@ fn capitalize_first_letter(s: &str) -> String {
     }
 }
 
-fn capitalize_first_letter_only(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        Some(first) => first.to_uppercase().collect::<String>(),
-        None => String::new(),
-    }
-}
+// fn capitalize_first_letter_only(s: &str) -> String {
+//     let mut chars = s.chars();
+//     match chars.next() {
+//         Some(first) => first.to_uppercase().collect::<String>(),
+//         None => String::new(),
+//     }
+// }
 
 #[derive(serde::Deserialize, serde::Serialize, Default)]
 struct ScenarioInfo {
