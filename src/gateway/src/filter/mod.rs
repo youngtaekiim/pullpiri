@@ -56,7 +56,12 @@ impl Filter {
                     let current_v = f32::from_str(&data.value).unwrap();
                     target_v <= current_v
                 }
-                "eq" => self.target_value.eq(&data.value),
+                //"eq" => self.target_value.eq(&data.value),
+                "eq" => {
+                    let target = self.target_value.clone();
+                    let data = data.value.clone();
+                    target.to_lowercase() == data.to_lowercase()
+                }
                 "ge" => {
                     let target_v = f32::from_str(&self.target_value).unwrap();
                     let current_v = f32::from_str(&data.value).unwrap();

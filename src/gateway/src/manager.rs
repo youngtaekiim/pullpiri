@@ -40,7 +40,7 @@ impl Manager {
             match condition.crud.as_str() {
                 "CREATE" => self.launch_filter(&condition.name).await,
                 //"DELETE" => self.remove_filter(&condition.name).await,
-                _ => todo!(),
+                _ => continue,
             }
         }
     }
