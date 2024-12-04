@@ -93,8 +93,10 @@ async fn handle_dds(
                     .await
                     .unwrap();
                 if current_status == "inactive" {
-                    use crate::grpc::sender;
-                    let _ = sender::send(&filter.action_key).await;
+                    // use crate::grpc::sender;
+                    // let _ = sender::send(&filter.action_key).await;
+                    let action_key = filter.action_key.clone();
+                    tokio::spawn(send_action(action_key));
                 }
             }
             let _ = common::etcd::put(&format!("scenario/{}/status", filter.name), status).await;
@@ -102,4 +104,9 @@ async fn handle_dds(
         //let mut iter = keep.iter();
         //filters.retain(|_| *iter.next().unwrap());
     }
+}
+
+async fn send_action(action_key: String) {
+    use crate::grpc::sender;
+    let _ = sender::send(&action_key).await;
 }
