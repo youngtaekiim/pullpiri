@@ -55,18 +55,18 @@ impl MetricConnection for GrpcMetricServer {
             .collect();
 
         let mut vec_fake_container_info: Vec<NewContainerInfo> = vec![
-            NewContainerInfo::make_dummy("Driver State Monitoring", 1),
-            NewContainerInfo::make_dummy("Face-analysis-algorithm", 2),
-            NewContainerInfo::make_dummy("Ai-perception", 3),
-            NewContainerInfo::make_dummy("Voice Recognition", 4),
-            NewContainerInfo::make_dummy("Lane Keeping Assist", 5),
-            NewContainerInfo::make_dummy("Mixed Reality Integration", 6),
-            NewContainerInfo::make_dummy("Emergency Braking System", 7),
-            NewContainerInfo::make_dummy("Adaptive Cruise Control", 8),
-            NewContainerInfo::make_dummy("Automatic Parking Assist", 9),
-            NewContainerInfo::make_dummy("V2X Communication", 10),
-            NewContainerInfo::make_dummy("Battery Management", 11),
-            NewContainerInfo::make_dummy("Metric Notifier", 12),
+            NewContainerInfo::make_dummy("DIMS", 1),
+            NewContainerInfo::make_dummy("LKA", 2),
+            NewContainerInfo::make_dummy("HUD", 3),
+            NewContainerInfo::make_dummy("ChildLock", 4),
+            NewContainerInfo::make_dummy("ADAS", 5),
+            NewContainerInfo::make_dummy("MRNavi", 6),
+            NewContainerInfo::make_dummy("ABS", 7),
+            NewContainerInfo::make_dummy("SmartCruise", 8),
+            NewContainerInfo::make_dummy("AutoHold", 9),
+            NewContainerInfo::make_dummy("V2X Comm.", 10),
+            NewContainerInfo::make_dummy("VisionRoof", 11),
+            NewContainerInfo::make_dummy("ISG", 12),
         ];
 
         vec_new_container_info.append(&mut vec_fake_container_info);

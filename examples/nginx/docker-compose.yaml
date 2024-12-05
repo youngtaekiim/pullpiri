@@ -2,7 +2,7 @@
 
 services:
   piccolo-nginx:
-    image: nginx
+    image: nginx:1.27-alpine
     ports:
       - "41234:80"
     volumes:
