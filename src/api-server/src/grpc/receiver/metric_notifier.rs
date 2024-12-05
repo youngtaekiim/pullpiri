@@ -39,7 +39,7 @@ impl MetricConnection for GrpcMetricServer {
         //println!("Got a request from {:?}", request.remote_addr());
 
         let container_list = request.into_inner();
-        let node_name = &container_list.node_name;
+        let node_name = container_list.node_name.clone();
         let etcd_key = format!("metric/container/{node_name}");
         let new_container_list = NewContainerList::from(container_list);
 
@@ -54,20 +54,25 @@ impl MetricConnection for GrpcMetricServer {
             })
             .collect();
 
-        let mut vec_fake_container_info: Vec<NewContainerInfo> = vec![
-            NewContainerInfo::make_dummy("DIMS", 1),
-            NewContainerInfo::make_dummy("LKA", 2),
-            NewContainerInfo::make_dummy("HUD", 3),
-            NewContainerInfo::make_dummy("ChildLock", 4),
-            NewContainerInfo::make_dummy("ADAS", 5),
-            NewContainerInfo::make_dummy("MRNavi", 6),
-            NewContainerInfo::make_dummy("ABS", 7),
-            NewContainerInfo::make_dummy("SmartCruise", 8),
-            NewContainerInfo::make_dummy("AutoHold", 9),
-            NewContainerInfo::make_dummy("V2X Comm.", 10),
-            NewContainerInfo::make_dummy("VisionRoof", 11),
-            NewContainerInfo::make_dummy("ISG", 12),
-        ];
+        let mut vec_fake_container_info: Vec<NewContainerInfo> = if node_name == "HPC" {
+            vec![
+                NewContainerInfo::make_dummy("DIMS", 1),
+                NewContainerInfo::make_dummy("LKA", 2),
+                NewContainerInfo::make_dummy("HUD", 3),
+                NewContainerInfo::make_dummy("ChildLock", 4),
+                NewContainerInfo::make_dummy("ADAS", 5),
+                NewContainerInfo::make_dummy("MRNavi", 6),
+                NewContainerInfo::make_dummy("ABS", 7),
+            ]
+        } else {
+            vec![
+                NewContainerInfo::make_dummy("SmartCruise", 8),
+                NewContainerInfo::make_dummy("AutoHold", 9),
+                NewContainerInfo::make_dummy("V2X Comm.", 10),
+                NewContainerInfo::make_dummy("VisionRoof", 11),
+                NewContainerInfo::make_dummy("ISG", 12),
+            ]
+        };
 
         vec_new_container_info.append(&mut vec_fake_container_info);
         let renew_container_list = NewContainerList {
