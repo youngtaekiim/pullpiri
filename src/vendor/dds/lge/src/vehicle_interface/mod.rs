@@ -9,7 +9,7 @@ pub mod ui;
 use crate::{DdsData, Piccoloable};
 use dust_dds::{
     dds_async::domain_participant_factory::DomainParticipantFactoryAsync,
-    infrastructure::{qos::QosKind, status::NO_STATUS},
+    infrastructure::{error::DdsResult, qos::QosKind, status::NO_STATUS},
     subscription::sample_info::{ANY_INSTANCE_STATE, ANY_SAMPLE_STATE, ANY_VIEW_STATE},
     topic_definition::type_support::{DdsDeserialize, DdsHasKey, DdsKey, DdsTypeXml},
 };
@@ -48,8 +48,11 @@ pub async fn receive_dds<
             .take(50, ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE)
             .await
         {
-            let data: T = data_samples[0].data().unwrap();
-            let msg = data.to_piccolo_dds_data();
+            let data: DdsResult<T> = data_samples[0].data();
+            if data.is_err() {
+                continue;
+            }
+            let msg = data.unwrap().to_piccolo_dds_data();
             println!("Received: {:?}", msg);
             let _ = tx.send(msg).await;
         }

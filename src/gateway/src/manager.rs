@@ -91,7 +91,7 @@ async fn handle_dds(
                 status = "active";
                 let current_status = common::etcd::get(&format!("scenario/{}/status", filter.name))
                     .await
-                    .unwrap();
+                    .unwrap_or_default();
                 if current_status == "inactive" {
                     // use crate::grpc::sender;
                     // let _ = sender::send(&filter.action_key).await;

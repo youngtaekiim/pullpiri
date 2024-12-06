@@ -72,12 +72,12 @@ async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
 
         let status = common::etcd::get(&format!("scenario/{name}/status"))
             .await
-            .unwrap();
+            .unwrap_or_default();
 
         let mut metric_condition = HashMap::new();
         let condition_str = common::etcd::get(&format!("scenario/{name}/conditions"))
             .await
-            .unwrap();
+            .unwrap_or_default();
         if let Ok(condition) =
             serde_yaml::from_str::<common::spec::scenario::Condition>(&condition_str)
         {
@@ -90,7 +90,7 @@ async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
         let mut metric_action = HashMap::new();
         let action_str = common::etcd::get(&format!("scenario/{name}/targets"))
             .await
-            .unwrap();
+            .unwrap_or_default();
         metric_action.insert(get_action_key(&action_str), get_action_value(&action_str));
 
         scenarios.push(ScenarioInfo {

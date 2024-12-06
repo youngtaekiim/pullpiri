@@ -126,7 +126,7 @@ async fn delete_symlink_and_reload(model_name: &str) -> Result<(), Box<dyn Error
             let mut session = Session::new()?;
             session.set_tcp_stream(tcp);
             session.handshake()?;
-            session.userauth_password(&guest.id, &guest.pw).unwrap();
+            session.userauth_password(&guest.id, &guest.pw)?;
             if !session.authenticated() {
                 println!("auth failed to remote node");
                 reload_all_node().await?;
@@ -171,7 +171,7 @@ async fn make_symlink_and_reload(
             let mut session = Session::new()?;
             session.set_tcp_stream(tcp);
             session.handshake()?;
-            session.userauth_password(&guest.id, &guest.pw).unwrap();
+            session.userauth_password(&guest.id, &guest.pw)?;
             if !session.authenticated() {
                 println!("auth failed to remote node");
                 return Err("auth failed".into());
@@ -179,7 +179,7 @@ async fn make_symlink_and_reload(
 
             let mut channel = session.channel_session()?;
             let command = format!("sudo ln -s {original} {link}");
-            channel.exec(&command).unwrap();
+            channel.exec(&command)?;
             channel.wait_eof()?;
             channel.wait_close()?;
             break;
