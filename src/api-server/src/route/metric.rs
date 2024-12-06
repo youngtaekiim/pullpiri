@@ -130,6 +130,8 @@ fn get_action_key(target_str: &str) -> String {
         String::from("Head Lamp")
     } else if target_str.contains("trunk") {
         String::from("Trunk")
+    } else if target_str.contains("welcome") {
+        String::from("Welcome")
     } else if target_str.contains("bttport") {
         String::from("Charger")
     } else if target_str.contains("leftdoor") {
@@ -160,6 +162,38 @@ fn get_action_value(target_str: &str) -> String {
         String::from("On")
     } else if target_str.contains("-off") {
         String::from("Off")
+    } else {
+        get_oem_value(target_str)
+    }
+}
+
+fn get_oem_value(target_str: &str) -> String {
+    if target_str.contains("-gm") {
+        String::from("GM")
+    } else if target_str.contains("-porsche") {
+        String::from("Porsche")
+    } else if target_str.contains("-kgmobility") {
+        String::from("KGMobility")
+    } else if target_str.contains("-toyota") {
+        String::from("Toyota")
+    } else if target_str.contains("-bmw") {
+        String::from("BMW")
+    } else if target_str.contains("-honda") {
+        String::from("Honda")
+    } else if target_str.contains("-jlr") {
+        String::from("JLR")
+    } else if target_str.contains("-audi") {
+        String::from("Audi")
+    } else if target_str.contains("-hyundai") {
+        String::from("Hyundai")
+    } else if target_str.contains("-kia") {
+        String::from("Kia")
+    } else if target_str.contains("-vw") {
+        String::from("VW")
+    } else if target_str.contains("-nissan") {
+        String::from("Nissan")
+    } else if target_str.contains("-renault") {
+        String::from("Renault")
     } else {
         String::new()
     }
