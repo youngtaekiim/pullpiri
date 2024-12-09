@@ -1,4 +1,4 @@
-struct ADASObstacleDetectionIsEnabled {
+struct ADASObstacleDetectionIsWarning {
 	// datatype: boolean
 	// type: actuator
 	// description: Indicates if obstacle sensor system is enabled (i.e. monitoring for obstacles).

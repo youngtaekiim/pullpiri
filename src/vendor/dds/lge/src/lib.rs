@@ -5,7 +5,7 @@ pub mod vehicle_interface;
 
 use tokio::sync::mpsc::Sender;
 use vehicle_interface::{
-    adas::ADASObstacleDetection::ADASObstacleDetectionIsEnabled,
+    adas::ADASObstacleDetection::ADASObstacleDetectionIsWarning,
     body::{BodyLightsHeadLamp::BodyLightsHeadLampStatus, BodyTrunk::BodyTrunkStatus},
     cabin::{
         CabinDoor::{CabinLeftDoorStatus, CabinRightDoorStatus},
@@ -32,7 +32,7 @@ pub trait Piccoloable {
 }
 
 pub async fn run(tx: Sender<DdsData>) {
-    tokio::spawn(receive_dds::<ADASObstacleDetectionIsEnabled>(tx.clone()));
+    tokio::spawn(receive_dds::<ADASObstacleDetectionIsWarning>(tx.clone()));
     tokio::spawn(receive_dds::<BodyLightsHeadLampStatus>(tx.clone()));
     tokio::spawn(receive_dds::<BodyTrunkStatus>(tx.clone()));
     tokio::spawn(receive_dds::<CabinLeftDoorStatus>(tx.clone()));
