@@ -168,46 +168,46 @@ fn get_action_value(target_str: &str) -> String {
 }
 
 fn get_oem_value(target_str: &str) -> String {
-    if target_str.contains("-gm") {
-        String::from("GM")
-    } else if target_str.contains("-porsche") {
-        String::from("Porsche")
-    } else if target_str.contains("-kgmobility") {
-        String::from("KGMobility")
-    } else if target_str.contains("-toyota") {
-        String::from("Toyota")
-    } else if target_str.contains("-benz") {
-        String::from("Benz")
-    } else if target_str.contains("-ford") {
-        String::from("Ford")
-    } else if target_str.contains("-tesla") {
-        String::from("Tesla")
-    } else if target_str.contains("-lg") {
-        String::from("LG")
-    } else if target_str.contains("-ces") {
-        String::from("CES")
-    } else if target_str.contains("-others") {
-        String::from("Others")
+    if target_str.contains("-audi") {
+        String::from("Audi")
     } else if target_str.contains("-bmw") {
         String::from("BMW")
-    } else if target_str.contains("-honda") {
+    } else if target_str.contains("-ces") {
+        String::from("CES")
+    } else if target_str.contains("-ford") {
+        String::from("Ford")
+    } else if target_str.contains("-gm") {
+        String::from("GM")
+    } else if target_str.contains("-honad") {
         String::from("Honda")
-    } else if target_str.contains("-jlr") {
-        String::from("JLR")
-    } else if target_str.contains("-audi") {
-        String::from("Audi")
     } else if target_str.contains("-hyundai") {
         String::from("Hyundai")
+    } else if target_str.contains("-jlr") {
+        String::from("JLR")
+    } else if target_str.contains("-kgm") {
+        String::from("KGM")
     } else if target_str.contains("-kia") {
         String::from("Kia")
-    } else if target_str.contains("-vw") {
-        String::from("VW")
+    } else if target_str.contains("-lg") {
+        String::from("LG")
+    } else if target_str.contains("-mb") {
+        String::from("MB")
     } else if target_str.contains("-nissan") {
         String::from("Nissan")
+    } else if target_str.contains("-porche") {
+        String::from("Porche")
     } else if target_str.contains("-renault") {
         String::from("Renault")
+    } else if target_str.contains("-tesla") {
+        String::from("Tesla")
+    } else if target_str.contains("-toyota") {
+        String::from("Toyota")
+    } else if target_str.contains("-vw") {
+        String::from("VW")
+    } else if target_str.contains("-others") {
+        String::from("Others")
     } else {
-        String::new()
+        String::from("Default")
     }
 }
 

@@ -3,13 +3,13 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: welcome-kgmobility
+  name: welcome-mb
   labels:
-    app: welcome-kgmobility
+    app: welcome-mb
 spec:
   hostNetwork: true
   containers:
-    - name: welcome-kgmobility
-      image: sdv.lge.com/demo/tg-welcome-kgmobility:1.0
+    - name: welcome-mb
+      image: sdv.lge.com/demo/tg-welcome-benz:1.0
   terminationGracePeriodSeconds: 0
   restartPolicy: Never
