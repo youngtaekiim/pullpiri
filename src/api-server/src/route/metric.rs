@@ -70,9 +70,12 @@ async fn list_scenario() -> Json<Vec<ScenarioInfo>> {
             continue;
         }
 
-        let status = common::etcd::get(&format!("scenario/{name}/status"))
+        let mut status = common::etcd::get(&format!("scenario/{name}/status"))
             .await
             .unwrap_or_default();
+        if name.contains("antipinch") {
+            status = String::from("active");
+        }
 
         let mut metric_condition = HashMap::new();
         let condition_str = common::etcd::get(&format!("scenario/{name}/conditions"))
