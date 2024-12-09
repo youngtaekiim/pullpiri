@@ -176,6 +176,18 @@ fn get_oem_value(target_str: &str) -> String {
         String::from("KGMobility")
     } else if target_str.contains("-toyota") {
         String::from("Toyota")
+    } else if target_str.contains("-benz") {
+        String::from("Benz")
+    } else if target_str.contains("-ford") {
+        String::from("Ford")
+    } else if target_str.contains("-tesla") {
+        String::from("Tesla")
+    } else if target_str.contains("-lg") {
+        String::from("LG")
+    } else if target_str.contains("-ces") {
+        String::from("CES")
+    } else if target_str.contains("-others") {
+        String::from("Others")
     } else if target_str.contains("-bmw") {
         String::from("BMW")
     } else if target_str.contains("-honda") {
