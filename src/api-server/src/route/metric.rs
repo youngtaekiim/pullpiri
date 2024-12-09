@@ -194,8 +194,8 @@ fn get_oem_value(target_str: &str) -> String {
         String::from("MB")
     } else if target_str.contains("-nissan") {
         String::from("Nissan")
-    } else if target_str.contains("-porche") {
-        String::from("Porche")
+    } else if target_str.contains("-porsche") {
+        String::from("Porsche")
     } else if target_str.contains("-renault") {
         String::from("Renault")
     } else if target_str.contains("-tesla") {
