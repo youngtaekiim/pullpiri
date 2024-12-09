@@ -8,10 +8,7 @@ pub mod ui;
 
 use crate::{DdsData, Piccoloable};
 use dust_dds::{
-    dds_async::domain_participant_factory::DomainParticipantFactoryAsync,
-    infrastructure::{error::DdsResult, qos::QosKind, status::NO_STATUS},
-    subscription::sample_info::{ANY_INSTANCE_STATE, ANY_SAMPLE_STATE, ANY_VIEW_STATE},
-    topic_definition::type_support::{DdsDeserialize, DdsHasKey, DdsKey, DdsTypeXml},
+    configuration::DustDdsConfigurationBuilder, dds_async::domain_participant_factory::DomainParticipantFactoryAsync, infrastructure::{error::DdsResult, qos::QosKind, status::NO_STATUS}, subscription::sample_info::{ANY_INSTANCE_STATE, ANY_SAMPLE_STATE, ANY_VIEW_STATE}, topic_definition::type_support::{DdsDeserialize, DdsHasKey, DdsKey, DdsTypeXml}
 };
 use tokio::sync::mpsc::Sender;
 
@@ -21,7 +18,10 @@ pub async fn receive_dds<
     tx: Sender<DdsData>,
 ) {
     let (topic_name, type_name, domain_id) = (T::topic_name(), T::type_name(), 0);
+    let configuration= DustDdsConfigurationBuilder::new().interface_name(Some(String::from("acrn-br0"))).build().unwrap();
     let participant_factory = DomainParticipantFactoryAsync::new();
+    
+    participant_factory.set_configuration(configuration).await.unwrap();
 
     let participant = participant_factory
         .create_participant(domain_id, QosKind::Default, None, NO_STATUS)
