@@ -1,6 +1,0 @@
-module speed {
-    @final
-    struct DataType {
-        int value;
-    };
-};

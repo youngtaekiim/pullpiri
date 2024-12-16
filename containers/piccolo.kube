@@ -11,4 +11,4 @@ Yaml=/etc/containers/systemd/piccolo/piccolo.yaml
 
 [Service]
 Restart=always
-ExecStartPost=/bin/bash /etc/containers/systemd/piccolo/input_package.sh
+# ExecStartPost=/bin/bash /etc/containers/systemd/piccolo/input_package.sh

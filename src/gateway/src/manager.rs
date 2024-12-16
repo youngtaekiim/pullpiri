@@ -2,7 +2,7 @@
 
 use crate::filter::Filter;
 use common::gateway::Condition;
-use lge::DdsData;
+use lge_dds::DdsData;
 use std::sync::Arc;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
@@ -26,7 +26,7 @@ impl Manager {
     }
 
     pub async fn run(&mut self) {
-        lge::run(self.tx_dds.clone()).await;
+        lge_dds::run(self.tx_dds.clone()).await;
 
         let arc_rx_dds = Arc::clone(&self.rx_dds);
         let arc_filters = Arc::clone(&self.filters);

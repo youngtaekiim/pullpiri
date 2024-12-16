@@ -12,9 +12,5 @@ members = [
     "common",
     "importer",
     "gateway",
-]
-
-exclude = [
-    "tools",
-    "vendor"
+    "vendor/lge_dds"
 ]

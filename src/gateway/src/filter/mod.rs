@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use lge::DdsData;
+use lge_dds::DdsData;
 use std::str::FromStr;
 
 #[derive(Debug)]

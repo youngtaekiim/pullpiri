@@ -1,8 +1,9 @@
+#!/bin/bash
+
 echo "1: eco, 2:performance, 3: anti-enable, 4: anti-disable :"
 read input
 A=$((input))
-#A=1
-BODY=bms/bms-eco-mode
+BODY=""
 
 if [ "$A" -eq 1 ]; then
 	BODY="bms/bms-eco-mode"

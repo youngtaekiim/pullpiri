@@ -6,8 +6,8 @@ host:
   name: HPC
   ip: 0.0.0.0
 guest:
-  - name: ZONE
-    ip: 192.168.10.68
-    ssh_port: 22
-    id: root
-    pw: lge123
+#  - name: ZONE
+#    ip: 192.168.10.11
+#    ssh_port: 22
+#    id: root
+#    pw: rootpassword
