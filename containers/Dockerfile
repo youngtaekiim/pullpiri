@@ -23,7 +23,7 @@ RUN apt update -y && \
 FROM alpine:3.20.3
 WORKDIR /piccolo
 
-COPY ./settings.yaml .
+COPY ./src/settings.yaml .
 
 COPY --from=builder \
     /piccolo/target/release/api-server \
