@@ -17,29 +17,6 @@ pub use crate::error::Result;
 use std::sync::OnceLock;
 static SETTINGS: OnceLock<Settings> = OnceLock::new();
 
-#[derive(serde::Deserialize)]
-pub struct Settings {
-    pub yaml_storage: String,
-    pub doc_registry: String,
-    pub host: HostSettings,
-    pub guest: Option<Vec<GuestSettings>>,
-}
-
-#[derive(serde::Deserialize)]
-pub struct HostSettings {
-    pub name: String,
-    pub ip: String,
-}
-
-#[derive(serde::Deserialize)]
-pub struct GuestSettings {
-    pub name: String,
-    pub ip: String,
-    pub ssh_port: String,
-    pub id: String,
-    pub pw: String,
-}
-
 fn parse_settings_yaml() -> Settings {
     let s: Settings = Settings {
         yaml_storage: String::from("/root/piccolo_yaml"),
