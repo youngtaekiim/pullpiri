@@ -37,6 +37,7 @@ pub async fn parse_package(package_name: &str) -> common::Result<package::Packag
     if !Path::new(&full_save_path).exists() {
         file_handler::download(&full_url, &full_save_path).await?;
     }
+    println!("before extract #40");
     //file_handler::extract(&full_save_path)?;
 
     //parsing
@@ -46,6 +47,7 @@ pub async fn parse_package(package_name: &str) -> common::Result<package::Packag
         package_name
     );
     package::parse(&parsing_path)
+    println!("end parse #50");
 }
 
 pub async fn get_scenario_from_file(scenario_path: &str) -> common::Result<scenario::ScenarioEtcd> {
