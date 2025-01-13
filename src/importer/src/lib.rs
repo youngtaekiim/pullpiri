@@ -37,7 +37,7 @@ pub async fn parse_package(package_name: &str) -> common::Result<package::Packag
     if !Path::new(&full_save_path).exists() {
         file_handler::download(&full_url, &full_save_path).await?;
     }
-    file_handler::extract(&full_save_path)?;
+    //file_handler::extract(&full_save_path)?;
 
     //parsing
     let parsing_path = format!(
