@@ -46,8 +46,9 @@ pub async fn parse_package(package_name: &str) -> common::Result<package::Packag
         common::get_config().yaml_storage,
         package_name
     );
-    package::parse(&parsing_path)
+    let result = package::parse(&parsing_path);
     println!("end parse #50");
+    result
 }
 
 pub async fn get_scenario_from_file(scenario_path: &str) -> common::Result<scenario::ScenarioEtcd> {
