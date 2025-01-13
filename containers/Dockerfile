@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-FROM rust:1.78.0-slim AS builder
+# FROM rust:1.78.0-slim AS builder
+FROM ytkim88/pullpiri-builder:latest AS builder
 WORKDIR /piccolo
 
 COPY ./src/Cargo.lock \
