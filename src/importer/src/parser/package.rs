@@ -15,6 +15,7 @@ pub struct PackageEtcd {
 }
 
 pub fn parse(path: &str) -> common::Result<PackageEtcd> {
+    println!("START - parse #18");
     file_handler::create_exist_folder(path)?;
 
     let package_yaml = format!("{}/package.yaml", path);
@@ -32,6 +33,7 @@ pub fn parse(path: &str) -> common::Result<PackageEtcd> {
     let mut volumes: Vec<String> = Vec::new();
 
     for m in package.get_models() {
+        println!("START - for #36");
         let model: package::model::Model = model_parse(path, &m.get_name()).unwrap();
         model_names.push(m.get_name());
 
@@ -71,6 +73,7 @@ fn parse_yaml<T>(path: &str, name: &str, subdir: &str) -> Result<T, Box<dyn Erro
 where
     T: DeserializeOwned,
 {
+    println!("START - parse_yaml #76");
     let yaml_path = format!("{}/{}/{}.yaml", path, subdir, name);
     let mut f = File::open(yaml_path)?;
     let mut contents = String::new();
@@ -80,10 +83,12 @@ where
 }
 
 fn model_parse(path: &str, name: &str) -> Result<package::model::Model, Box<dyn Error>> {
+    println!("START - model_parse #86");
     parse_yaml(path, name, "models")
 }
 
 fn network_parse(path: &str, name: &Option<String>) -> Option<package::network::NetworkSpec> {
+    println!("START - network_parse #91");
     if let Some(n) = name {
         let network: package::network::Network = parse_yaml(path, n, "networks").unwrap();
         return network.get_spec().clone();
@@ -92,6 +97,7 @@ fn network_parse(path: &str, name: &Option<String>) -> Option<package::network::
 }
 
 fn volume_parse(path: &str, name: &Option<String>) -> Option<package::volume::VolumeSpec> {
+    println!("START - volume_parse #100");
     if let Some(n) = name {
         if let Ok(volume) = parse_yaml::<package::volume::Volume>(path, n, "volumes") {
             return volume.get_spec().clone();
