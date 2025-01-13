@@ -55,4 +55,4 @@ COPY --from=builder \
 COPY --from=builder \
     /lib/ld-linux-aarch64.so.1 /lib/
 
-CMD sh
+CMD ["sh"]

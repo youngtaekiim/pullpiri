@@ -54,4 +54,4 @@ COPY --from=builder \
     /lib/x86_64-linux-gnu/libgpg-error.so.0 \
     /lib/x86_64-linux-gnu/libgpg-error.so.0.33.1 /lib/x86_64-linux-gnu/
 
-CMD sh
+CMD ["sh"]

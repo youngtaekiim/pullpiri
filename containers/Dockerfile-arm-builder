@@ -20,4 +20,4 @@ RUN apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev
 
 RUN cargo build --release
 
-CMD sh
+CMD ["sh"]
