@@ -37,7 +37,6 @@ pub async fn parse_package(package_name: &str) -> common::Result<package::Packag
     if !Path::new(&full_save_path).exists() {
         file_handler::download(&full_url, &full_save_path).await?;
     }
-    println!("[L] before extract #40");
     //file_handler::extract(&full_save_path)?;
 
     //parsing
@@ -47,7 +46,7 @@ pub async fn parse_package(package_name: &str) -> common::Result<package::Packag
         package_name
     );
     let result = package::parse(&parsing_path);
-    println!("[L] end parse #50");
+    println!("[L] end parse #49");
     result
 }
 

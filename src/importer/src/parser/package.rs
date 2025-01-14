@@ -34,7 +34,7 @@ pub fn parse(path: &str) -> common::Result<PackageEtcd> {
 
     println!("[P] START - for #35");
     for m in package.get_models() {
-        println!("[P] LOOP - for #37");
+        println!("[P] LOOP - model:{} line#37", &m.get_name());
         let model: package::model::Model = model_parse(path, &m.get_name()).unwrap();
         model_names.push(m.get_name());
 
@@ -76,7 +76,6 @@ fn parse_yaml<T>(path: &str, name: &str, subdir: &str) -> Result<T, Box<dyn Erro
 where
     T: DeserializeOwned,
 {
-    println!("[P] START - parse_yaml #79");
     let yaml_path = format!("{}/{}/{}.yaml", path, subdir, name);
     let mut f = File::open(yaml_path)?;
     let mut contents = String::new();
@@ -86,12 +85,10 @@ where
 }
 
 fn model_parse(path: &str, name: &str) -> Result<package::model::Model, Box<dyn Error>> {
-    println!("[P] START - model_parse #89");
     parse_yaml(path, name, "models")
 }
 
 fn network_parse(path: &str, name: &Option<String>) -> Option<package::network::NetworkSpec> {
-    println!("[P] START - network_parse #94");
     if let Some(n) = name {
         let network: package::network::Network = parse_yaml(path, n, "networks").unwrap();
         return network.get_spec().clone();
@@ -100,7 +97,6 @@ fn network_parse(path: &str, name: &Option<String>) -> Option<package::network::
 }
 
 fn volume_parse(path: &str, name: &Option<String>) -> Option<package::volume::VolumeSpec> {
-    println!("[P] START - volume_parse #103");
     if let Some(n) = name {
         if let Ok(volume) = parse_yaml::<package::volume::Volume>(path, n, "volumes") {
             return volume.get_spec().clone();

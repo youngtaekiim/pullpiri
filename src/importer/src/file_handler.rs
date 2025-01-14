@@ -123,10 +123,12 @@ pub fn copy_to_remote_node(path: &str) -> common::Result<()> {
         for guest in guests {
             println!("[f] LOOP - for #124");
             let guest_ssh_ip = format!("{}:{}", guest.ip, guest.ssh_port);
+            println!("[f] Line - for #126");
             let tcp = std::net::TcpStream::connect(guest_ssh_ip)?;
+            println!("[f] Line - for #128");
             let mut session = Session::new()?;
 
-            println!("[f] start - auth #129");
+            println!("[f] start - auth #131");
             session.set_tcp_stream(tcp);
             session.handshake()?;
             session.userauth_password(&guest.id, &guest.pw)?;
@@ -134,12 +136,12 @@ pub fn copy_to_remote_node(path: &str) -> common::Result<()> {
                 println!("auth failed to remote node");
                 return Err("auth failed".into());
             }
-            println!("[f] end - auth #137");
+            println!("[f] end - auth #139");
 
             session.sftp()?.mkdir(&PathBuf::from(path), 0o755)?;
             recursive_copy(&session, &PathBuf::from(path))?;
         }
-        println!("[f] END - for #142");
+        println!("[f] END - for #144");
     } else {
         println!("There is no guest node.");
     }
@@ -148,7 +150,7 @@ pub fn copy_to_remote_node(path: &str) -> common::Result<()> {
 }
 
 fn recursive_copy(session: &Session, path: &Path) -> io::Result<()> {
-    println!("[f] START - recursive_copy #151");
+    println!("[f] START - recursive_copy #153");
     for entry in fs::read_dir(path)? {
         let entry = entry?;
         let entry_path = entry.path();
@@ -163,6 +165,6 @@ fn recursive_copy(session: &Session, path: &Path) -> io::Result<()> {
             io::copy(&mut host_file, &mut guest_file)?;
         }
     }
-    println!("[f] END - recursive_copy #166");
+    println!("[f] END - recursive_copy #168");
     Ok(())
 }
