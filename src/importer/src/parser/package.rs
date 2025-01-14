@@ -60,9 +60,9 @@ pub fn parse(path: &str) -> common::Result<PackageEtcd> {
     }
     println!("[P] END - for #61");
 
-    if let Err(e) = file_handler::copy_to_remote_node(path) {
+    /*if let Err(e) = file_handler::copy_to_remote_node(path) {
         println!("[E] cannot copy package files to remote node: {:?}", e);
-    }
+    }*/
 
     println!("[P] Line #67");
     Ok(PackageEtcd {
