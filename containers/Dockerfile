@@ -15,10 +15,10 @@ COPY ./src/importer/ /piccolo/importer
 COPY ./src/statemanager/ /piccolo/statemanager
 COPY ./src/vendor/ /piccolo/vendor
 
-RUN apt update -y && \
-    apt upgrade -y && \
-    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev && \
-    cargo build --release
+#RUN apt update -y && \
+#    apt upgrade -y && \
+#    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev && \
+RUN cargo build --release
 
 
 FROM alpine:3.20.3
