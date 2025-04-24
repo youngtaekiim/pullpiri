@@ -1,10 +1,6 @@
 #!/bin/bash
 
-PACKAGES="bms-algorithm-performance"\
-" bms-algorithm-eco"\
-" bms-algorithm-charging"\
-" antipinch-enable"\
-" antipinch-disable"
+PACKAGES="helloworld"
 
 for package in $PACKAGES
 do

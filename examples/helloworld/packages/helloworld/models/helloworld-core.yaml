@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: helloworld-core
+  annotations:
+    io.piccolo.annotations.package-type: helloworld-core
+    io.piccolo.annotations.package-name: helloworld
+    io.piccolo.annotations.package-network: default
+  labels:
+    app: helloworld-core
+spec:
+  hostNetwork: true
+  containers:
+    - name: helloworld
+      image: hello
+  terminationGracePeriodSeconds: 0

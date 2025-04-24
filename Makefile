@@ -20,10 +20,10 @@ image:
 .PHONY: pre
 pre:
 	-mkdir -p /root/piccolo_yaml
-	-cp -r examples/resources/* /root/piccolo_yaml/
+	-cp -r examples/helloworld/* /root/piccolo_yaml/
 	-mkdir -p /etc/containers/systemd/piccolo/
 	-mkdir -p /etc/containers/systemd/piccolo/etcd-data/
-	-podman-compose -f examples/nginx/docker-compose.yaml up -d
+#	-podman-compose -f examples/nginx/docker-compose.yaml up -d
 
 .PHONY: install
 install:
@@ -41,7 +41,7 @@ uninstall:
 post:
 	-rm -rf /root/piccolo_yaml
 	-rm -rf /etc/containers/systemd/*
-	-podman-compose -f examples/nginx/docker-compose.yaml down
+#	-podman-compose -f examples/nginx/docker-compose.yaml down
 	systemctl daemon-reload
 
 .PHONY: tools

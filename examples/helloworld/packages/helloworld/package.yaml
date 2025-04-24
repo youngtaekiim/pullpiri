@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Package
+metadata:
+  label: null
+  name: helloworld
+spec:
+  pattern:
+    - type: plain
+  models:
+    - name: helloworld-core
+      node: HPC
+      resources:
+        volume: helloworld-volume
+        network: helloworld-network
