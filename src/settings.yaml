@@ -3,7 +3,7 @@
 yaml_storage: /root/piccolo_yaml
 doc_registry: http://0.0.0.0:41234
 host:
-  name: HPC
+  name: fvp-rd-kronos
   ip: 0.0.0.0
 guest:
 #  - name: ZONE

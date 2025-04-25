@@ -8,7 +8,7 @@ spec:
     - type: plain
   models:
     - name: helloworld-core
-      node: HPC
+      node: fvp-rd-kronos
       resources:
         volume: helloworld-volume
         network: helloworld-network
