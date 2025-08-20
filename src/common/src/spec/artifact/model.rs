@@ -19,6 +19,23 @@ impl Model {
     }
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct ModelStatus {
+    state: ModelState,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+enum ModelState {
+    None,              // Model has not been assigned a state
+    Pending,           // Model waiting to be assigned to a node
+    Running,           // Model running normally
+    Succeeded,         // All model containers terminated successfully
+    Failed,            // One or more containers failed
+    Unknown,           // Model state cannot be determined
+    ContainerCreating, // Containers being created
+    CrashLoopBackOff,  // Applying backoff due to repeated crashes
+}
+
 //Unit Test Cases
 #[cfg(test)]
 mod tests {

@@ -60,6 +60,7 @@ pub struct Model {
     kind: String,
     metadata: MetaData,
     spec: model::ModelSpec,
+    status: Option<model::ModelStatus>,
 }
 
 //Unit Test Cases

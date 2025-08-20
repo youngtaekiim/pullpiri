@@ -62,20 +62,18 @@ impl Resource {
 
 #[derive(Debug, serde::Deserialize, PartialEq)]
 pub struct PackageStatus {
-    status: Vec<ModelStatus>,
+    state: PackageState,
 }
 
-#[derive(Debug, serde::Deserialize, PartialEq)]
-pub struct ModelStatus {
-    name: String,
-    state: ModelStatusState,
-}
-
-#[derive(Debug, serde::Deserialize, PartialEq)]
-enum ModelStatusState {
-    None,
-    Running,
-    Error,
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
+enum PackageState {
+    None,         // Package not yet initialized
+    Initializing, // Package being initialized
+    Running,      // Package operating normally
+    Degraded,     // Package operating with reduced functionality
+    Paused,       // Package temporarily pause
+    Updating,     // Package being updated
+    Error,        // Package in error state
 }
 
 //Unit Test Cases
@@ -122,16 +120,7 @@ mod tests {
                 ],
             },
             status: Some(PackageStatus {
-                status: vec![
-                    ModelStatus {
-                        name: "model1".to_string(),
-                        state: ModelStatusState::Running,
-                    },
-                    ModelStatus {
-                        name: "model2".to_string(),
-                        state: ModelStatusState::None,
-                    },
-                ],
+                state: PackageState::None,
             }),
         }
     }
@@ -240,17 +229,5 @@ mod tests {
 
         assert_eq!(package.get_name(), "empty-package");
         assert_eq!(package.get_models().len(), 0);
-    }
-
-    #[test]
-    fn test_model_status_state_equality() {
-        let running = ModelStatusState::Running;
-        let none = ModelStatusState::None;
-        let error = ModelStatusState::Error;
-
-        // Test equality
-        assert_eq!(running, ModelStatusState::Running);
-        assert_eq!(none, ModelStatusState::None);
-        assert_eq!(error, ModelStatusState::Error);
     }
 }
