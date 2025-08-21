@@ -1,5 +1,6 @@
 use super::Artifact;
 use super::Scenario;
+use serde::{Deserialize, Serialize};
 
 impl Artifact for Scenario {
     fn get_name(&self) -> String {
@@ -19,22 +20,30 @@ impl Scenario {
     pub fn get_targets(&self) -> String {
         self.spec.target.clone()
     }
+
+    pub fn set_status(&mut self, state: ScenarioState) {
+        if let Some(status) = &mut self.status {
+            status.state = state;
+        } else {
+            self.status = Some(ScenarioStatus { state });
+        }
+    }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ScenarioSpec {
     condition: Option<Condition>,
     action: String,
     target: String,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ScenarioStatus {
     state: ScenarioState,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
-enum ScenarioState {
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub enum ScenarioState {
     None,    // Scenario not yet initialized
     Idle,    // Scenario ready state (not yet activated)
     Waiting, // Waiting for condition to be met
@@ -44,7 +53,7 @@ enum ScenarioState {
     Error,   // Error occurred during scenario execution
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Condition {
     express: String,
     value: String,
@@ -69,7 +78,7 @@ impl Condition {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 struct Operand {
     r#type: String,
     name: String,

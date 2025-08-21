@@ -1,5 +1,6 @@
 use super::Artifact;
 use super::Package;
+use serde::{Deserialize, Serialize};
 
 impl Artifact for Package {
     fn get_name(&self) -> String {
@@ -11,20 +12,28 @@ impl Package {
     pub fn get_models(&self) -> &Vec<ModelInfo> {
         &self.spec.models
     }
+
+    pub fn set_status(&mut self, state: PackageState) {
+        if let Some(status) = &mut self.status {
+            status.state = state;
+        } else {
+            self.status = Some(PackageStatus { state });
+        }
+    }
 }
 
-#[derive(Debug, serde::Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct PackageSpec {
     pattern: Vec<Pattern>,
     models: Vec<ModelInfo>,
 }
 
-#[derive(Debug, serde::Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct Pattern {
     r#type: String,
 }
 
-#[derive(Debug, serde::Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ModelInfo {
     name: String,
     node: String,
@@ -45,7 +54,7 @@ impl ModelInfo {
     }
 }
 
-#[derive(Clone, Debug, serde::Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Resource {
     volume: Option<String>,
     network: Option<String>,
@@ -60,13 +69,13 @@ impl Resource {
     }
 }
 
-#[derive(Debug, serde::Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct PackageStatus {
     state: PackageState,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
-enum PackageState {
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub enum PackageState {
     None,         // Package not yet initialized
     Initializing, // Package being initialized
     Running,      // Package operating normally
