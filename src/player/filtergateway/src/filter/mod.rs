@@ -58,93 +58,93 @@ impl Filter {
     ///
     /// * `Result<()>` - Success or error result
     pub async fn meet_scenario_condition(&mut self, data: &DdsData) -> Result<()> {
-    use std::time::Instant;
-    let start = Instant::now();
+        use std::time::Instant;
+        let start = Instant::now();
 
-    let condition = self.scenario.get_conditions().unwrap();
-    let topic = condition.get_operand_value();
-    let value_name = condition.get_operand_name();
-    let target_value = condition.get_value();
-    let express = condition.get_express();
+        let condition = self.scenario.get_conditions().unwrap();
+        let topic = condition.get_operand_value();
+        let value_name = condition.get_operand_name();
+        let target_value = condition.get_value();
+        let express = condition.get_express();
 
-    print!(
+        print!(
         "Checking condition for scenario: {}\nTopic: {}\nTarget Value: {}\nValue Name: {}\nExpression: {}\n",
         self.scenario_name, topic, target_value, value_name, express
     );
 
-    if !data.name.eq(&topic) {
+        if !data.name.eq(&topic) {
+            let elapsed = start.elapsed();
+            println!("meet_scenario_condition: elapsed = {:?}", elapsed);
+            return Err("data topic does not match".into());
+        }
+
+        let field_value = match data.fields.get(&value_name) {
+            Some(v) => v,
+            None => {
+                let elapsed = start.elapsed();
+                println!("meet_scenario_condition: elapsed = {:?}", elapsed);
+                return Err(format!("field '{}' not found in data.fields", value_name).into());
+            }
+        };
+
+        let check: bool = match express.as_str() {
+            "eq" => target_value.to_lowercase() == field_value.to_lowercase(),
+            "lt" => {
+                let target_v = target_value
+                    .parse::<f32>()
+                    .map_err(|_| "target_value parse error")?;
+                let current_v = field_value
+                    .parse::<f32>()
+                    .map_err(|_| "field_value parse error")?;
+                current_v < target_v
+            }
+            "le" => {
+                let target_v = target_value
+                    .parse::<f32>()
+                    .map_err(|_| "target_value parse error")?;
+                let current_v = field_value
+                    .parse::<f32>()
+                    .map_err(|_| "field_value parse error")?;
+                current_v <= target_v
+            }
+            "ge" => {
+                let target_v = target_value
+                    .parse::<f32>()
+                    .map_err(|_| "target_value parse error")?;
+                let current_v = field_value
+                    .parse::<f32>()
+                    .map_err(|_| "field_value parse error")?;
+                current_v >= target_v
+            }
+            "gt" => {
+                let target_v = target_value
+                    .parse::<f32>()
+                    .map_err(|_| "target_value parse error")?;
+                let current_v = field_value
+                    .parse::<f32>()
+                    .map_err(|_| "field_value parse error")?;
+                current_v > target_v
+            }
+            _ => {
+                let elapsed = start.elapsed();
+                println!("meet_scenario_condition: elapsed = {:?}", elapsed);
+                return Err("wrong expression in condition".into());
+            }
+        };
+
         let elapsed = start.elapsed();
         println!("meet_scenario_condition: elapsed = {:?}", elapsed);
-        return Err("data topic does not match".into());
+
+        if check {
+            println!("Condition met for scenario: {}", self.scenario_name);
+            self.sender
+                .trigger_action(self.scenario_name.clone())
+                .await?;
+            Ok(())
+        } else {
+            Err("cannot meet condition".into())
+        }
     }
-
-    let field_value = match data.fields.get(&value_name) {
-        Some(v) => v,
-        None => {
-            let elapsed = start.elapsed();
-            println!("meet_scenario_condition: elapsed = {:?}", elapsed);
-            return Err(format!("field '{}' not found in data.fields", value_name).into());
-        }
-    };
-
-    let check: bool = match express.as_str() {
-        "eq" => target_value.to_lowercase() == field_value.to_lowercase(),
-        "lt" => {
-            let target_v = target_value
-                .parse::<f32>()
-                .map_err(|_| "target_value parse error")?;
-            let current_v = field_value
-                .parse::<f32>()
-                .map_err(|_| "field_value parse error")?;
-            current_v < target_v
-        }
-        "le" => {
-            let target_v = target_value
-                .parse::<f32>()
-                .map_err(|_| "target_value parse error")?;
-            let current_v = field_value
-                .parse::<f32>()
-                .map_err(|_| "field_value parse error")?;
-            current_v <= target_v
-        }
-        "ge" => {
-            let target_v = target_value
-                .parse::<f32>()
-                .map_err(|_| "target_value parse error")?;
-            let current_v = field_value
-                .parse::<f32>()
-                .map_err(|_| "field_value parse error")?;
-            current_v >= target_v
-        }
-        "gt" => {
-            let target_v = target_value
-                .parse::<f32>()
-                .map_err(|_| "target_value parse error")?;
-            let current_v = field_value
-                .parse::<f32>()
-                .map_err(|_| "field_value parse error")?;
-            current_v > target_v
-        }
-        _ => {
-            let elapsed = start.elapsed();
-            println!("meet_scenario_condition: elapsed = {:?}", elapsed);
-            return Err("wrong expression in condition".into());
-        }
-    };
-
-    let elapsed = start.elapsed();
-    println!("meet_scenario_condition: elapsed = {:?}", elapsed);
-
-    if check {
-        println!("Condition met for scenario: {}", self.scenario_name);
-        self.sender
-            .trigger_action(self.scenario_name.clone())
-            .await?;
-        Ok(())
-    } else {
-        Err("cannot meet condition".into())
-    }
-}
 
     /// Pause the filter processing
     ///

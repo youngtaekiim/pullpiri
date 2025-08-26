@@ -272,22 +272,22 @@ impl FilterGatewayManager {
     /// # Returns
     ///
     /// * `Result<()>` - Success or error result
-   pub async fn subscribe_vehicle_data(&self, vehicle_message: DdsData) -> Result<()> {
-    use std::time::Instant;
-    let start = Instant::now();
+    pub async fn subscribe_vehicle_data(&self, vehicle_message: DdsData) -> Result<()> {
+        use std::time::Instant;
+        let start = Instant::now();
 
-    println!("subscribe vehicle data {}", vehicle_message.name);
-    println!("subscribe vehicle data {}", vehicle_message.value);
-    let mut vehicle_manager = self.vehicle_manager.lock().await;
-    vehicle_manager
-        .subscribe_topic(vehicle_message.name, vehicle_message.value)
-        .await?;
+        println!("subscribe vehicle data {}", vehicle_message.name);
+        println!("subscribe vehicle data {}", vehicle_message.value);
+        let mut vehicle_manager = self.vehicle_manager.lock().await;
+        vehicle_manager
+            .subscribe_topic(vehicle_message.name, vehicle_message.value)
+            .await?;
 
-    let elapsed = start.elapsed();
-    println!("subscribe_vehicle_data: elapsed = {:?}", elapsed);
+        let elapsed = start.elapsed();
+        println!("subscribe_vehicle_data: elapsed = {:?}", elapsed);
 
-    Ok(())
-}
+        Ok(())
+    }
 
     /// Unsubscribe from vehicle data for a scenario
     ///
@@ -323,48 +323,48 @@ impl FilterGatewayManager {
     /// # Returns
     ///
     /// * `Result<()>` - Success or error result
-pub async fn launch_scenario_filter(&self, scenario: Scenario) -> Result<()> {
-    use std::time::Instant;
-    let start = Instant::now();
+    pub async fn launch_scenario_filter(&self, scenario: Scenario) -> Result<()> {
+        use std::time::Instant;
+        let start = Instant::now();
 
-    // Check if the scenario has conditions
-    if scenario.get_conditions().is_none() {
-        println!("No conditions for scenario: {}", scenario.get_name());
-        let mut sender = self.sender.lock().await;
-        sender.trigger_action(scenario.get_name().clone()).await?;
-        let elapsed = start.elapsed();
-        println!("launch_scenario_filter: elapsed = {:?}", elapsed);
-        return Ok(());
-    }
-
-    let sender = {
-        let sender_guard = self.sender.lock().await;
-        sender_guard.clone()
-    };
-    let filter = Filter::new(scenario.get_name().to_string(), scenario, true, sender);
-
-    // Add the filter to our managed collection
-    {
-        // Prevent duplicate filters for the same scenario
-        let mut filters = self.filters.lock().await;
-        if filters
-            .iter()
-            .any(|f| f.scenario_name == filter.scenario_name)
-        {
-            println!(
-                "Filter for scenario '{}' already exists, skipping.",
-                filter.scenario_name
-            );
+        // Check if the scenario has conditions
+        if scenario.get_conditions().is_none() {
+            println!("No conditions for scenario: {}", scenario.get_name());
+            let mut sender = self.sender.lock().await;
+            sender.trigger_action(scenario.get_name().clone()).await?;
             let elapsed = start.elapsed();
             println!("launch_scenario_filter: elapsed = {:?}", elapsed);
             return Ok(());
         }
-        filters.push(filter);
+
+        let sender = {
+            let sender_guard = self.sender.lock().await;
+            sender_guard.clone()
+        };
+        let filter = Filter::new(scenario.get_name().to_string(), scenario, true, sender);
+
+        // Add the filter to our managed collection
+        {
+            // Prevent duplicate filters for the same scenario
+            let mut filters = self.filters.lock().await;
+            if filters
+                .iter()
+                .any(|f| f.scenario_name == filter.scenario_name)
+            {
+                println!(
+                    "Filter for scenario '{}' already exists, skipping.",
+                    filter.scenario_name
+                );
+                let elapsed = start.elapsed();
+                println!("launch_scenario_filter: elapsed = {:?}", elapsed);
+                return Ok(());
+            }
+            filters.push(filter);
+        }
+        let elapsed = start.elapsed();
+        println!("launch_scenario_filter: elapsed = {:?}", elapsed);
+        Ok(())
     }
-    let elapsed = start.elapsed();
-    println!("launch_scenario_filter: elapsed = {:?}", elapsed);
-    Ok(())
-}
 
     /// Remove a filter for a scenario
     ///

@@ -55,23 +55,23 @@ impl VehicleManager {
     /// # Returns
     ///
     /// * `Result<()>` - Success or error result
-pub async fn subscribe_topic(
-    &mut self,
-    topic_name: String,
-    data_type_name: String,
-) -> Result<()> {
-    use std::time::Instant;
-    let start = Instant::now();
+    pub async fn subscribe_topic(
+        &mut self,
+        topic_name: String,
+        data_type_name: String,
+    ) -> Result<()> {
+        use std::time::Instant;
+        let start = Instant::now();
 
-    self.dds_manager
-        .create_typed_listener(topic_name, data_type_name)
-        .await?;
+        self.dds_manager
+            .create_typed_listener(topic_name, data_type_name)
+            .await?;
 
-    let elapsed = start.elapsed();
-    println!("subscribe_topic: elapsed = {:?}", elapsed);
+        let elapsed = start.elapsed();
+        println!("subscribe_topic: elapsed = {:?}", elapsed);
 
-    Ok(())
-}
+        Ok(())
+    }
 
     /// Get list of available DDS types
     pub fn list_available_types(&self) -> Vec<String> {
