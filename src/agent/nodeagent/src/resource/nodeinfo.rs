@@ -1,6 +1,6 @@
+use super::NodeInfo;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
-use std::{thread, time::Duration};
 use sysinfo::{Networks, System};
 
 // Static storage for previous IO/network values for delta calculation
@@ -48,7 +48,7 @@ pub fn extract_node_info_delta() -> NodeInfo {
     // summation of each interface's received and transmitted bytes
     let mut rx_bytes_now: u64 = 0;
     let mut tx_bytes_now: u64 = 0;
-    for (interface_name, data) in &networks {
+    for (_, data) in &networks {
         rx_bytes_now += data.total_received();
         tx_bytes_now += data.total_transmitted();
     }
@@ -94,35 +94,6 @@ pub fn extract_node_info_delta() -> NodeInfo {
         arch,
         ip,
     }
-}
-
-/// Node information matching the requested DataCache structure.
-#[derive(Debug, Clone)]
-pub struct NodeInfo {
-    // 1. CPU
-    pub cpu_count: usize, // NodeInfo['cpu']['cpu_count']
-    pub cpu_usage: f32,   // NodeInfo['cpu']['cpu_usage']
-
-    // 2. GPU
-    pub gpu_count: usize, // NodeInfo['gpu']['gpu_count']
-
-    // 3. Memory
-    pub total_memory: u64, // NodeInfo['mem']['total_memory']
-    pub used_memory: u64,  // NodeInfo['mem']['used_memory']
-    pub mem_usage: f32,    // NodeInfo['mem']['mem_usage']
-
-    // 4. Network
-    pub rx_bytes: u64, // NodeInfo['net']['rx_bytes']
-    pub tx_bytes: u64, // NodeInfo['net']['tx_bytes']
-
-    // 5. Storage
-    pub read_bytes: u64,  // NodeInfo['storage']['read_bytes']
-    pub write_bytes: u64, // NodeInfo['storage']['write_bytes']
-
-    // 6. System
-    pub os: String,   // NodeInfo['system']['os']
-    pub arch: String, // NodeInfo['system']['arch']
-    pub ip: String,   // NodeInfo['system']['ip']
 }
 
 /// Returns the first non-loopback IPv4 address as a String, or None if not found.
@@ -180,9 +151,6 @@ mod tests {
         assert!(info.total_memory > 0);
         assert!(info.used_memory <= info.total_memory);
         assert!(info.mem_usage >= 0.0 && info.mem_usage <= 100.0);
-        assert!(info.rx_bytes >= 0);
-        assert!(info.tx_bytes >= 0);
-        assert!(info.read_bytes >= 0);
-        assert!(info.write_bytes >= 0);
+        // Removed always-true u64 >= 0 assertions
     }
 }
