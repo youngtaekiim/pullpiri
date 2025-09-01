@@ -1,4 +1,5 @@
 pub mod container;
+pub mod nodeinfo;
 
 use hyper::{Body, Client, Uri};
 use hyperlocal::{UnixConnector, Uri as UnixUri};
