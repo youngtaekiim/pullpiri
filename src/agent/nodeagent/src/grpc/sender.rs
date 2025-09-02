@@ -110,7 +110,7 @@ impl NodeAgentSender {
 #[cfg(test)]
 mod tests {
     use crate::grpc::sender::NodeAgentSender;
-    use common::monitoringserver::{ContainerList, SendContainerListResponse};
+    use common::monitoringserver::{ContainerList, NodeInfo, SendContainerListResponse};
     use common::statemanager::{Action, Response as SMResponse};
     use tonic::{Request, Response, Status};
 
