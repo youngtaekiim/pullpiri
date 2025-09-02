@@ -1,5 +1,7 @@
 use common::monitoringserver::monitoring_server_connection_server::MonitoringServerConnection;
-use common::monitoringserver::{ContainerList, SendContainerListResponse, NodeInfo, SendNodeInfoResponse};
+use common::monitoringserver::{
+    ContainerList, NodeInfo, SendContainerListResponse, SendNodeInfoResponse,
+};
 use tokio::sync::mpsc;
 use tonic::{Request, Response, Status};
 

@@ -47,10 +47,10 @@ impl MonitoringServerManager {
     async fn handle_container_list(&self, container_list: ContainerList) {
         println!(
             "[MonitoringServer] Received ContainerList from {}: containers count={}",
-            container_list.node_name, 
+            container_list.node_name,
             container_list.containers.len()
         );
-        
+
         // Print container details
         for container in &container_list.containers {
             println!(
@@ -58,9 +58,8 @@ impl MonitoringServerManager {
                 container.id, container.names, container.image
             );
         }
-        
+
         // TODO: Add your container processing logic here
-        // e.g., store in database, trigger alerts, update metrics, etc.
     }
 
     /// Processes NodeInfo messages from nodeagent.
@@ -89,9 +88,8 @@ impl MonitoringServerManager {
             node_info.arch,
             node_info.ip
         );
-        
+
         // TODO: Add your node info processing logic here
-        // e.g., store metrics, check thresholds, update dashboards, etc.
     }
 
     /// Main loop for processing incoming gRPC ContainerList messages.

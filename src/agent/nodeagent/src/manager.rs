@@ -124,12 +124,12 @@ impl NodeAgentManager {
     /// This runs in an infinite loop and logs or processes system info as needed.
     async fn gather_node_info_loop(&self) {
         use crate::resource::nodeinfo::extract_node_info_delta;
-        use tokio::time::{sleep, Duration};
         use common::monitoringserver::NodeInfo;
-        
+        use tokio::time::{sleep, Duration};
+
         loop {
             let node_info_data = extract_node_info_delta();
-            
+
             // Create NodeInfo message for gRPC
             let node_info = NodeInfo {
                 node_name: self.hostname.clone(),
@@ -155,7 +155,7 @@ impl NodeAgentManager {
                     eprintln!("[NodeAgent] Error sending node info: {}", e);
                 }
             }
-            
+
             println!(
                 "[NodeInfo] CPU: {:.2}%, CPU Count: {}, GPU Count: {}, Mem: {}/{} KB ({:.2}%), Net RX: {} B, Net TX: {} B, Disk Read: {} B, Disk Write: {} B, OS: {}, Arch: {}, IP: {}",
                 node_info.cpu_usage,

@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use common::monitoringserver::{ContainerList, SendContainerListResponse, NodeInfo, SendNodeInfoResponse};
+use common::monitoringserver::{
+    ContainerList, NodeInfo, SendContainerListResponse, SendNodeInfoResponse,
+};
 use common::statemanager::{
     state_manager_connection_client::StateManagerConnectionClient, Action, Response,
 };
@@ -73,9 +75,7 @@ impl NodeAgentSender {
         match client {
             Ok(mut client) => {
                 // Send the node info
-                client
-                    .send_node_info(Request::new(node_info))
-                    .await
+                client.send_node_info(Request::new(node_info)).await
             }
             Err(e) => {
                 // Handle connection error

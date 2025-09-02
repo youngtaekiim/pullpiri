@@ -58,7 +58,7 @@ async fn main() {
 
     let (tx_container, rx_container) = channel::<ContainerList>(100);
     let (tx_node, rx_node) = channel::<NodeInfo>(100);
-    
+
     let mgr = launch_manager(rx_container, rx_node);
     let grpc = initialize(tx_container, tx_node);
 
