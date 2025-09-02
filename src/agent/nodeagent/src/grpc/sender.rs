@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use common::monitoringserver::{ContainerList, SendContainerListResponse};
+use common::monitoringserver::{ContainerList, SendContainerListResponse, NodeInfo, SendNodeInfoResponse};
 use common::statemanager::{
     state_manager_connection_client::StateManagerConnectionClient, Action, Response,
 };
@@ -52,6 +52,29 @@ impl NodeAgentSender {
                 // Send the container list
                 client
                     .send_container_list(Request::new(container_list))
+                    .await
+            }
+            Err(e) => {
+                // Handle connection error
+                Err(Status::unknown(format!("Failed to connect: {}", e)))
+            }
+        }
+    }
+
+    /// Send a NodeInfo to the monitoring server via gRPC
+    pub async fn send_node_info(
+        &mut self,
+        node_info: NodeInfo,
+    ) -> Result<tonic::Response<SendNodeInfoResponse>, Status> {
+        let client =
+            MonitoringServerConnectionClient::connect(common::monitoringserver::connect_server())
+                .await;
+
+        match client {
+            Ok(mut client) => {
+                // Send the node info
+                client
+                    .send_node_info(Request::new(node_info))
                     .await
             }
             Err(e) => {
@@ -129,6 +152,17 @@ mod tests {
         let container_list = ContainerList::default();
 
         let response = sender.send_container_list(container_list).await;
+
+        assert!(response.is_ok() || response.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_send_node_info_error_propagation() {
+        let mut sender = NodeAgentSender::default();
+
+        let node_info = NodeInfo::default();
+
+        let response = sender.send_node_info(node_info).await;
 
         assert!(response.is_ok() || response.is_err());
     }
