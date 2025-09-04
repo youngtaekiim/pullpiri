@@ -4,6 +4,7 @@
 //! and launches both concurrently. It also provides unit tests for initialization.
 
 use common::monitoringserver::{ContainerList, NodeInfo};
+pub mod data_structures;
 pub mod grpc;
 pub mod manager;
 
@@ -37,8 +38,8 @@ async fn initialize(tx_container: Sender<ContainerList>, tx_node: Sender<NodeInf
     use tonic::transport::Server;
 
     let server = grpc::receiver::MonitoringServerReceiver {
-        tx_container: tx_container.clone(),
-        tx_node: tx_node.clone(),
+        tx_container,
+        tx_node,
     };
 
     let addr = common::monitoringserver::open_server()
@@ -46,10 +47,13 @@ async fn initialize(tx_container: Sender<ContainerList>, tx_node: Sender<NodeInf
         .expect("monitoringserver address parsing error");
     println!("MonitoringServer listening on {}", addr);
 
-    let _ = Server::builder()
+    if let Err(e) = Server::builder()
         .add_service(MonitoringServerConnectionServer::new(server))
         .serve(addr)
-        .await;
+        .await
+    {
+        eprintln!("gRPC server error: {}", e);
+    }
 }
 
 #[tokio::main]
