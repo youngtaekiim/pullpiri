@@ -270,17 +270,56 @@ ClusterTopology:
 
 ### 7.1 API 인터페이스
 
-#### 7.1.1 REST API
+#### 7.1.1 gRPC API
 
-| 엔드포인트 | 메소드 | 설명 | 요청 형식 | 응답 형식 |
-|-----------|------|------|---------|---------|
-| `/api/v1/nodes` | GET | 모든 노드 정보 조회 | - | `Node[]` |
-| `/api/v1/nodes/{id}` | GET | 특정 노드 정보 조회 | - | `Node` |
-| `/api/v1/nodes/register` | POST | 노드 등록 요청 | `NodeRegistrationRequest` | `NodeRegistrationResponse` |
-| `/api/v1/topology` | GET | 클러스터 토폴로지 조회 | - | `ClusterTopology` |
-| `/api/v1/topology` | PUT | 클러스터 토폴로지 갱신 | `ClusterTopology` | `ClusterTopology` |
+API Server에서 제공하는 gRPC 인터페이스:
 
-#### 7.1.2 gRPC API
+```protobuf
+service ApiServerService {
+  // 노드 관리 관련 API
+  rpc GetNodes(GetNodesRequest) returns (GetNodesResponse);
+  rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
+  rpc RegisterNode(NodeRegistrationRequest) returns (NodeRegistrationResponse);
+  
+  // 토폴로지 관리 관련 API
+  rpc GetTopology(GetTopologyRequest) returns (GetTopologyResponse);
+  rpc UpdateTopology(UpdateTopologyRequest) returns (UpdateTopologyResponse);
+}
+
+message GetNodesRequest {
+  optional string filter = 1;
+}
+
+message GetNodesResponse {
+  repeated Node nodes = 1;
+}
+
+message GetNodeRequest {
+  string node_id = 1;
+}
+
+message GetNodeResponse {
+  Node node = 1;
+}
+
+message GetTopologyRequest {}
+
+message GetTopologyResponse {
+  ClusterTopology topology = 1;
+}
+
+message UpdateTopologyRequest {
+  ClusterTopology topology = 1;
+}
+
+message UpdateTopologyResponse {
+  ClusterTopology updated_topology = 1;
+  bool success = 2;
+  optional string error_message = 3;
+}
+```
+
+#### 7.1.2 NodeAgent gRPC API
 
 NodeAgent와 API Server 간 gRPC 인터페이스:
 
