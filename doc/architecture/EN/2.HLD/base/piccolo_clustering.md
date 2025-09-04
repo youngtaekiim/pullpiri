@@ -20,7 +20,7 @@ The PICCOLO Clustering System is designed to implement a distributed container m
 1. Provide a lightweight cluster architecture that operates efficiently in resource-constrained environments  
 2. Implement seamless communication and status management between master and sub nodes  
 3. Build a cluster system resilient to network instability  
-4. Provide an operational model optimized for small-scale clusters
+4. Provide an operational model optimized for small-scale clusters  
 
 ### 1.2 Key Features
 
@@ -53,7 +53,7 @@ The PICCOLO Clustering System is designed to implement a distributed container m
 - Small-scale embedded clusters of 2–10 nodes  
 - Communication management between master and sub nodes  
 - Integration between cloud nodes and embedded nodes  
-- Podman-based container monitoring and management
+- Podman-based container monitoring and management  
 
 ## 2. Technologies and Environment
 
@@ -66,8 +66,6 @@ The PICCOLO Clustering System is designed to implement a distributed container m
 The PICCOLO Clustering System is based on a master-sub node structure and adopts a lightweight design optimized for embedded environments.
 
 ### 3.1 System Structure
-
-Overall structure of the clustering system:
 
 ```mermaid
 graph TD
@@ -110,7 +108,7 @@ graph TD
 |-------|------------|-------------|
 | Core Service | Rust | High-performance, memory-safe core service implementation language |
 | Communication Protocol | gRPC | Efficient protocol for master-sub node communication |
-| State Store | etcd | Distributed key-value store for cluster state management |
+| State Storage | etcd | Distributed key-value store for cluster state management |
 | Container Runtime | Podman | Daemonless lightweight container management tool |
 | Service Management | systemd | Node service management and auto-start configuration |
 | Deployment Tool | Bash scripts | Automation tool for node installation and configuration |
@@ -126,7 +124,7 @@ graph TD
 5. Provide cluster topology configuration and management  
 6. Implement inter-node state synchronization mechanism  
 7. Support fault detection and recovery process  
-8. Support hybrid cloud connection configuration
+8. Support hybrid cloud connection configuration  
 
 ### 4.2 Non-Functional Requirements
 
@@ -142,21 +140,19 @@ graph TD
 
 3. **Scalability**
    - Stable expansion up to at least 10 nodes
-   - Support dynamic addition of cloud nodes
-   - Support various network environments
+   - Dynamic addition of cloud nodes
+   - Support for various network environments
 
 4. **Reliability**
    - Mechanisms to handle network instability
    - Automatic recovery in case of node failure
    - Local operation support in offline mode
 
-## 5. Feature Details
+## 5. Key Feature Details
 
 ### 5.1 Node Management
 
-Node management, the core function of the PICCOLO Clustering System, includes node registration, authentication, status monitoring, and control.
-
-#### 5.1.1 Workflow
+#### 5.1.1 Flow
 
 ```mermaid
 sequenceDiagram
@@ -167,21 +163,19 @@ sequenceDiagram
     participant ET as etcd
     
     SN->>NA: Install and initialize
-    NA->>NA: Check system readiness
-    NA->>AS: Request node registration
+    NA->>NA: System readiness check
+    NA->>AS: Node registration request
     AS->>AS: Verify node information
     AS->>ET: Store node information
-    AS->>SM: Notify node status change
-    AS-->>NA: Registration complete response
+    AS->>SM: Notify node state change
+    AS-->>NA: Registration complete
     loop Periodic monitoring
         NA->>AS: Heartbeat and status report
         AS->>ET: Update status information
     end
 ```
 
-#### 5.1.2 Core Algorithm/Logic
-
-Node registration and management process:
+#### 5.1.2 Core Logic
 
 ```
 1. Install NodeAgent on sub node
@@ -191,14 +185,12 @@ Node registration and management process:
 5. Store node information in etcd
 6. Update cluster topology
 7. Start periodic heartbeat and status reporting
-8. Notify StateManager upon status change detection
+8. Notify StateManager on status change
 ```
 
 ### 5.2 Cluster Topology Management
 
-PICCOLO supports various cluster topologies for different embedded environments.
-
-#### 5.2.1 Workflow
+#### 5.2.1 Flow
 
 ```mermaid
 sequenceDiagram
@@ -209,76 +201,74 @@ sequenceDiagram
     
     A->>AS: Request topology configuration
     AS->>ET: Store topology information
-    AS->>NA: Distribute configuration information
-    NA-->>AS: Confirm configuration application
+    AS->>NA: Distribute configuration
+    NA-->>AS: Confirm configuration applied
     AS-->>A: Topology configuration complete
 ```
 
-#### 5.2.2 Supported Topology Types
+#### 5.2.2 Supported Topologies
 
 1. **Basic Embedded Topology**: Single master node with a few sub nodes  
-2. **Edge-Cloud Hybrid Topology**: Connect local embedded cluster with cloud nodes  
+2. **Edge-Cloud Hybrid Topology**: Local embedded cluster connected to cloud nodes  
 3. **Multi-Embedded Cluster Topology**: Multiple embedded clusters connected to an upper master node  
-4. **Geographically Distributed Topology**: Integrate geographically dispersed embedded systems
+4. **Geographically Distributed Topology**: Integrated geographically dispersed embedded systems  
 
 ## 6. Data Model
 
 ### 6.1 Core Data Structures
 
 ```yaml
-# Node information structure
 Node:
-  id: string                 # Unique node identifier
-  name: string               # Node name
-  ip: string                 # Node IP address
-  role: "master" | "sub"     # Node role
-  status: NodeStatus         # Node status
-  resources:                 # Node resource information
-    cpu: number              # CPU cores
-    memory: number           # Memory size (MB)
-    disk: number             # Disk size (GB)
-  created_at: timestamp      # Creation time
-  last_heartbeat: timestamp  # Last heartbeat time
+  id: string
+  name: string
+  ip: string
+  role: "master" | "sub"
+  status: NodeStatus
+  resources:
+    cpu: number
+    memory: number
+    disk: number
+  created_at: timestamp
+  last_heartbeat: timestamp
 
-# Cluster topology structure
 ClusterTopology:
-  id: string                 # Cluster ID
-  name: string               # Cluster name
-  type: TopologyType         # Topology type
-  master_nodes: Node[]       # List of master nodes
-  sub_nodes: Node[]          # List of sub nodes
-  parent_cluster: string     # Parent cluster ID (for hierarchical structure)
-  config: object             # Cluster configuration information
+  id: string
+  name: string
+  type: TopologyType
+  master_nodes: Node[]
+  sub_nodes: Node[]
+  parent_cluster: string
+  config: object
 ```
 
 ### 6.2 State Management
 
 | State | Description | Transition Condition |
 |-------|-------------|----------------------|
-| Pending | Node waiting for registration | After node registration request |
-| Initializing | Node being initialized | After registration approval, during configuration |
+| Pending | Node awaiting registration | After registration request |
+| Initializing | Node initializing | After approval, during setup |
 | Ready | Active node | Initialization complete, heartbeat normal |
-| NotReady | Node with issues | Heartbeat failure, insufficient resources |
-| Maintenance | Node under maintenance | State change by administrator |
-| Terminating | Node being removed | After node removal request |
+| NotReady | Node with issues | Heartbeat failure, resource shortage |
+| Maintenance | Node under maintenance | Manual change by admin |
+| Terminating | Node shutting down | After removal request |
 
 ## 7. Interfaces
 
 ### 7.1 API Interfaces
 
-#### 7.1.1 REST API
+#### 7.1.1 gRPC API
 
-| Endpoint | Method | Description | Request Format | Response Format |
-|----------|--------|-------------|----------------|-----------------|
-| `/api/v1/nodes` | GET | Get all node information | - | `Node[]` |
-| `/api/v1/nodes/{id}` | GET | Get specific node information | - | `Node` |
-| `/api/v1/nodes/register` | POST | Request node registration | `NodeRegistrationRequest` | `NodeRegistrationResponse` |
-| `/api/v1/topology` | GET | Get cluster topology | - | `ClusterTopology` |
-| `/api/v1/topology` | PUT | Update cluster topology | `ClusterTopology` | `ClusterTopology` |
+```protobuf
+service ApiServerService {
+  rpc GetNodes(GetNodesRequest) returns (GetNodesResponse);
+  rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
+  rpc RegisterNode(NodeRegistrationRequest) returns (NodeRegistrationResponse);
+  rpc GetTopology(GetTopologyRequest) returns (GetTopologyResponse);
+  rpc UpdateTopology(UpdateTopologyRequest) returns (UpdateTopologyResponse);
+}
+```
 
-#### 7.1.2 gRPC API
-
-gRPC interface between NodeAgent and API Server:
+#### 7.1.2 NodeAgent gRPC API
 
 ```protobuf
 service NodeAgentService {
@@ -287,176 +277,67 @@ service NodeAgentService {
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
   rpc ReceiveConfig(ConfigRequest) returns (ConfigResponse);
 }
-
-message NodeRegistrationRequest {
-  string node_id = 1;
-  string hostname = 2;
-  string ip_address = 3;
-  NodeRole role = 4;
-  ResourceInfo resources = 5;
-  Credentials credentials = 6;
-}
-
-message StatusReport {
-  string node_id = 1;
-  NodeStatus status = 2;
-  map<string, string> metrics = 3;
-  repeated ContainerStatus containers = 4;
-  repeated AlertInfo alerts = 5;
-}
 ```
 
 ### 7.2 Internal Interfaces
 
-Internal interfaces between clustering components:
+- API Server ↔ StateManager: Node state change notifications, topology sync  
+- API Server ↔ etcd: Store/retrieve node and topology info  
+- NodeAgent ↔ System Monitoring: Podman container status, resource usage, hardware checks  
 
-1. **API Server - StateManager**
-   - Node status change notifications
-   - Cluster configuration change synchronization
+## 8. Performance & Scalability
 
-2. **API Server - etcd**
-   - Store and retrieve node information
-   - Manage cluster topology information
+- Heartbeat interval: default 10s, min 5s, timeout 30s  
+- NodeAgent memory ≤ 50MB, CPU idle <1%, active ≤5%  
+- Network ≤ 100KB/s  
 
-3. **NodeAgent - System Monitoring**
-   - Monitor Podman container status
-   - Monitor system resource usage
-   - Check hardware status
-
-## 8. Performance and Scalability
-
-### 8.1 Performance Requirements
-
-1. **Heartbeat and Status Reporting**
-   - Default interval: 10 seconds
-   - Minimum interval: 5 seconds (considering resource load)
-   - Timeout: 30 seconds (switch to NotReady after 3 consecutive failures)
-
-2. **Resource Usage**
-   - NodeAgent memory usage: max 50MB
-   - CPU usage: <1% idle, up to 5% active
-   - Network bandwidth: up to 100KB/s
-
-### 8.2 Scalability Strategy
-
-1. **Node Scaling**
-   - Gradual expansion: from small (2–5 nodes) to medium (10+ nodes)
-   - Master node load balancing: consider multi-master structure beyond certain scale
-
-2. **Multi-Cluster Connection**
-   - Hierarchical cluster structure: manage multiple clusters via upper master node
-   - Inter-cluster linkage: share data and policies between independent clusters
-
-3. **Cloud Integration**
-   - Hybrid deployment: integrated management of cloud and embedded nodes
-   - Dynamic scaling: support auto-scaling in cloud environments
+Scaling strategies: gradual node scaling, multi-cluster hierarchy, hybrid cloud integration  
 
 ## 9. Security
 
-1. **Authentication and Authorization**
-   - TLS-based node authentication
-   - Initial authentication token during node registration
-   - Role-based access control (separate master/sub node permissions)
+- TLS-based node authentication  
+- Role-based access control  
+- Encrypted gRPC communication  
+- etcd encryption, audit logging  
 
-2. **Communication Security**
-   - Apply TLS to all gRPC communications
-   - API endpoint authentication and encryption
-   - Automatic certificate renewal mechanism
+## 10. Fault Handling & Recovery
 
-3. **Data Security**
-   - Encrypt etcd storage
-   - Store sensitive information separately
-   - Access logging and audit trail
+- Heartbeat-based failure detection  
+- Auto-restart NodeAgent  
+- Manual recovery procedures  
 
-## 10. Fault Handling and Recovery
+## 11. Monitoring & Logging
 
-1. **Node Failure Detection**
-   - Heartbeat-based failure detection
-   - Active status checks
-   - Alerts and logging
+- Real-time node monitoring  
+- Distributed logging with rotation  
+- Event-based alerts  
 
-2. **Automatic Recovery Mechanism**
-   - Automatic restart of NodeAgent
-   - Connection recovery attempts
-   - Step-by-step recovery procedure
+## 12. Deployment & Operations
 
-3. **Manual Recovery Procedure**
-   - Administrator intervention process
-   - Force node re-registration
-   - Cluster reconfiguration
+- Manual master setup, automated sub node deployment  
+- Rolling updates, rollback support  
+- Operational guidelines  
 
-## 11. Monitoring and Logging
+## 13. Constraints & Limitations
 
-1. **Status Monitoring**
-   - Real-time node status monitoring
-   - Track resource usage
-   - Visualize cluster topology
-
-2. **Logging Strategy**
-   - Distributed logging system
-   - Adjustable log levels
-   - Separate logging for critical events
-   - Periodic log rotation
-
-3. **Alert System**
-   - Critical event alerts
-   - Threshold-based alerts
-   - Configurable alert channels (email, messaging systems)
-
-## 12. Deployment and Operations
-
-1. **Installation and Deployment**
-   - Manual setup of master node
-   - Automatic deployment script for sub nodes
-   - Provide configuration file templates
-
-2. **Upgrade Strategy**
-   - Support rolling updates
-   - Verify version compatibility
-   - Rollback mechanism
-
-3. **Operational Guidelines**
-   - Cluster status check procedure
-   - Troubleshooting guide
-   - Performance optimization tips
-
-## 13. Constraints and Limitations
-
-1. **Scale Constraints**
-   - Optimized for up to 10 nodes (more nodes require performance testing)
-   - Potential bottleneck in single master node structure
-
-2. **Network Constraints**
-   - Performance degradation in high-latency networks
-   - Limited connectivity between fully isolated networks
-
-3. **Resource Constraints**
-   - Minimum specs: 512MB RAM, 1GHz CPU
-   - Monitoring features may be limited on low-spec devices
+- Optimized for ≤10 nodes  
+- Single master bottleneck possible  
+- Network latency impact  
+- Minimum spec: 512MB RAM, 1GHz CPU  
 
 ## 14. Future Improvements
 
-1. **Multi-Master Support**
-   - Multi-master architecture for large-scale clusters
-   - High availability for master nodes
-
-2. **Advanced Networking Features**
-   - Support for mesh networks
-   - P2P communication optimization
-   - Automatic recovery from network partitioning
-
-3. **Management Interface Improvements**
-   - Web-based management console
-   - Cluster visualization tools
-   - Automated operation scripts
+- Multi-master support  
+- Advanced networking (mesh, P2P)  
+- Web-based management console  
 
 ## 15. References
 
-- PICCOLO Framework Design Document  
-- API Server Design Document  
-- NodeAgent Design Document  
-- etcd Official Documentation (https://etcd.io/docs/)  
-- Podman Official Documentation (https://podman.io/docs/)
+- PICCOLO framework design docs  
+- API Server design docs  
+- NodeAgent design docs  
+- etcd docs: https://etcd.io/docs/  
+- Podman docs: https://podman.io/docs/  
 
 ## Appendix
 
@@ -464,13 +345,13 @@ Internal interfaces between clustering components:
 
 | Term | Definition |
 |------|------------|
-| Master Node | Central node managing the cluster, running core services like API Server, StateManager |
-| Sub Node | Worker node managed by the master node, running only NodeAgent |
-| NodeAgent | Agent running on each node, monitoring node status and communicating with the master node |
-| etcd | Distributed key-value store used for storing cluster state information |
-| Podman | Daemonless container management tool, used as a Docker alternative |
-| Topology | Structure and relationships of node connections within a cluster |
-| Heartbeat | Periodic signal to check node activity status |
+| Master Node | Central node managing the cluster |
+| Sub Node | Worker node managed by master |
+| NodeAgent | Agent running on each node |
+| etcd | Distributed key-value store |
+| Podman | Daemonless container tool |
+| Topology | Node connection structure |
+| Heartbeat | Periodic signal for liveness check |
 
 ### B. Change History
 

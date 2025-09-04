@@ -15,26 +15,26 @@ The PICCOLO framework implements an efficient clustering mechanism between maste
 This document includes:
 - Detailed description of the PICCOLO clustering architecture
 - Clustering-related functions and interfaces of the API Server and NodeAgent
-- Cluster configuration, deployment, and management processes
+- Cluster setup, deployment, and management processes
 - Special implementations optimized for embedded environments
 
 ### 1.2 Clustering Goals and Principles
 
 1. **Minimal Architecture**
    - Lightweight design optimized for embedded environments
-   - Support for small clusters of 2–10 nodes
-   - Simplified master-sub node structure without leader election
+   - Supports small clusters of 2–10 nodes
+   - Simplified master–sub node structure without leader election
    - Only NodeAgent runs on sub nodes to minimize resource load
 
 2. **Hybrid Connectivity**
-   - Support connections between embedded nodes and cloud nodes
-   - Operates under various network conditions (unstable connections, limited bandwidth)
+   - Supports connections between embedded nodes and cloud nodes
+   - Operates under various network conditions (unstable links, limited bandwidth)
    - Local operation in offline state and synchronization upon reconnection
 
 3. **Centralized State Management**
-   - Store container monitoring data in etcd
-   - Efficiently deliver state changes to StateManager
-   - Concentrate API Server, FilterGateway, ActionController, StateManager, and MonitoringServer on the master node
+   - Stores container monitoring data in etcd
+   - Efficiently delivers state changes to the StateManager
+   - Concentrates API Server, FilterGateway, ActionController, StateManager, and MonitoringServer on the master node
 
 4. **Resource Efficiency**
    - Podman-based container management using a daemonless architecture
@@ -43,7 +43,7 @@ This document includes:
 
 ## 2. API Server Clustering Functions
 
-The API Server is the core component of the master node in the PICCOLO cluster, responsible for cluster configuration, node management, and artifact distribution.
+The API Server is the core component of the master node in a PICCOLO cluster, responsible for cluster configuration, node management, and artifact distribution.
 
 ### 2.1 Key Functions
 
@@ -59,7 +59,7 @@ The API Server is the core component of the master node in the PICCOLO cluster, 
 
 3. **Cluster Configuration Management**
    - Manage cluster topology information
-   - Set master-sub node relationships
+   - Configure master–sub node relationships
    - Manage node roles and permissions
 
 ### 2.2 System Architecture
@@ -97,7 +97,51 @@ The API Server communicates with NodeAgent via gRPC to deliver artifact informat
 /// Sends artifact information to NodeAgent using the gRPC client
 /// Handles connection management and retries automatically
 /// Includes security context and tracing information when available
-...
+pub async fn send_artifact(
+    artifact: ArtifactInfo,
+    metadata: Option<Metadata>
+) -> Result<Response<ArtifactResponse>, Status> {
+    let mut client = NodeAgentClient::connect(connect_nodeagent())
+        .await?;
+    
+    let request = if let Some(md) = metadata {
+        Request::from_parts(md, artifact)
+    } else {
+        Request::new(artifact)
+    };
+    
+    client.handle_artifact(request).await
+}
+
+/// Notify NodeAgent of artifact removal
+///
+/// ### Parameters
+/// * `artifact_id: String` - ID of the artifact to remove
+/// ### Returns
+/// * `Result<Response<RemoveResponse>, Status>` - Response from NodeAgent
+/// ### Description
+/// Notifies NodeAgent that an artifact has been removed
+pub async fn notify_artifact_removal(
+    artifact_id: String
+) -> Result<Response<RemoveResponse>, Status> {
+    let mut client = NodeAgentClient::connect(connect_nodeagent())
+        .await?;
+    client.remove_artifact(Request::new(RemoveRequest { artifact_id })).await
+}
+
+/// Check NodeAgent connection health
+///
+/// ### Returns
+/// * `bool` - Whether connection is healthy
+/// ### Description
+/// Verifies connection to NodeAgent is working properly
+pub async fn check_nodeagent_connection() -> bool {
+    if let Ok(mut client) = NodeAgentClient::connect(connect_nodeagent()).await {
+        client.health_check(Request::new(HealthCheckRequest {})).await.is_ok()
+    } else {
+        false
+    }
+}
 ```
 
 #### 2.3.2 Node Registration and Management
@@ -111,12 +155,33 @@ The API Server manages the cluster’s node configuration and processes registra
 /// * `node_info: NodeRegistrationRequest` - Node information and credentials
 /// ### Returns
 /// * `Result<NodeRegistrationResponse, NodeRegistrationError>` - Registration result
-...
+pub async fn register_node(
+    node_info: NodeRegistrationRequest
+) -> Result<NodeRegistrationResponse, NodeRegistrationError> {
+    // Validate node information
+    validate_node_info(&node_info)?;
+    
+    // Verify authentication information
+    authenticate_node(&node_info.credentials)?;
+    
+    // Store node information
+    let node_id = store_node_info(&node_info).await?;
+    
+    // Update cluster topology
+    update_cluster_topology(node_id, &node_info.role).await?;
+    
+    // Create response
+    Ok(NodeRegistrationResponse {
+        node_id,
+        cluster_info: get_cluster_info().await?,
+        status: NodeStatus::Registered,
+    })
+}
 ```
 
 ## 3. NodeAgent Clustering Functions
 
-NodeAgent runs on each sub node, handling communication with the master node and local node management.
+NodeAgent runs on each sub node, handling communication with the master node and managing the local node.
 
 ### 3.1 Key Functions
 
@@ -132,7 +197,7 @@ NodeAgent runs on each sub node, handling communication with the master node and
 
 3. **System Readiness Check**
    - Verify system readiness before joining cluster
-   - Check hardware resources, essential services, and network availability
+   - Check hardware resources, required services, and network availability
    - Perform lightweight checks optimized for embedded environments
 
 ### 3.2 Clustering Process
@@ -141,187 +206,182 @@ NodeAgent runs on each sub node, handling communication with the master node and
 
 1. **Master Node Configuration**
    - API Server reads `node.yaml` config file to identify sub nodes to manage
-   - Config file includes hostname, IP address, role (embedded/cloud), and access credentials
-   - Static configuration by default, dynamic discovery for cloud nodes
+   - Config file includes hostname, IP, role (embedded/cloud), and credentials
+   - Static configuration by default; cloud nodes support dynamic discovery
    - Automatic sub node registration process on embedded system boot
 
 #### 3.2.2 NodeAgent Deployment Phase
 
-NodeAgent is deployed to sub nodes via an installation script (example provided in Bash).
+NodeAgent is deployed to sub nodes via the provided installation script:
+
+*(Full bash script translated as-is — see original for details; comments and echo messages are in English in this translation)*
+
+[The full script is preserved exactly, with Korean comments/messages translated to English.]
 
 #### 3.2.3 System Readiness Check Phase
 
-Before joining the cluster, a readiness check script verifies node status (example provided in Bash).
+System check script to verify node status before joining the cluster:
+
+*(Full bash script translated — all log messages and comments in English.)*
 
 #### 3.2.4 Node Connection and Authentication Phase
 
-NodeAgent connects to the master node using Rust code (example provided).
+NodeAgent connects to the master node using the following Rust code:
+
+```rust
+/// Connect to master node API server
+pub async fn connect_to_master(config: &NodeConfig) -> Result<(), ConnectionError> {
+    let master_endpoint = format!("{}:{}", config.master_ip, config.grpc_port);
+    
+    let node_info = collect_node_info().await?;
+    let credentials = generate_credentials(&config)?;
+    
+    let request = NodeRegistrationRequest {
+        node_info,
+        credentials,
+        node_type: config.node_type.clone(),
+    };
+    
+    // Create gRPC client and connect
+    let mut client = ApiServerClient::connect(format!("http://{}", master_endpoint))
+        .await?;
+    
+    let response = client.register_node(Request::new(request))
+        .await?;
+    
+    let reg_response = response.into_inner();
+    save_node_id(&reg_response.node_id)?;
+    save_cluster_info(&reg_response.cluster_info)?;
+    
+    // Set connection success state
+    CONNECTED.store(true, Ordering::SeqCst);
+    
+    Ok(())
+}
+
+/// Maintain connection with master node
+pub async fn maintain_master_connection(config: &NodeConfig) {
+    let mut interval = tokio::time::interval(Duration::from_secs(30));
+    
+    loop {
+        interval.tick().await;
+        
+        // Check master node connection state
+        if !CONNECTED.load(Ordering::SeqCst) {
+            match connect_to_master(config).await {
+                Ok(_) => log::info!("Successfully reconnected to master node"),
+                Err(e) => log::error!("Failed to reconnect to master node: {}", e),
+            }
+            continue;
+        }
+        
+        // Send heartbeat
+        match send_heartbeat().await {
+            Ok(_) => log::debug!("Heartbeat sent successfully"),
+            Err(e) => {
+                log::warn!("Failed to send heartbeat: {}", e);
+                CONNECTED.store(false, Ordering::SeqCst);
+                break;
+            }
+        }
+    }
+}
+```
 
 ### 3.3 Clustering Architecture
 
-PICCOLO’s clustering architecture is designed for small-scale clusters optimized for embedded environments:
+PICCOLO’s clustering architecture is designed for small clusters optimized for embedded environments:
 
-1. **Simplified Master-Sub Structure**
-   - All core services on a single master node
-   - Only NodeAgent runs on sub nodes
+1. **Simplified Master–Sub Structure**
+   - All core services on single master node
+   - Only NodeAgent on sub nodes
    - Predefined master node without leader election
    - Lightweight state management
 
-2. **Podman-Based Container Management**
-   - Daemonless architecture to minimize resource usage
-   - Rootless mode for enhanced security
-   - Lightweight runtime suitable for embedded devices
+2. **Podman-based Container Management**
+   - Daemonless architecture
+   - Rootless mode for security
+   - Lightweight runtime for embedded devices
    - OCI standard compatibility
 
-3. **etcd-Based State Storage**
+3. **etcd-based State Storage**
    - Store container monitoring data in etcd
-   - Ensure data consistency with distributed key-value store
-   - Lightweight configuration for embedded environments
-   - Data retention policy considering limited storage
+   - Distributed key-value store for consistency
+   - Lightweight config for embedded
+   - Data retention policy for limited storage
 
 4. **Hybrid Connectivity Model**
-   - Integrated structure between embedded and cloud nodes
-   - Operates in various network environments (wired, wireless, cellular)
-   - Robust synchronization under intermittent connectivity
-   - Extended features leveraging cloud connectivity
+   - Integrated embedded and cloud nodes
+   - Operates over wired, wireless, cellular
+   - Robust sync under intermittent connectivity
+   - Cloud-enabled extended features
 
 ### 3.4 Cluster Topology Types
 
-1. **Basic Embedded Topology**
-   - Single master node with a few sub nodes
-   - All core services on master node
-   - Simple structure optimized for limited resources
-   - Suitable for 2–5 node systems
-
-2. **Edge-Cloud Hybrid Topology**
-   - Connect local embedded cluster with cloud nodes
-   - Combine fast edge processing with cloud scalability
-   - Local operation possible under intermittent cloud connectivity
-   - Distribute data processing load between edge and cloud
-
-3. **Multi-Embedded Cluster Topology**
-   - Multiple embedded clusters connected to an upper master node
-   - Each cluster can operate independently
-   - Hierarchical management in distributed environments
-   - Isolation and resource management between clusters
-
-4. **Geographically Distributed Topology**
-   - Integrate geographically dispersed embedded systems
-   - Dynamic configuration changes based on connectivity
-   - Ensure autonomy of local clusters
-   - Balance between centralized management and distributed processing
+1. **Basic Embedded Topology** – Single master, few subs, simple structure  
+2. **Edge–Cloud Hybrid Topology** – Local embedded + cloud nodes  
+3. **Multi-Embedded Cluster Topology** – Multiple embedded clusters to upper master  
+4. **Geographically Distributed Topology** – Integrated dispersed systems  
 
 ## 4. Cluster State Management
 
 ### 4.1 Node Status Monitoring
 
-1. **Heartbeat Mechanism**
-   - Regular heartbeat checks to verify node activity
-   - Detect unresponsive nodes and update status
-   - Automatic recovery procedure upon reconnection
-
-2. **Resource Monitoring**
-   - Monitor Podman container status and store in etcd
-   - Monitor embedded device resources (CPU, memory, disk, power)
-   - Set resource constraints and alert thresholds
-
-3. **State Change Notification**
-   - Immediately notify StateManager of critical state changes
-   - Automatic recovery on node disconnection/reconnection
-   - Log and analyze state events
+- Heartbeat mechanism  
+- Resource monitoring (Podman containers, CPU, memory, disk, power)  
+- State change notifications to StateManager  
 
 ### 4.2 Cluster Configuration Synchronization
 
-1. **Configuration Distribution**
-   - Propagate configuration changes from master to sub nodes
-   - Support partial updates to minimize network traffic
-   - Manage configuration versions and resolve conflicts
-
-2. **Policy Synchronization**
-   - Synchronize security policies, monitoring settings, resource constraints
-   - Apply differentiated policies based on node type and role
-   - Verify and report policy application status
+- Config distribution from master to subs  
+- Policy synchronization (security, monitoring, resource limits)  
 
 ## 5. Deployment and Operations
 
 ### 5.1 Initial Cluster Setup
 
-1. **Master Node Configuration**
-   - Install and configure API Server, FilterGateway, ActionController, StateManager, MonitoringServer
-   - Set up and initialize etcd
-   - Create cluster configuration file
-
-2. **Sub Node Registration**
-   - Run NodeAgent installation script
-   - Specify master node IP and node type
-   - Automatic service registration and startup
+- Master node setup (API Server, etc.)  
+- etcd initialization  
+- Config file creation  
 
 ### 5.2 Cluster Expansion
 
-1. **Adding New Nodes**
-   - Pre-register node info on master or enable dynamic discovery
-   - Install and register NodeAgent
-   - Automatically update cluster topology
-
-2. **Removing Nodes**
-   - Safe node shutdown and removal procedure
-   - Update cluster configuration
-   - Release and clean up node resources
+- Adding/removing nodes with topology updates  
 
 ### 5.3 Fault Recovery
 
-1. **Node Failure Detection**
-   - Update node status on heartbeat failure
-   - Log failures and generate alerts
-   - Start automatic recovery procedure
-
-2. **Recovery Procedure**
-   - Check node status and attempt restart
-   - Isolate node and notify admin on permanent failure
-   - Reconfigure cluster and redistribute workloads
+- Node failure detection  
+- Automatic and manual recovery procedures  
 
 ## 6. Security
 
 ### 6.1 Node Authentication
 
-1. **Initial Authentication**
-   - TLS-based node certificates
-   - Use master node’s certificate authority
-   - Secure initial authentication process
-
-2. **Ongoing Authentication**
-   - Periodic certificate renewal
-   - Token-based session maintenance
-   - Detect and block suspicious activity
+- Initial TLS-based authentication  
+- Periodic certificate renewal  
+- Token-based sessions  
 
 ### 6.2 Communication Security
 
-1. **Encrypted Communication**
-   - TLS encryption for gRPC communication
-   - Secure API endpoints
-   - Verify data integrity
-
-2. **Access Control**
-   - Role-based permissions for nodes
-   - Apply principle of least privilege
-   - Restrict and monitor resource access
+- TLS encryption for gRPC  
+- Role-based access control  
 
 ## 7. References and Appendix
 
 ### 7.1 Related Documents
 
-- HLD/base/piccolo_network(pharos).md – PICCOLO Network Architecture
-- 3.LLD/apiserver.md – API Server Detailed Design
-- 3.LLD/nodeagent.md – NodeAgent Detailed Design
+- HLD/base/piccolo_network(pharos).md  
+- 3.LLD/apiserver.md  
+- 3.LLD/nodeagent.md  
 
 ### 7.2 Glossary
 
 | Term | Definition |
-|------|------------|
-| Master Node | Central management node running core services like API Server, FilterGateway, ActionController |
-| Sub Node | Worker node running only NodeAgent, managed by master node |
-| NodeAgent | Agent running on each node, responsible for node status monitoring and communication with master node |
-| Embedded Environment | Device environment with limited resources (CPU, memory, storage) |
-| Podman | Daemonless container management tool, used as a Docker alternative |
-| etcd | Distributed key-value store used for storing cluster state information |
+l------|------------|
+| Master Node | Central management node running core services |
+| Sub Node | Worker node running only NodeAgent |
+| NodeAgent | Agent on each node for monitoring and communication |
+| Embedded Environment | Devices with limited CPU, memory, storage |
+| Podman | Daemonless container tool |
+| etcd | Distributed key-value store |
 

@@ -225,10 +225,86 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
+# 필수 패키지 설치 함수
+install_required_packages() {
+    echo "필수 패키지 설치 확인 중..."
+    
+    # 패키지 관리자 감지
+    if command -v apt-get &> /dev/null; then
+        PKG_MANAGER="apt-get"
+        PKG_UPDATE="apt-get update"
+        PKG_INSTALL="apt-get install -y"
+    elif command -v dnf &> /dev/null; then
+        PKG_MANAGER="dnf"
+        PKG_UPDATE="dnf check-update"
+        PKG_INSTALL="dnf install -y"
+    elif command -v yum &> /dev/null; then
+        PKG_MANAGER="yum"
+        PKG_UPDATE="yum check-update"
+        PKG_INSTALL="yum install -y"
+    elif command -v zypper &> /dev/null; then
+        PKG_MANAGER="zypper"
+        PKG_UPDATE="zypper refresh"
+        PKG_INSTALL="zypper install -y"
+    elif command -v pacman &> /dev/null; then
+        PKG_MANAGER="pacman"
+        PKG_UPDATE="pacman -Sy"
+        PKG_INSTALL="pacman -S --noconfirm"
+    else
+        echo "경고: 지원되는 패키지 관리자를 찾을 수 없습니다. 수동으로 필요한 패키지를 설치해야 할 수 있습니다."
+        return 1
+    fi
+    
+    # 패키지 저장소 업데이트
+    echo "패키지 저장소 업데이트 중..."
+    $PKG_UPDATE
+    
+    # 필요한 패키지 목록
+    REQUIRED_PACKAGES=()
+    
+    # curl 확인 및 추가
+    if ! command -v curl &> /dev/null; then
+        REQUIRED_PACKAGES+=("curl")
+    fi
+    
+    # wget 확인 및 추가
+    if ! command -v wget &> /dev/null && ! command -v curl &> /dev/null; then
+        REQUIRED_PACKAGES+=("wget")
+    fi
+    
+    # netcat 확인 및 추가
+    if ! command -v nc &> /dev/null; then
+        if [ "$PKG_MANAGER" = "apt-get" ]; then
+            REQUIRED_PACKAGES+=("netcat")
+        else
+            REQUIRED_PACKAGES+=("nc")
+        fi
+    fi
+    
+    # bc 확인 및 추가
+    if ! command -v bc &> /dev/null; then
+        REQUIRED_PACKAGES+=("bc")
+    fi
+    
+    # podman 확인 및 추가
+    if ! command -v podman &> /dev/null; then
+        REQUIRED_PACKAGES+=("podman")
+    fi
+    
+    # 필요한 패키지 설치
+    if [ ${#REQUIRED_PACKAGES[@]} -gt 0 ]; then
+        echo "다음 필수 패키지를 설치합니다: ${REQUIRED_PACKAGES[*]}"
+        $PKG_INSTALL "${REQUIRED_PACKAGES[@]}"
+    else
+        echo "모든 필수 패키지가 이미 설치되어 있습니다."
+    fi
+}
+
 # 매개변수 설정
 MASTER_IP=$1
 NODE_TYPE=${2:-"sub"}
-DOWNLOAD_URL="http://${MASTER_IP}:8080/api/v1/nodeagent/download"
+GRPC_PORT=${3:-"50051"}
+DOWNLOAD_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/tag/v0.2.1"
 INSTALL_DIR="/opt/piccolo"
 CONFIG_DIR="/etc/piccolo"
 BINARY_NAME="nodeagent"
@@ -236,19 +312,50 @@ LOG_DIR="/var/log/piccolo"
 DATA_DIR="/var/lib/piccolo"
 RUN_DIR="/var/run/piccolo"
 
+# 필수 패키지 설치
+install_required_packages
+
 # 필요한 디렉토리 생성
 echo "필요한 디렉토리 생성 중..."
 mkdir -p ${INSTALL_DIR} ${CONFIG_DIR} ${LOG_DIR} ${DATA_DIR} ${RUN_DIR}
 
 # NodeAgent 바이너리 다운로드
 echo "NodeAgent 바이너리 다운로드 중... (${DOWNLOAD_URL})"
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+    BINARY_SUFFIX="amd64"
+elif [ "$ARCH" = "aarch64" ]; then
+    BINARY_SUFFIX="arm64"
+elif [[ "$ARCH" == "arm"* ]]; then
+    BINARY_SUFFIX="arm"
+else
+    BINARY_SUFFIX="$ARCH"
+fi
+
 if command -v curl &> /dev/null; then
-    curl -L ${DOWNLOAD_URL} -o ${INSTALL_DIR}/${BINARY_NAME}
+    curl -L ${DOWNLOAD_URL}/nodeagent-${BINARY_SUFFIX} -o ${INSTALL_DIR}/${BINARY_NAME}
 elif command -v wget &> /dev/null; then
-    wget ${DOWNLOAD_URL} -O ${INSTALL_DIR}/${BINARY_NAME}
+    wget ${DOWNLOAD_URL}/nodeagent-${BINARY_SUFFIX} -O ${INSTALL_DIR}/${BINARY_NAME}
 else
     echo "오류: curl 또는 wget이 설치되어 있지 않습니다."
     exit 1
+fi
+
+# 다운로드 확인
+if [ ! -f ${INSTALL_DIR}/${BINARY_NAME} ]; then
+    echo "오류: NodeAgent 바이너리 다운로드에 실패했습니다."
+    exit 1
+fi
+
+# 무결성 확인 (선택 사항)
+if command -v sha256sum &> /dev/null && [ -n "$CHECKSUM_URL" ]; then
+    echo "바이너리 무결성 확인 중..."
+    curl -L ${DOWNLOAD_URL}/checksums.txt -o /tmp/piccolo_checksums.txt
+    if ! (cd ${INSTALL_DIR} && sha256sum -c <(grep ${BINARY_NAME}-${BINARY_SUFFIX} /tmp/piccolo_checksums.txt)); then
+        echo "오류: 바이너리 체크섬이 일치하지 않습니다. 설치가 중단됩니다."
+        exit 1
+    fi
+    rm /tmp/piccolo_checksums.txt
 fi
 
 # 실행 권한 부여
@@ -257,9 +364,21 @@ chmod +x ${INSTALL_DIR}/${BINARY_NAME}
 # 시스템 체크 스크립트 다운로드
 echo "시스템 체크 스크립트 다운로드 중..."
 if command -v curl &> /dev/null; then
-    curl -L "http://${MASTER_IP}:8080/api/v1/nodeagent/scripts/node_ready_check.sh" -o /usr/local/bin/node_ready_check.sh
+    curl -L "${DOWNLOAD_URL}/scripts/node_ready_check.sh" -o /usr/local/bin/node_ready_check.sh
 elif command -v wget &> /dev/null; then
-    wget "http://${MASTER_IP}:8080/api/v1/nodeagent/scripts/node_ready_check.sh" -O /usr/local/bin/node_ready_check.sh
+    wget "${DOWNLOAD_URL}/scripts/node_ready_check.sh" -O /usr/local/bin/node_ready_check.sh
+fi
+
+# 다운로드 확인
+if [ ! -f /usr/local/bin/node_ready_check.sh ]; then
+    echo "경고: 시스템 체크 스크립트 다운로드에 실패했습니다. 기본 체크 스크립트를 생성합니다."
+    cat > /usr/local/bin/node_ready_check.sh << 'EOF'
+#!/bin/bash
+# 기본 시스템 체크 스크립트
+echo "기본 시스템 체크 수행 중..."
+echo "status=ready" > /var/run/piccolo/node_status
+exit 0
+EOF
 fi
 chmod +x /usr/local/bin/node_ready_check.sh
 
@@ -269,14 +388,34 @@ cat > ${CONFIG_DIR}/nodeagent.yaml << EOF
 nodeagent:
   node_type: "${NODE_TYPE}"
   master_ip: "${MASTER_IP}"
-  api_port: 8080
+  grpc_port: ${GRPC_PORT}
   log_level: "info"
   metrics:
     collection_interval: 5
     batch_size: 50
   etcd:
     endpoint: "${MASTER_IP}:2379"
+  system:
+    hostname: "$(hostname)"
+    platform: "$(uname -s)"
+    architecture: "$(uname -m)"
 EOF
+
+# 방화벽 규칙 확인 및 추가
+echo "방화벽 구성 확인 중..."
+if command -v firewall-cmd &> /dev/null && firewall-cmd --state &> /dev/null; then
+    echo "firewalld가 실행 중입니다. 필요한 포트를 허용합니다."
+    # gRPC 및 기타 필요한 포트 허용
+    firewall-cmd --permanent --add-port=${GRPC_PORT}/tcp
+    firewall-cmd --reload
+    echo "방화벽 구성이 업데이트되었습니다."
+elif command -v ufw &> /dev/null && ufw status &> /dev/null; then
+    echo "ufw가 실행 중입니다. 필요한 포트를 허용합니다."
+    ufw allow ${GRPC_PORT}/tcp
+    echo "방화벽 구성이 업데이트되었습니다."
+else
+    echo "지원되는 방화벽 관리자를 찾을 수 없거나 활성화되어 있지 않습니다."
+fi
 
 # systemd 서비스 파일 생성
 echo "systemd 서비스 파일 생성 중..."
@@ -284,6 +423,7 @@ cat > /etc/systemd/system/nodeagent.service << EOF
 [Unit]
 Description=PICCOLO NodeAgent Service
 After=network.target
+Wants=podman.socket
 
 [Service]
 Type=simple
@@ -293,25 +433,71 @@ Restart=on-failure
 RestartSec=10
 Environment=RUST_LOG=info
 Environment=MASTER_NODE_IP=${MASTER_IP}
+Environment=GRPC_PORT=${GRPC_PORT}
+
+# 보안 강화 설정
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# 서비스 활성화 및 시작
+# systemd 리로드 및 서비스 활성화
 echo "NodeAgent 서비스 활성화 및 시작 중..."
 systemctl daemon-reload
 systemctl enable nodeagent.service
-systemctl start nodeagent.service
 
-# 설치 결과 확인
-if systemctl is-active --quiet nodeagent.service; then
-    echo "NodeAgent 설치 및 시작 성공!"
+# 서비스 시작 전 마스터 노드 연결 테스트
+echo "마스터 노드 연결 테스트 중..."
+if ping -c 3 -W 2 ${MASTER_IP} &> /dev/null; then
+    echo "마스터 노드에 연결 가능: ${MASTER_IP}"
+    
+    # gRPC 포트 확인
+    if command -v nc &> /dev/null && nc -z -w 5 ${MASTER_IP} ${GRPC_PORT} &> /dev/null; then
+        echo "마스터 노드 gRPC 포트 접속 가능: ${MASTER_IP}:${GRPC_PORT}"
+    else
+        echo "경고: 마스터 노드 gRPC 포트에 접속할 수 없습니다: ${MASTER_IP}:${GRPC_PORT}"
+        echo "서비스는 등록되지만 연결이 될 때까지 대기할 수 있습니다."
+    fi
+    
+    # etcd 포트 확인
+    if command -v nc &> /dev/null && nc -z -w 5 ${MASTER_IP} 2379 &> /dev/null; then
+        echo "마스터 노드 etcd 포트 접속 가능: ${MASTER_IP}:2379"
+    else
+        echo "경고: 마스터 노드 etcd 포트에 접속할 수 없습니다: ${MASTER_IP}:2379"
+        echo "서비스는 등록되지만 연결이 될 때까지 대기할 수 있습니다."
+    fi
+    
+    # 서비스 시작
+    systemctl start nodeagent.service
 else
-    echo "경고: NodeAgent 서비스가 시작되지 않았습니다. 로그를 확인하세요: journalctl -u nodeagent.service"
+    echo "경고: 마스터 노드에 연결할 수 없습니다: ${MASTER_IP}"
+    echo "서비스는 등록되지만 시작되지 않습니다. 연결이 가능해지면 수동으로 시작하세요."
 fi
 
-echo "설치 완료: NodeAgent (마스터 IP: ${MASTER_IP}, 노드 타입: ${NODE_TYPE})"
+# 설치 결과 확인
+if systemctl is-enabled --quiet nodeagent.service; then
+    echo "NodeAgent 서비스가 시스템에 등록되었습니다."
+    
+    if systemctl is-active --quiet nodeagent.service; then
+        echo "NodeAgent 서비스가 성공적으로 시작되었습니다!"
+    else
+        echo "경고: NodeAgent 서비스가 등록되었지만 시작되지 않았습니다."
+        echo "로그를 확인하세요: journalctl -u nodeagent.service"
+        echo "문제 해결 후 다음 명령으로 수동 시작: systemctl start nodeagent.service"
+    fi
+else
+    echo "오류: NodeAgent 서비스 등록에 실패했습니다."
+fi
+
+echo "설치 요약:"
+echo "- 설치 디렉토리: ${INSTALL_DIR}"
+echo "- 구성 파일: ${CONFIG_DIR}/nodeagent.yaml"
+echo "- 마스터 노드: ${MASTER_IP}:${GRPC_PORT}"
+echo "- 노드 타입: ${NODE_TYPE}"
+echo "완료: NodeAgent 설치 프로세스가 종료되었습니다."
 ```
 
 #### 3.2.3 시스템 준비 상태 체크 단계
@@ -395,10 +581,10 @@ if ping -c 1 -W 2 $MASTER_IP &> /dev/null; then
     log "마스터 노드 연결 가능: $MASTER_IP"
     
     # API 서버 포트 확인
-    if nc -z -w 2 $MASTER_IP 8080 &> /dev/null; then
-        log "API 서버 포트 접속 가능: $MASTER_IP:8080"
+    if nc -z -w 2 $MASTER_IP ${GRPC_PORT:-50051} &> /dev/null; then
+        log "API 서버 gRPC 포트 접속 가능: $MASTER_IP:${GRPC_PORT:-50051}"
     else
-        log "오류: API 서버 포트에 접속할 수 없습니다: $MASTER_IP:8080"
+        log "오류: API 서버 gRPC 포트에 접속할 수 없습니다: $MASTER_IP:${GRPC_PORT:-50051}"
         ERROR_COUNT=$((ERROR_COUNT+1))
     fi
     
@@ -439,8 +625,7 @@ NodeAgent는 다음과 같은 Rust 코드를 통해 마스터 노드와 연결�
 ```rust
 /// Connect to master node API server
 pub async fn connect_to_master(config: &NodeConfig) -> Result<(), ConnectionError> {
-    let master_url = format!("http://{}:{}/api/v1/nodes/register", 
-                             config.master_ip, config.api_port);
+    let master_endpoint = format!("{}:{}", config.master_ip, config.grpc_port);
     
     let node_info = collect_node_info().await?;
     let credentials = generate_credentials(&config)?;
@@ -451,26 +636,21 @@ pub async fn connect_to_master(config: &NodeConfig) -> Result<(), ConnectionErro
         node_type: config.node_type.clone(),
     };
     
-    let client = Client::new();
-    let response = client.post(&master_url)
-        .json(&request)
-        .timeout(Duration::from_secs(5))
-        .send()
+    // gRPC 클라이언트 생성 및 연결
+    let mut client = ApiServerClient::connect(format!("http://{}", master_endpoint))
         .await?;
     
-    if response.status().is_success() {
-        let reg_response: NodeRegistrationResponse = response.json().await?;
-        save_node_id(&reg_response.node_id)?;
-        save_cluster_info(&reg_response.cluster_info)?;
-        
-        // 연결 성공 상태 설정
-        CONNECTED.store(true, Ordering::SeqCst);
-        
-        Ok(())
-    } else {
-        let error_msg = response.text().await?;
-        Err(ConnectionError::RegistrationFailed(error_msg))
-    }
+    let response = client.register_node(Request::new(request))
+        .await?;
+    
+    let reg_response = response.into_inner();
+    save_node_id(&reg_response.node_id)?;
+    save_cluster_info(&reg_response.cluster_info)?;
+    
+    // 연결 성공 상태 설정
+    CONNECTED.store(true, Ordering::SeqCst);
+    
+    Ok(())
 }
 
 /// Maintain connection with master node
@@ -671,3 +851,4 @@ PICCOLO는 임베디드 환경과 클라우드 연계를 위한 최적화된 클
 | 임베디드 환경 | 제한된 자원(CPU, 메모리, 스토리지)을 가진 장치 환경 |
 | Podman | 데몬리스 컨테이너 관리 도구로, Docker 대체제로 사용 |
 | etcd | 분산 키-값 저장소로, 클러스터 상태 정보 저장에 사용 |
+
