@@ -105,7 +105,6 @@ impl StateManagerManager {
     pub async fn initialize(&mut self) -> Result<()> {
         println!("StateManagerManager initializing...");
 
-
         // Initialize the state machine with async action executor
         let action_receiver = {
             let mut state_machine = self.state_machine.lock().await;
@@ -489,7 +488,6 @@ impl StateManagerManager {
         println!("  Status: Container list processing completed (implementation pending)");
         println!("=====================================");
     }
-
 
     /// Execute actions based on state transitions
     async fn execute_action(&self, action: &str, state_change: &StateChange) {
