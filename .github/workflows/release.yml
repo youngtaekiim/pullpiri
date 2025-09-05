@@ -116,6 +116,13 @@ jobs:
           name: license-report
           path: dist/licenses/
 
+      # Download nodeagent binary
+      - name: Download nodeagent binary
+        uses: actions/download-artifact@v4
+        with:
+          name: nodeagent-binary
+          path: dist/binaries/
+
       # Upload all reports as GitHub Release assets
 
       # Optional: upload coverage for player component
@@ -238,6 +245,16 @@ jobs:
           file: doc-archive.tar.gz
           tag: ${{ github.ref }}
       
+      # Upload nodeagent binary to release
+      - name: Upload nodeagent binary (Linux AMD64) to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_nodeagent_amd64
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/binaries/nodeagent-linux-amd64
+          asset_name: nodeagent-linux-amd64
+          tag: ${{ github.ref }}
+      
       # Fetch latest release metadata (used by quality manifest tool)
       - name: Gets latest created release info
         id: latest_release_info
@@ -256,6 +273,7 @@ jobs:
           artifacts_release_process: ${{ steps.upload_release_process.outputs.browser_download_url }} 
           artifacts_documentation: ${{ steps.upload_doc.outputs.browser_download_url }}
           artifacts_requirements: ${{ steps.upload_doc.outputs.browser_download_url }}
+          artifacts_binaries: ${{ steps.upload_nodeagent_amd64.outputs.browser_download_url }}
           artifacts_testing: >
             ${{ steps.upload_test_report.outputs.browser_download_url }},
             ${{ steps.upload_license_report.outputs.browser_download_url }},
