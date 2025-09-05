@@ -487,12 +487,8 @@ impl StateManagerManager {
 
         println!("  Status: Container list processing completed (implementation pending)");
         println!("=====================================");
-  
-    /// Execute actions based on state transitions
-    async fn execute_action(&self, action: &str, state_change: &StateChange) {
-        println!("    Executing action: {}", action);
     }
-      
+
     /// Main message processing loop for handling gRPC requests.
     ///
     /// Spawns dedicated async tasks for processing different message types:
