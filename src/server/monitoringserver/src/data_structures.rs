@@ -246,19 +246,27 @@ impl SocInfo {
         let node_count = self.nodes.len() as f64;
 
         if node_count > 0.0 {
-            // Average usage percentages across nodes
+            // Average CPU usage percentages across nodes (no per-CPU performance info available)
             self.total_cpu_usage = self.nodes.iter().map(|n| n.cpu_usage).sum::<f64>() / node_count;
-            self.total_mem_usage = self.nodes.iter().map(|n| n.mem_usage).sum::<f64>() / node_count;
+
+            // Calculate memory usage from actual memory values (nodes have different memory sizes)
+            self.total_used_memory = self.nodes.iter().map(|n| n.used_memory).sum();
+            self.total_memory = self.nodes.iter().map(|n| n.total_memory).sum();
+            self.total_mem_usage = if self.total_memory > 0 {
+                (self.total_used_memory as f64 * 100.0) / self.total_memory as f64
+            } else {
+                0.0
+            };
         } else {
             self.total_cpu_usage = 0.0;
             self.total_mem_usage = 0.0;
+            self.total_used_memory = 0;
+            self.total_memory = 0;
         }
 
         // Sum absolute values across nodes
         self.total_cpu_count = self.nodes.iter().map(|n| n.cpu_count).sum();
         self.total_gpu_count = self.nodes.iter().map(|n| n.gpu_count).sum();
-        self.total_used_memory = self.nodes.iter().map(|n| n.used_memory).sum();
-        self.total_memory = self.nodes.iter().map(|n| n.total_memory).sum();
         self.total_rx_bytes = self.nodes.iter().map(|n| n.rx_bytes).sum();
         self.total_tx_bytes = self.nodes.iter().map(|n| n.tx_bytes).sum();
         self.total_read_bytes = self.nodes.iter().map(|n| n.read_bytes).sum();
@@ -310,19 +318,27 @@ impl BoardInfo {
         let node_count = self.nodes.len() as f64;
 
         if node_count > 0.0 {
-            // Average usage percentages across nodes
+            // Average CPU usage percentages across nodes (no per-CPU performance info available)
             self.total_cpu_usage = self.nodes.iter().map(|n| n.cpu_usage).sum::<f64>() / node_count;
-            self.total_mem_usage = self.nodes.iter().map(|n| n.mem_usage).sum::<f64>() / node_count;
+
+            // Calculate memory usage from actual memory values (nodes have different memory sizes)
+            self.total_used_memory = self.nodes.iter().map(|n| n.used_memory).sum();
+            self.total_memory = self.nodes.iter().map(|n| n.total_memory).sum();
+            self.total_mem_usage = if self.total_memory > 0 {
+                (self.total_used_memory as f64 * 100.0) / self.total_memory as f64
+            } else {
+                0.0
+            };
         } else {
             self.total_cpu_usage = 0.0;
             self.total_mem_usage = 0.0;
+            self.total_used_memory = 0;
+            self.total_memory = 0;
         }
 
         // Sum absolute values across nodes
         self.total_cpu_count = self.nodes.iter().map(|n| n.cpu_count).sum();
         self.total_gpu_count = self.nodes.iter().map(|n| n.gpu_count).sum();
-        self.total_used_memory = self.nodes.iter().map(|n| n.used_memory).sum();
-        self.total_memory = self.nodes.iter().map(|n| n.total_memory).sum();
         self.total_rx_bytes = self.nodes.iter().map(|n| n.rx_bytes).sum();
         self.total_tx_bytes = self.nodes.iter().map(|n| n.tx_bytes).sum();
         self.total_read_bytes = self.nodes.iter().map(|n| n.read_bytes).sum();
