@@ -7,21 +7,31 @@
 
 use crate::data_structures::{BoardInfo, SocInfo};
 use common::monitoringserver::NodeInfo;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
 /// Generic function to store info in etcd
-async fn store_info<T: Serialize>(resource_type: &str, resource_id: &str, info: &T) -> common::Result<()> {
+async fn store_info<T: Serialize>(
+    resource_type: &str,
+    resource_id: &str,
+    info: &T,
+) -> common::Result<()> {
     let key = format!("/piccolo/metrics/{}/{}", resource_type, resource_id);
     let json_data = serde_json::to_string(info)
         .map_err(|e| format!("Failed to serialize {}: {}", resource_type, e))?;
 
     common::etcd::put(&key, &json_data).await?;
-    println!("[ETCD] Stored {} for {}: {}", resource_type, resource_type, resource_id);
+    println!(
+        "[ETCD] Stored {} for {}: {}",
+        resource_type, resource_type, resource_id
+    );
     Ok(())
 }
 
 /// Generic function to retrieve info from etcd
-async fn get_info<T: DeserializeOwned>(resource_type: &str, resource_id: &str) -> common::Result<T> {
+async fn get_info<T: DeserializeOwned>(
+    resource_type: &str,
+    resource_id: &str,
+) -> common::Result<T> {
     let key = format!("/piccolo/metrics/{}/{}", resource_type, resource_id);
     let json_data = common::etcd::get(&key).await?;
 
@@ -35,7 +45,10 @@ async fn get_info<T: DeserializeOwned>(resource_type: &str, resource_id: &str) -
 async fn delete_info(resource_type: &str, resource_id: &str) -> common::Result<()> {
     let key = format!("/piccolo/metrics/{}/{}", resource_type, resource_id);
     common::etcd::delete(&key).await?;
-    println!("[ETCD] Deleted {} for {}: {}", resource_type, resource_type, resource_id);
+    println!(
+        "[ETCD] Deleted {} for {}: {}",
+        resource_type, resource_type, resource_id
+    );
     Ok(())
 }
 
@@ -48,7 +61,10 @@ async fn get_all_info<T: DeserializeOwned>(resource_type: &str) -> common::Resul
     for kv in kv_pairs {
         match serde_json::from_str::<T>(&kv.value) {
             Ok(item) => items.push(item),
-            Err(e) => eprintln!("[ETCD] Failed to deserialize {} {}: {}", resource_type, kv.key, e),
+            Err(e) => eprintln!(
+                "[ETCD] Failed to deserialize {} {}: {}",
+                resource_type, kv.key, e
+            ),
         }
     }
 
