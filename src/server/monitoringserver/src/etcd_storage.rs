@@ -21,8 +21,8 @@ async fn store_info<T: Serialize>(
 
     common::etcd::put(&key, &json_data).await?;
     println!(
-        "[ETCD] Stored {} for {}: {}",
-        resource_type, resource_type, resource_id
+        "[ETCD] Stored the metrics for {}: {}",
+        resource_type, resource_id
     );
     Ok(())
 }
@@ -46,8 +46,8 @@ async fn delete_info(resource_type: &str, resource_id: &str) -> common::Result<(
     let key = format!("/piccolo/metrics/{}/{}", resource_type, resource_id);
     common::etcd::delete(&key).await?;
     println!(
-        "[ETCD] Deleted {} for {}: {}",
-        resource_type, resource_type, resource_id
+        "[ETCD] Deleted the metrics for {}: {}",
+        resource_type, resource_id
     );
     Ok(())
 }
