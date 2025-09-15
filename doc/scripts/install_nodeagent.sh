@@ -119,7 +119,7 @@ MASTER_IP=$1
 NODE_TYPE=${2:-"sub"}
 GRPC_PORT=${3:-"47098"}
 #DOWNLOAD_URL="https://github.com/piccolo-framework/piccolo/releases/download/latest"
-DOWNLOAD_URL="https://github.com/akshayg0314/cicd_pullpiri/releases/download/v1.0.132"
+DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/main/examples/binarys"
 CHECKSUM_URL="${DOWNLOAD_URL}"  # Define CHECKSUM_URL
 INSTALL_DIR="/opt/piccolo"
 CONFIG_DIR="/etc/piccolo"
@@ -127,13 +127,14 @@ BINARY_NAME="nodeagent"
 LOG_DIR="/var/log/piccolo"
 DATA_DIR="/var/lib/piccolo"
 RUN_DIR="/var/run/piccolo"
+YAML_STORAGE_DIR="${CONFIG_DIR}/yaml"
 
 # Install required packages
 install_required_packages
 
 # Create necessary directories
 echo "Creating necessary directories..."
-mkdir -p ${INSTALL_DIR} ${CONFIG_DIR} ${LOG_DIR} ${DATA_DIR} ${RUN_DIR}
+mkdir -p ${INSTALL_DIR} ${CONFIG_DIR} ${LOG_DIR} ${DATA_DIR} ${RUN_DIR} ${YAML_STORAGE_DIR}
 
 # Download NodeAgent binary
 echo "Downloading NodeAgent binary... (${DOWNLOAD_URL})"
@@ -256,6 +257,7 @@ nodeagent:
     hostname: "$(hostname)"
     platform: "$(uname -s)"
     architecture: "$(uname -m)"
+yaml_storage: "${YAML_STORAGE_DIR}"
 EOF
 
 # Check and add firewall rules
