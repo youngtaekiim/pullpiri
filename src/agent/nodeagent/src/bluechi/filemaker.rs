@@ -16,7 +16,7 @@ const SYSTEMD_PATH: &str = "/etc/containers/systemd/";
 /// ### Description
 /// Make `.kube`, `.yaml` files for bluechi
 pub async fn make_files_from_pod(pods: Vec<Pod>, node: String) -> common::Result<()> {
-    let storage_directory = &common::setting::get_config().yaml_storage;
+    let storage_directory = &crate::config::Config::get().get_yaml_storage();
     if !std::path::Path::new(storage_directory).exists() {
         std::fs::create_dir_all(storage_directory)?;
     }
@@ -40,7 +40,7 @@ pub async fn make_symlink(node_name: &str, model_name: &str) -> common::Result<(
     );
     let original: String = format!(
         "{0}/{1}.kube",
-        common::setting::get_config().yaml_storage,
+        crate::config::Config::get().get_yaml_storage(),
         model_name
     );
     let link = format!("{}{}.kube", SYSTEMD_PATH, model_name);
