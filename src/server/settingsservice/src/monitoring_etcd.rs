@@ -4,347 +4,215 @@
 //! Integration with monitoring server's etcd storage
 
 use crate::monitoring_types::{BoardInfo, NodeInfo, SocInfo};
-use etcd_client::Client;
+use serde::{de::DeserializeOwned, Serialize};
+use thiserror::Error;
+use tracing::{debug, warn};
 
-type Result<T> = std::result::Result<T, String>;
-
-/// Create storage client
-async fn get_etcd_client() -> Result<Client> {
-    Client::connect(["http://localhost:2379"], None)
-        .await
-        .map_err(|e| format!("Failed to connect to etcd: {}", e))
+/// Custom error type for monitoring etcd operations
+#[derive(Debug, Error)]
+pub enum MonitoringEtcdError {
+    #[error("Etcd operation error: {0}")]
+    EtcdOperation(String),
+    #[error("Serialization error: {0}")]
+    Serialize(#[from] serde_json::Error),
+    #[error("UTF8 error: {0}")]
+    Utf8(#[from] std::str::Utf8Error),
+    #[error("Data not found")]
+    NotFound,
+    #[error("{0}")]
+    Other(String),
 }
+
+type Result<T> = std::result::Result<T, MonitoringEtcdError>;
+
+/// Generic function to store info in etcd
+async fn store_info<T: Serialize>(resource_type: &str, resource_id: &str, info: &T) -> Result<()> {
+    let key = format!("/piccolo/metrics/{}/{}", resource_type, resource_id);
+    let json_data = serde_json::to_string(info)?;
+
+    common::etcd::put(&key, &json_data)
+        .await
+        .map_err(|e| MonitoringEtcdError::EtcdOperation(e.to_string()))?;
+
+    debug!("Stored {} for {}", resource_type, resource_id);
+    Ok(())
+}
+
+/// Generic function to retrieve info from etcd
+async fn get_info<T: DeserializeOwned>(resource_type: &str, resource_id: &str) -> Result<T> {
+    let key = format!("/piccolo/metrics/{}/{}", resource_type, resource_id);
+
+    let json_data = common::etcd::get(&key)
+        .await
+        .map_err(|e| MonitoringEtcdError::EtcdOperation(e.to_string()))?;
+
+    let info: T = serde_json::from_str(&json_data)?;
+
+    debug!("Retrieved {} for {}", resource_type, resource_id);
+    Ok(info)
+}
+
+/// Generic function to get all items of a type from etcd
+async fn get_all_info<T: DeserializeOwned>(resource_type: &str) -> Result<Vec<T>> {
+    let prefix = format!("/piccolo/metrics/{}/", resource_type);
+    let kv_pairs = common::etcd::get_all_with_prefix(&prefix)
+        .await
+        .map_err(|e| MonitoringEtcdError::EtcdOperation(e.to_string()))?;
+
+    let mut items = Vec::new();
+    for kv in kv_pairs {
+        match serde_json::from_str::<T>(&kv.value) {
+            Ok(item) => items.push(item),
+            Err(e) => {
+                warn!(
+                    "Failed to deserialize {} from {}: {}",
+                    resource_type, kv.key, e
+                );
+            }
+        }
+    }
+    debug!("Retrieved {} {}s from etcd", items.len(), resource_type);
+    Ok(items)
+}
+
+/// Generic function to delete info from etcd
+async fn delete_info(resource_type: &str, resource_id: &str) -> Result<()> {
+    let key = format!("/piccolo/metrics/{}/{}", resource_type, resource_id);
+
+    common::etcd::delete(&key)
+        .await
+        .map_err(|e| MonitoringEtcdError::EtcdOperation(e.to_string()))?;
+
+    debug!("Deleted {} for {}", resource_type, resource_id);
+    Ok(())
+}
+
+// Public wrapper functions for specific types
 
 /// Store NodeInfo in etcd
 pub async fn store_node_info(node_info: &NodeInfo) -> Result<()> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metrics/nodes/{}", node_info.node_name);
-    let value =
-        serde_json::to_string(node_info).map_err(|e| format!("Serialization error: {}", e))?;
-
-    client
-        .put(key, value, None)
-        .await
-        .map_err(|e| format!("ETCD put error: {}", e))?;
-
-    Ok(())
+    store_info("nodes", &node_info.node_name, node_info).await
 }
 
 /// Get NodeInfo from etcd
 pub async fn get_node_info(node_name: &str) -> Result<NodeInfo> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metrics/nodes/{}", node_name);
-    let resp = client
-        .get(key, None)
-        .await
-        .map_err(|e| format!("ETCD get error: {}", e))?;
-
-    if let Some(kv) = resp.kvs().first() {
-        let value = std::str::from_utf8(kv.value())
-            .map_err(|e| format!("UTF-8 conversion error: {}", e))?;
-        serde_json::from_str(value).map_err(|e| format!("Deserialization error: {}", e))
-    } else {
-        Err("NodeInfo not found".to_string())
-    }
+    get_info("nodes", node_name).await
 }
 
 /// Get all nodes from etcd
 pub async fn get_all_nodes() -> Result<Vec<NodeInfo>> {
-    let mut client = get_etcd_client().await?;
-
-    let resp = client
-        .get(
-            "/piccolo/metrics/nodes/",
-            Some(etcd_client::GetOptions::new().with_prefix()),
-        )
-        .await
-        .map_err(|e| format!("ETCD get error: {}", e))?;
-
-    let mut nodes = Vec::new();
-    for kv in resp.kvs() {
-        let key = std::str::from_utf8(kv.key())
-            .map_err(|e| format!("UTF-8 conversion error for key: {}", e))?;
-        let value = std::str::from_utf8(kv.value())
-            .map_err(|e| format!("UTF-8 conversion error for value: {}", e))?;
-
-        match serde_json::from_str::<NodeInfo>(value) {
-            Ok(node) => nodes.push(node),
-            Err(e) => eprintln!("Failed to deserialize NodeInfo from {}: {}", key, e),
-        }
-    }
-    Ok(nodes)
+    get_all_info("nodes").await
 }
 
 /// Delete NodeInfo from etcd
 pub async fn delete_node_info(node_name: &str) -> Result<()> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metrics/nodes/{}", node_name);
-    client
-        .delete(key, None)
-        .await
-        .map_err(|e| format!("ETCD delete error: {}", e))?;
-
-    Ok(())
+    delete_info("nodes", node_name).await
 }
 
 /// Store SocInfo in etcd
 pub async fn store_soc_info(soc_info: &SocInfo) -> Result<()> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metrics/socs/{}", soc_info.soc_id);
-    let value =
-        serde_json::to_string(soc_info).map_err(|e| format!("Serialization error: {}", e))?;
-
-    client
-        .put(key, value, None)
-        .await
-        .map_err(|e| format!("ETCD put error: {}", e))?;
-
-    Ok(())
+    store_info("socs", &soc_info.soc_id, soc_info).await
 }
 
 /// Get SocInfo from etcd
 pub async fn get_soc_info(soc_id: &str) -> Result<SocInfo> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metrics/socs/{}", soc_id);
-    let resp = client
-        .get(key, None)
-        .await
-        .map_err(|e| format!("ETCD get error: {}", e))?;
-
-    if let Some(kv) = resp.kvs().first() {
-        let value = std::str::from_utf8(kv.value())
-            .map_err(|e| format!("UTF-8 conversion error: {}", e))?;
-        serde_json::from_str(value).map_err(|e| format!("Deserialization error: {}", e))
-    } else {
-        Err("SocInfo not found".to_string())
-    }
+    get_info("socs", soc_id).await
 }
 
 /// Get all SoCs from etcd
 pub async fn get_all_socs() -> Result<Vec<SocInfo>> {
-    let mut client = get_etcd_client().await?;
-
-    let resp = client
-        .get(
-            "/piccolo/metrics/socs/",
-            Some(etcd_client::GetOptions::new().with_prefix()),
-        )
-        .await
-        .map_err(|e| format!("ETCD get error: {}", e))?;
-
-    let mut socs = Vec::new();
-    for kv in resp.kvs() {
-        let key = std::str::from_utf8(kv.key())
-            .map_err(|e| format!("UTF-8 conversion error for key: {}", e))?;
-        let value = std::str::from_utf8(kv.value())
-            .map_err(|e| format!("UTF-8 conversion error for value: {}", e))?;
-
-        match serde_json::from_str::<SocInfo>(value) {
-            Ok(soc) => socs.push(soc),
-            Err(e) => eprintln!("Failed to deserialize SocInfo from {}: {}", key, e),
-        }
-    }
-    Ok(socs)
+    get_all_info("socs").await
 }
 
 /// Delete SocInfo from etcd
 pub async fn delete_soc_info(soc_id: &str) -> Result<()> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metrics/socs/{}", soc_id);
-    client
-        .delete(key, None)
-        .await
-        .map_err(|e| format!("ETCD delete error: {}", e))?;
-
-    Ok(())
+    delete_info("socs", soc_id).await
 }
 
 /// Store BoardInfo in etcd
 pub async fn store_board_info(board_info: &BoardInfo) -> Result<()> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metrics/boards/{}", board_info.board_id);
-    let value =
-        serde_json::to_string(board_info).map_err(|e| format!("Serialization error: {}", e))?;
-
-    client
-        .put(key, value, None)
-        .await
-        .map_err(|e| format!("ETCD put error: {}", e))?;
-
-    Ok(())
+    store_info("boards", &board_info.board_id, board_info).await
 }
 
 /// Get BoardInfo from etcd
 pub async fn get_board_info(board_id: &str) -> Result<BoardInfo> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metrics/boards/{}", board_id);
-    let resp = client
-        .get(key, None)
-        .await
-        .map_err(|e| format!("ETCD get error: {}", e))?;
-
-    if let Some(kv) = resp.kvs().first() {
-        let value = std::str::from_utf8(kv.value())
-            .map_err(|e| format!("UTF-8 conversion error: {}", e))?;
-        serde_json::from_str(value).map_err(|e| format!("Deserialization error: {}", e))
-    } else {
-        Err("BoardInfo not found".to_string())
-    }
+    get_info("boards", board_id).await
 }
 
 /// Get all boards from etcd
 pub async fn get_all_boards() -> Result<Vec<BoardInfo>> {
-    let mut client = get_etcd_client().await?;
-
-    let resp = client
-        .get(
-            "/piccolo/metrics/boards/",
-            Some(etcd_client::GetOptions::new().with_prefix()),
-        )
-        .await
-        .map_err(|e| format!("ETCD get error: {}", e))?;
-
-    let mut boards = Vec::new();
-    for kv in resp.kvs() {
-        let key = std::str::from_utf8(kv.key())
-            .map_err(|e| format!("UTF-8 conversion error for key: {}", e))?;
-        let value = std::str::from_utf8(kv.value())
-            .map_err(|e| format!("UTF-8 conversion error for value: {}", e))?;
-
-        match serde_json::from_str::<BoardInfo>(value) {
-            Ok(board) => boards.push(board),
-            Err(e) => eprintln!("Failed to deserialize BoardInfo from {}: {}", key, e),
-        }
-    }
-    Ok(boards)
+    get_all_info("boards").await
 }
 
 /// Delete BoardInfo from etcd
 pub async fn delete_board_info(board_id: &str) -> Result<()> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metrics/boards/{}", board_id);
-    client
-        .delete(key, None)
-        .await
-        .map_err(|e| format!("ETCD delete error: {}", e))?;
-
-    Ok(())
+    delete_info("boards", board_id).await
 }
 
 /// Get node logs from etcd
 pub async fn get_node_logs(node_name: &str) -> Result<Vec<String>> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/logs/nodes/{}", node_name);
-    let resp = client
-        .get(key, Some(etcd_client::GetOptions::new().with_prefix()))
-        .await
-        .map_err(|e| format!("ETCD get logs error: {}", e))?;
-
-    let mut logs = Vec::new();
-    for kv in resp.kvs() {
-        let value = std::str::from_utf8(kv.value())
-            .map_err(|e| format!("UTF-8 conversion error: {}", e))?;
-        logs.push(value.to_string());
-    }
-
-    // If no logs found in dedicated logs path, return empty Vec (not an error)
-    Ok(logs)
+    get_logs("nodes", node_name).await
 }
 
 /// Get SoC logs from etcd
 pub async fn get_soc_logs(soc_id: &str) -> Result<Vec<String>> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/logs/socs/{}", soc_id);
-    let resp = client
-        .get(key, Some(etcd_client::GetOptions::new().with_prefix()))
-        .await
-        .map_err(|e| format!("ETCD get logs error: {}", e))?;
-
-    let mut logs = Vec::new();
-    for kv in resp.kvs() {
-        let value = std::str::from_utf8(kv.value())
-            .map_err(|e| format!("UTF-8 conversion error: {}", e))?;
-        logs.push(value.to_string());
-    }
-
-    Ok(logs)
+    get_logs("socs", soc_id).await
 }
 
 /// Get board logs from etcd
 pub async fn get_board_logs(board_id: &str) -> Result<Vec<String>> {
-    let mut client = get_etcd_client().await?;
+    get_logs("boards", board_id).await
+}
 
-    let key = format!("/piccolo/logs/boards/{}", board_id);
-    let resp = client
-        .get(key, Some(etcd_client::GetOptions::new().with_prefix()))
+/// Generic function to get logs from etcd
+async fn get_logs(resource_type: &str, resource_id: &str) -> Result<Vec<String>> {
+    let prefix = format!("/piccolo/logs/{}/{}", resource_type, resource_id);
+    let kv_pairs = common::etcd::get_all_with_prefix(&prefix)
         .await
-        .map_err(|e| format!("ETCD get logs error: {}", e))?;
+        .map_err(|e| MonitoringEtcdError::EtcdOperation(e.to_string()))?;
 
     let mut logs = Vec::new();
-    for kv in resp.kvs() {
-        let value = std::str::from_utf8(kv.value())
-            .map_err(|e| format!("UTF-8 conversion error: {}", e))?;
-        logs.push(value.to_string());
+    for kv in kv_pairs {
+        logs.push(kv.value);
     }
 
+    debug!(
+        "Retrieved {} logs for {} {}",
+        logs.len(),
+        resource_type,
+        resource_id
+    );
     Ok(logs)
 }
 
 /// Store node metadata in etcd
 pub async fn store_node_metadata(node_name: &str, metadata: &serde_json::Value) -> Result<()> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metadata/nodes/{}", node_name);
-    let value =
-        serde_json::to_string(metadata).map_err(|e| format!("Serialization error: {}", e))?;
-
-    client
-        .put(key, value, None)
-        .await
-        .map_err(|e| format!("ETCD put metadata error: {}", e))?;
-
-    Ok(())
+    store_metadata("nodes", node_name, metadata).await
 }
 
 /// Store SoC metadata in etcd
 pub async fn store_soc_metadata(soc_id: &str, metadata: &serde_json::Value) -> Result<()> {
-    let mut client = get_etcd_client().await?;
-
-    let key = format!("/piccolo/metadata/socs/{}", soc_id);
-    let value =
-        serde_json::to_string(metadata).map_err(|e| format!("Serialization error: {}", e))?;
-
-    client
-        .put(key, value, None)
-        .await
-        .map_err(|e| format!("ETCD put metadata error: {}", e))?;
-
-    Ok(())
+    store_metadata("socs", soc_id, metadata).await
 }
 
 /// Store board metadata in etcd
 pub async fn store_board_metadata(board_id: &str, metadata: &serde_json::Value) -> Result<()> {
-    let mut client = get_etcd_client().await?;
+    store_metadata("boards", board_id, metadata).await
+}
 
-    let key = format!("/piccolo/metadata/boards/{}", board_id);
-    let value =
-        serde_json::to_string(metadata).map_err(|e| format!("Serialization error: {}", e))?;
+/// Generic function to store metadata in etcd
+async fn store_metadata(
+    resource_type: &str,
+    resource_id: &str,
+    metadata: &serde_json::Value,
+) -> Result<()> {
+    let key = format!("/piccolo/metadata/{}/{}", resource_type, resource_id);
+    let value = serde_json::to_string(metadata)?;
 
-    client
-        .put(key, value, None)
+    common::etcd::put(&key, &value)
         .await
-        .map_err(|e| format!("ETCD put metadata error: {}", e))?;
+        .map_err(|e| MonitoringEtcdError::EtcdOperation(e.to_string()))?;
 
+    debug!("Stored metadata for {} {}", resource_type, resource_id);
     Ok(())
 }
