@@ -15,6 +15,11 @@ use prost::Message;
 pub struct NodeManager;
 
 impl NodeManager {
+    /// Create a new NodeManager instance
+    pub fn new() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(NodeManager)
+    }
+
     /// Register a new node in the cluster
     pub async fn register_node(
         &self,
@@ -72,6 +77,13 @@ impl NodeManager {
         }
 
         Ok(nodes)
+    }
+    
+    /// Get all nodes in the cluster (alias for get_all_nodes)
+    pub async fn get_nodes(
+        &self,
+    ) -> Result<Vec<NodeInfo>, Box<dyn std::error::Error + Send + Sync>> {
+        self.get_all_nodes().await
     }
 
     /// Get a specific node by ID

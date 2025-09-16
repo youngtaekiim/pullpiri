@@ -4,6 +4,7 @@ use std::io::Read;
 use std::path::Path;
 use thiserror::Error;
 use std::sync::OnceLock;
+use if_addrs::{Interface, get_if_addrs};
 
 // Global config instance
 static NODEAGENT_CONFIG: OnceLock<Config> = OnceLock::new();
@@ -68,6 +69,19 @@ impl Config {
     }
 
     pub fn get_host_ip(&self) -> String {
+        if let Ok(interfaces) = get_network_interfaces() {
+            // Get the first non-loopback IPv4 address
+            for iface in interfaces {
+                // Check the IP address
+                if let std::net::IpAddr::V4(ipv4) = iface.addr.ip() {
+                    if !ipv4.is_loopback() {
+                        return ipv4.to_string();
+                    }
+                }
+            }
+        }
+        
+        // Fallback to master_ip if we couldn't determine the host IP
         self.nodeagent.master_ip.clone()
     }
 
@@ -92,4 +106,9 @@ impl Config {
     pub fn set_global(config: Config) {
         let _ = NODEAGENT_CONFIG.set(config);
     }
+}
+
+// Helper function to get network interfaces
+fn get_network_interfaces() -> Result<Vec<Interface>, std::io::Error> {
+    get_if_addrs()
 }

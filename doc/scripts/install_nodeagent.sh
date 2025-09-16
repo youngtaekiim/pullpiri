@@ -117,7 +117,7 @@ install_required_packages() {
 # Parameter settings
 MASTER_IP=$1
 NODE_TYPE=${2:-"sub"}
-GRPC_PORT=${3:-"47098"}
+GRPC_PORT=${3:-"47004"}
 #DOWNLOAD_URL="https://github.com/piccolo-framework/piccolo/releases/download/latest"
 DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/main/examples/binarys"
 CHECKSUM_URL="${DOWNLOAD_URL}"  # Define CHECKSUM_URL
@@ -251,8 +251,6 @@ nodeagent:
   metrics:
     collection_interval: 5
     batch_size: 50
-  etcd:
-    endpoint: "${MASTER_IP}:2379"
   system:
     hostname: "$(hostname)"
     platform: "$(uname -s)"

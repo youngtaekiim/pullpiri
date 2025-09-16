@@ -109,6 +109,7 @@ async fn initialize(tx_grpc: Sender<HandleYamlRequest>, hostname: String, config
         .parse()
         .expect("nodeagent address parsing error");
     println!("NodeAgent listening on {}", addr);
+    println!("NodeAgent config - master_ip: {}, grpc_port: {}", config.nodeagent.master_ip, config.nodeagent.grpc_port);
 
     let _ = Server::builder()
         .add_service(NodeAgentConnectionServer::new(server))

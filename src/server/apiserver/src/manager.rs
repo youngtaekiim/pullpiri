@@ -8,6 +8,7 @@ use common::apiserver::api_server_connection_server::ApiServerConnectionServer;
 use common::filtergateway::{Action, HandleScenarioRequest};
 use common::nodeagent::HandleYamlRequest;
 use tonic::transport::Server;
+use crate::node::NodeManager;
 
 /// Launch REST API listener, gRPC server, and reload scenario data in etcd
 pub async fn initialize() {
@@ -81,7 +82,29 @@ pub async fn apply_artifact(body: &str) -> common::Result<()> {
         yaml: body.to_string(),
     };
 
-    crate::grpc::sender::nodeagent::send(handle_yaml.clone()).await?;
+    // Get all registered nodes and send to them
+    let node_manager = NodeManager::new().unwrap();
+    match node_manager.get_nodes().await {
+        Ok(nodes) => {
+            let mut sent = false;
+            for node in nodes {
+                if node.status as i32 == common::nodeagent::NodeStatus::Ready as i32 {
+                    // Use the actual node IP address registered with the API server
+                    let node_ip = node.ip_address.clone();
+                    crate::grpc::sender::nodeagent::send_to_node(handle_yaml.clone(), node_ip).await?;
+                    sent = true;
+                }
+            }
+            // Fallback if no ready nodes were found
+            if !sent {
+                crate::grpc::sender::nodeagent::send(handle_yaml.clone()).await?;
+            }
+        },
+        Err(_) => {
+            // Fallback to the default behavior if node manager had an error
+            crate::grpc::sender::nodeagent::send(handle_yaml.clone()).await?;
+        }
+    }
 
     if let Some(guests) = &common::setting::get_config().guest {
         if !guests.is_empty() {
