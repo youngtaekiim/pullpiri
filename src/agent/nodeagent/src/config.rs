@@ -25,11 +25,6 @@ pub struct MetricsConfig {
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]
-pub struct EtcdConfig {
-    pub endpoint: String,
-}
-
-#[derive(Debug, Deserialize, Clone, Default)]
 pub struct SystemConfig {
     pub hostname: String,
     pub platform: String,
@@ -40,10 +35,11 @@ pub struct SystemConfig {
 pub struct NodeAgentConfig {
     pub node_type: String,
     pub master_ip: String,
+    #[serde(default)]
+    pub node_ip: String,
     pub grpc_port: u16,
     pub log_level: String,
     pub metrics: MetricsConfig,
-    pub etcd: EtcdConfig,
     pub system: SystemConfig,
     #[serde(default = "default_yaml_storage")]
     pub yaml_storage: String,
@@ -69,10 +65,14 @@ impl Config {
     }
 
     pub fn get_host_ip(&self) -> String {
+        // If node_ip is explicitly set in config, use it
+        if !self.nodeagent.node_ip.is_empty() {
+            return self.nodeagent.node_ip.clone();
+        }
+        
+        // Otherwise try to get the first non-loopback IPv4 address
         if let Ok(interfaces) = get_network_interfaces() {
-            // Get the first non-loopback IPv4 address
             for iface in interfaces {
-                // Check the IP address
                 if let std::net::IpAddr::V4(ipv4) = iface.addr.ip() {
                     if !ipv4.is_loopback() {
                         return ipv4.to_string();

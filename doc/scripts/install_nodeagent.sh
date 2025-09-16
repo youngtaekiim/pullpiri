@@ -1,6 +1,6 @@
 #!/bin/bash
 # install_nodeagent.sh - NodeAgent installation script
-# Usage: ./install_nodeagent.sh <master_node_ip> [node_type]
+# Usage: ./install_nodeagent.sh --master <master_ip> --node <node_ip>
 
 # Exit on error
 set -e
@@ -11,9 +11,34 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+# Initialize variables
+MASTER_IP=""
+NODE_IP=""
+NODE_TYPE="sub"  # Default node type
+
+# Process command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --master)
+            MASTER_IP="$2"
+            shift 2
+            ;;
+        --node)
+            NODE_IP="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 --master <master_ip> --node <node_ip>"
+            exit 1
+            ;;
+    esac
+done
+
 # Parameter validation
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 <master_node_ip> [node_type(sub|master)]"
+if [ -z "$MASTER_IP" ] || [ -z "$NODE_IP" ]; then
+    echo "Error: Both --master and --node options are required."
+    echo "Usage: $0 --master <master_ip> --node <node_ip>"
     exit 1
 fi
 
@@ -114,10 +139,9 @@ install_required_packages() {
     fi
 }
 
-# Parameter settings
-MASTER_IP=$1
-NODE_TYPE=${2:-"sub"}
-GRPC_PORT=${3:-"47004"}
+# Parameter settings already processed from command line
+# MASTER_IP and NODE_IP are set from command line arguments
+GRPC_PORT="47004"
 #DOWNLOAD_URL="https://github.com/piccolo-framework/piccolo/releases/download/latest"
 DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/main/examples/binarys"
 CHECKSUM_URL="${DOWNLOAD_URL}"  # Define CHECKSUM_URL
@@ -246,6 +270,7 @@ cat > ${CONFIG_DIR}/nodeagent.yaml << EOF
 nodeagent:
   node_type: "${NODE_TYPE}"
   master_ip: "${MASTER_IP}"
+  node_ip: "${NODE_IP}"
   grpc_port: ${GRPC_PORT}
   log_level: "info"
   metrics:
@@ -298,6 +323,7 @@ Restart=on-failure
 RestartSec=10
 Environment=RUST_LOG=info
 Environment=MASTER_NODE_IP=${MASTER_IP}
+Environment=NODE_IP=${NODE_IP}
 Environment=GRPC_PORT=${GRPC_PORT}
 
 # Security hardening settings
@@ -373,6 +399,7 @@ echo "Installation Summary:"
 echo "- Installation directory: ${INSTALL_DIR}"
 echo "- Configuration file: ${CONFIG_DIR}/nodeagent.yaml"
 echo "- Master node: ${MASTER_IP}:${GRPC_PORT}"
+echo "- Node IP: ${NODE_IP}"
 echo "- Node type: ${NODE_TYPE}"
 echo "- Status: $ERROR_COUNT errors, $WARNING_COUNT warnings"
 
