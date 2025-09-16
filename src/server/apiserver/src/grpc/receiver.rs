@@ -13,81 +13,7 @@ use common::etcd;
 use common::nodeagent::{NodeRegistrationRequest, NodeRegistrationResponse, NodeStatus};
 use prost::Message;
 use tonic::{Request, Response, Status};
-
-/// Simple node manager embedded in receiver
-#[derive(Clone)]
-struct NodeManager;
-
-impl NodeManager {
-    async fn register_node(
-        &self,
-        request: NodeRegistrationRequest,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        let node_key = format!("cluster/nodes/{}", request.node_id);
-
-        let node_info = NodeInfo {
-            node_id: request.node_id.clone(),
-            hostname: request.hostname.clone(),
-            ip_address: request.ip_address.clone(),
-            role: request.role,
-            status: NodeStatus::Pending.into(),
-            resources: request.resources,
-            last_heartbeat: chrono::Utc::now().timestamp(),
-            created_at: chrono::Utc::now().timestamp(),
-            metadata: request.metadata,
-        };
-
-        let mut buf = Vec::new();
-        prost::Message::encode(&node_info, &mut buf)?;
-        let encoded = base64::encode(&buf);
-        etcd::put(&node_key, &encoded).await?;
-
-        println!("Node {} registered successfully", request.node_id);
-        Ok(format!("cluster-token-{}", request.node_id))
-    }
-
-    async fn get_all_nodes(
-        &self,
-    ) -> Result<Vec<NodeInfo>, Box<dyn std::error::Error + Send + Sync>> {
-        let prefix = "cluster/nodes/";
-        let kvs = etcd::get_all_with_prefix(prefix).await?;
-
-        let mut nodes = Vec::new();
-        for kv in kvs {
-            match base64::decode(&kv.value) {
-                Ok(buf) => match NodeInfo::decode(&buf[..]) {
-                    Ok(node) => nodes.push(node),
-                    Err(e) => {
-                        eprintln!("Failed to decode node data for key {}: {}", kv.key, e);
-                        continue;
-                    }
-                },
-                Err(e) => {
-                    eprintln!("Failed to decode base64 for key {}: {}", kv.key, e);
-                    continue;
-                }
-            }
-        }
-
-        Ok(nodes)
-    }
-
-    async fn get_node(
-        &self,
-        node_id: &str,
-    ) -> Result<Option<NodeInfo>, Box<dyn std::error::Error + Send + Sync>> {
-        let node_key = format!("cluster/nodes/{}", node_id);
-
-        match etcd::get(&node_key).await {
-            Ok(encoded) => {
-                let buf = base64::decode(&encoded)?;
-                let node_info = NodeInfo::decode(&buf[..])?;
-                Ok(Some(node_info))
-            }
-            Err(_) => Ok(None),
-        }
-    }
-}
+use crate::node::NodeManager;
 
 /// Simple registry embedded in receiver
 #[derive(Clone)]
@@ -144,7 +70,7 @@ pub struct ApiServerReceiver {
 impl ApiServerReceiver {
     pub fn new() -> Self {
         Self {
-            node_manager: NodeManager,
+            node_manager: NodeManager::new().unwrap(),
             registry: NodeRegistry,
         }
     }
@@ -235,12 +161,44 @@ impl ApiServerConnection for ApiServerReceiver {
         request: Request<NodeRegistrationRequest>,
     ) -> Result<Response<NodeRegistrationResponse>, Status> {
         println!("Received RegisterNode request");
-        let req = request.into_inner();
+        let mut req = request.into_inner();
 
         println!("Registering node: {} ({})", req.hostname, req.ip_address);
+        
+        // Simplify the node_id to make it easier to search for
+        req.node_id = format!("node-{}", req.ip_address.replace(".", "-"));
+        println!("Using simplified node_id: {}", req.node_id);
 
-        match self.node_manager.register_node(req).await {
+        // Let's update the node status to Ready immediately
+        match self.node_manager.register_node(req.clone()).await {
             Ok(cluster_token) => {
+                // Also directly add to etcd with a simple key
+                let node_info = common::apiserver::NodeInfo {
+                    node_id: req.node_id.clone(),
+                    hostname: req.hostname.clone(),
+                    ip_address: req.ip_address.clone(),
+                    role: req.role,
+                    status: NodeStatus::Ready.into(),
+                    resources: req.resources.clone(),
+                    last_heartbeat: chrono::Utc::now().timestamp(),
+                    created_at: chrono::Utc::now().timestamp(),
+                    metadata: req.metadata.clone(),
+                };
+
+                let mut buf = Vec::new();
+                prost::Message::encode(&node_info, &mut buf).unwrap();
+                let encoded = base64::encode(&buf);
+                let _ = common::etcd::put(&format!("nodes/{}", req.ip_address), &encoded).await;
+                
+                println!("Node info also stored at simple key: nodes/{}", req.ip_address);
+
+                // Immediately update the node status to Ready
+                if let Err(e) = self.node_manager.update_status(&req.node_id, NodeStatus::Ready).await {
+                    println!("Warning: Failed to update node status to Ready: {}", e);
+                } else {
+                    println!("Successfully updated node status to Ready");
+                }
+
                 let response = NodeRegistrationResponse {
                     success: true,
                     message: "Node registered successfully".to_string(),

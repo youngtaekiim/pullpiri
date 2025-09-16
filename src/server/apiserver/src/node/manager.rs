@@ -47,6 +47,10 @@ impl NodeManager {
         // Store in etcd as base64 encoded binary
         let encoded = base64::encode(&buf);
         etcd::put(&node_key, &encoded).await?;
+        
+        // Also add to simple key for quick lookup
+        let simple_key = format!("nodes/{}", request.ip_address);
+        etcd::put(&simple_key, &request.ip_address).await?;
 
         println!("Node {} registered successfully", request.node_id);
         Ok(format!("cluster-token-{}", request.node_id))

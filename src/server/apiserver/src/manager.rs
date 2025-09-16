@@ -7,6 +7,7 @@
 use common::apiserver::api_server_connection_server::ApiServerConnectionServer;
 use common::filtergateway::{Action, HandleScenarioRequest};
 use common::nodeagent::HandleYamlRequest;
+use prost::Message;
 use tonic::transport::Server;
 use crate::node::NodeManager;
 
@@ -82,29 +83,28 @@ pub async fn apply_artifact(body: &str) -> common::Result<()> {
         yaml: body.to_string(),
     };
 
-    // Get all registered nodes and send to them
-    let node_manager = NodeManager::new().unwrap();
-    match node_manager.get_nodes().await {
-        Ok(nodes) => {
-            let mut sent = false;
-            for node in nodes {
-                if node.status as i32 == common::nodeagent::NodeStatus::Ready as i32 {
-                    // Use the actual node IP address registered with the API server
-                    let node_ip = node.ip_address.clone();
-                    crate::grpc::sender::nodeagent::send_to_node(handle_yaml.clone(), node_ip).await?;
-                    sent = true;
-                }
-            }
-            // Fallback if no ready nodes were found
-            if !sent {
-                crate::grpc::sender::nodeagent::send(handle_yaml.clone()).await?;
-            }
-        },
-        Err(_) => {
-            // Fallback to the default behavior if node manager had an error
-            crate::grpc::sender::nodeagent::send(handle_yaml.clone()).await?;
-        }
+    // Use the node_lookup module to find a node IP
+    // It will try all available methods and fall back to the settings IP if needed
+    let node_ip = crate::node::node_lookup::get_node_ip().await;
+    println!("apply_artifact: Using node IP: {}", node_ip);
+    
+    // Log a warning if using 0.0.0.0 - this is likely a problem
+    if node_ip == "0.0.0.0" {
+        eprintln!("Warning: Using IP 0.0.0.0 which may not be accessible from NodeAgent.");
+        eprintln!("NodeAgent transport errors are likely. Consider using a specific IP in settings.yaml");
     }
+    
+    // Try to send to the node
+    match crate::grpc::sender::nodeagent::send_to_node(handle_yaml.clone(), node_ip).await {
+        Ok(_) => println!("Successfully sent yaml to NodeAgent"),
+        Err(e) => {
+            eprintln!("Error sending yaml to NodeAgent: {:?}", e);
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("NodeAgent connection error: {:?}", e)
+            )));
+        }
+    };
 
     if let Some(guests) = &common::setting::get_config().guest {
         if !guests.is_empty() {
