@@ -1,6 +1,6 @@
 #!/bin/bash
 # install_nodeagent.sh - NodeAgent installation script
-# Usage: ./install_nodeagent.sh --master <master_ip> --node <node_ip>
+# Usage: ./install_nodeagent.sh --master <master_ip> --node <node_ip> [--name <node_name>] [--role <node_role>] [--type <node_type>]
 
 # Exit on error
 set -e
@@ -14,7 +14,9 @@ fi
 # Initialize variables
 MASTER_IP=""
 NODE_IP=""
-NODE_TYPE="sub"  # Default node type
+NODE_NAME=""  # Node name (defaults to hostname if not provided)
+NODE_ROLE="nodeagent"  # Default node role (master, nodeagent, bluechi)
+NODE_TYPE="vehicle"  # Default node type (vehicle, cloud)
 
 # Process command line arguments
 while [[ $# -gt 0 ]]; do
@@ -27,9 +29,31 @@ while [[ $# -gt 0 ]]; do
             NODE_IP="$2"
             shift 2
             ;;
+        --name)
+            NODE_NAME="$2"
+            shift 2
+            ;;
+        --role)
+            NODE_ROLE="$2"
+            # Validate node role
+            if [[ ! "$NODE_ROLE" =~ ^(master|nodeagent|bluechi)$ ]]; then
+                echo "Error: Invalid node role '$NODE_ROLE'. Must be one of: master, nodeagent, bluechi"
+                exit 1
+            fi
+            shift 2
+            ;;
+        --type)
+            NODE_TYPE="$2"
+            # Validate node type
+            if [[ ! "$NODE_TYPE" =~ ^(vehicle|cloud|master|nodeagent|bluechi)$ ]]; then
+                echo "Error: Invalid node type '$NODE_TYPE'. Must be one of: vehicle, cloud, master, nodeagent, bluechi"
+                exit 1
+            fi
+            shift 2
+            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 --master <master_ip> --node <node_ip>"
+            echo "Usage: $0 --master <master_ip> --node <node_ip> [--name <node_name>] [--role <node_role>] [--type <node_type>]"
             exit 1
             ;;
     esac
@@ -38,8 +62,14 @@ done
 # Parameter validation
 if [ -z "$MASTER_IP" ] || [ -z "$NODE_IP" ]; then
     echo "Error: Both --master and --node options are required."
-    echo "Usage: $0 --master <master_ip> --node <node_ip>"
+    echo "Usage: $0 --master <master_ip> --node <node_ip> [--name <node_name>] [--role <node_role>] [--type <node_type>]"
     exit 1
+fi
+
+# Set default node name to hostname if not provided
+if [ -z "$NODE_NAME" ]; then
+    NODE_NAME=$(hostname)
+    echo "Node name not provided, using hostname: $NODE_NAME"
 fi
 
 # Initialize counters
@@ -268,6 +298,7 @@ chmod +x /usr/local/bin/node_ready_check.sh
 echo "Creating configuration file..."
 cat > ${CONFIG_DIR}/nodeagent.yaml << EOF
 nodeagent:
+  node_name: "${NODE_NAME}"
   node_type: "${NODE_TYPE}"
   master_ip: "${MASTER_IP}"
   node_ip: "${NODE_IP}"
@@ -281,6 +312,22 @@ nodeagent:
     platform: "$(uname -s)"
     architecture: "$(uname -m)"
 yaml_storage: "${YAML_STORAGE_DIR}"
+EOF
+
+# Also create settings.yaml with the same values
+echo "Creating settings.yaml file..."
+cat > ${CONFIG_DIR}/settings.yaml << EOF
+yaml_storage: ${YAML_STORAGE_DIR}
+piccolo_cloud: http://${MASTER_IP}:47099
+host:
+  name: ${NODE_NAME}
+  ip: ${NODE_IP}
+  type: ${NODE_TYPE}
+  role: ${NODE_ROLE}
+master:
+  ip: ${MASTER_IP}
+dds:
+  domain_id: 100
 EOF
 
 # Check and add firewall rules

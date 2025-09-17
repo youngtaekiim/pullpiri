@@ -61,14 +61,34 @@ pub async fn send(action: HandleYamlRequest) -> Result<Response<HandleYamlRespon
     send_to_node(action, node_ip).await
 }
 
-pub async fn send_guest(action: HandleYamlRequest) -> Result<Response<HandleYamlResponse>, Status> {
-    // Connect to guest NodeAgent service
-    let guest_ip = match common::setting::get_config().guest.as_ref().and_then(|guests| guests.first()) {
-        Some(guest) => guest.ip.clone(),
-        None => {
-            return Err(Status::unavailable("No guest configuration found"));
-        }
-    };
+// etcd에서 게스트 노드 정보를 가져오도록 수정
+pub async fn send_guest(action: HandleYamlRequest) -> Result<Vec<Response<HandleYamlResponse>>, Status> {
+    // etcd에서 게스트 노드 정보들을 가져오기
+    let guest_nodes = crate::node::node_lookup::find_guest_nodes().await;
     
-    send_to_node(action, guest_ip).await
+    if guest_nodes.is_empty() {
+        return Err(Status::not_found("No guest nodes found in etcd"));
+    }
+    
+    let mut responses = Vec::new();
+    
+    for guest_node in guest_nodes {
+        println!("Sending to guest node: {} ({})", guest_node.node_id, guest_node.ip_address);
+        match send_to_node(action.clone(), guest_node.ip_address.clone()).await {
+            Ok(response) => {
+                println!("Successfully sent to guest node: {}", guest_node.node_id);
+                responses.push(response);
+            },
+            Err(e) => {
+                println!("Failed to send to guest node {}: {:?}", guest_node.node_id, e);
+                // 오류는 기록하지만 계속 다른 노드에 전송 시도
+            }
+        }
+    }
+    
+    if responses.is_empty() {
+        Err(Status::unavailable("Failed to send to any guest nodes"))
+    } else {
+        Ok(responses)
+    }
 }

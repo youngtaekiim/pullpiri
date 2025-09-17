@@ -17,7 +17,7 @@ spec:
     - type: plain
   models:
     - name: helloworld
-      node: HPC
+      node: auto-Legion-C730-19ICO
       resources:
         volume:
         network:

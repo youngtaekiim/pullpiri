@@ -68,48 +68,6 @@ pub async fn check_policy(scenario_name: String) -> Result<()> {
     }
 }
 
-/// Send a workload handling request to NodeAgent
-///
-/// Makes a gRPC request to NodeAgent to perform an action on a workload
-/// (create, delete, start, stop, etc.)
-///
-/// # Arguments
-///
-/// * `workload_name` - The name of the workload to handle
-/// * `action` - The action to perform (numeric code)
-/// * `description` - Additional information about the action
-///
-/// # Returns
-///
-/// * `Ok(())` if the request was successful
-/// * `Err(...)` if the request failed
-///
-/// # Errors
-///
-/// Returns an error if:
-/// - The connection to NodeAgent is not established
-/// - The gRPC request fails
-/// - The workload handling operation fails
-pub async fn handle_yaml(workload_name: String) -> Result<bool> {
-    if workload_name.trim().is_empty() {
-        return Err("Invalid input: workload name and description cannot be empty".into());
-    }
-
-    let addr = common::nodeagent::connect_server();
-    let mut client = NodeAgentConnectionClient::connect(addr)
-        .await //.unwrap();
-        .map_err(|e| format!("Failed to connect to NodeAgent: {}", e))?;
-
-    let request = Request::new(HandleYamlRequest {
-        yaml: workload_name,
-    });
-    let response: tonic::Response<common::nodeagent::HandleYamlResponse> =
-        client.handle_yaml(request).await?;
-    let response_inner = response.into_inner();
-
-    println!("Error: {}", response_inner.desc);
-    Ok(response_inner.status)
-}
 
 // ===========================
 // UNIT TESTS

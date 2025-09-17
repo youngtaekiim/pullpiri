@@ -33,7 +33,12 @@ pub struct SystemConfig {
 
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct NodeAgentConfig {
+    #[serde(default = "default_node_name")]
+    pub node_name: String,
+    #[serde(default = "default_node_type")]
     pub node_type: String,
+    #[serde(default = "default_node_role")]
+    pub node_role: String,
     pub master_ip: String,
     #[serde(default)]
     pub node_ip: String,
@@ -43,6 +48,21 @@ pub struct NodeAgentConfig {
     pub system: SystemConfig,
     #[serde(default = "default_yaml_storage")]
     pub yaml_storage: String,
+}
+
+fn default_node_name() -> String {
+    match hostname::get() {
+        Ok(hostname) => hostname.to_string_lossy().to_string(),
+        Err(_) => "unknown".to_string(),
+    }
+}
+
+fn default_node_type() -> String {
+    "cloud".to_string()
+}
+
+fn default_node_role() -> String {
+    "nodeagent".to_string()
 }
 
 fn default_yaml_storage() -> String {
@@ -87,6 +107,10 @@ impl Config {
 
     pub fn get_hostname(&self) -> String {
         self.nodeagent.system.hostname.clone()
+    }
+
+    pub fn get_node_name(&self) -> String {
+        self.nodeagent.node_name.clone()
     }
 
     pub fn get_yaml_storage(&self) -> String {
