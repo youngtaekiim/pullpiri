@@ -6,7 +6,7 @@
 //! Store and retrieve monitoring data in etcd
 
 use crate::data_structures::{BoardInfo, SocInfo};
-use common::monitoringserver::{NodeInfo, ContainerInfo}; // Use protobuf types
+use common::monitoringserver::{ContainerInfo, NodeInfo}; // Use protobuf types
 use serde::{de::DeserializeOwned, Serialize};
 
 /// Generic function to store info in etcd
@@ -100,7 +100,7 @@ pub async fn store_container_info(container_info: &ContainerInfo) -> common::Res
         "annotation": container_info.annotation,
         "stats": container_info.stats,
     });
-    
+
     store_info("containers", &container_info.id, &json_value).await
 }
 
@@ -122,38 +122,43 @@ pub async fn get_board_info(board_id: &str) -> common::Result<BoardInfo> {
 /// Get ContainerInfo from etcd - Using same pattern as others
 pub async fn get_container_info(container_id: &str) -> common::Result<ContainerInfo> {
     let json_value: serde_json::Value = get_info("containers", container_id).await?;
-    
+
     // Convert JSON back to protobuf ContainerInfo
     let container_info = ContainerInfo {
         id: json_value["id"].as_str().unwrap_or_default().to_string(),
-        names: json_value["names"].as_array()
+        names: json_value["names"]
+            .as_array()
             .unwrap_or(&vec![])
             .iter()
             .map(|v| v.as_str().unwrap_or_default().to_string())
             .collect(),
         image: json_value["image"].as_str().unwrap_or_default().to_string(),
-        state: json_value["state"].as_object()
+        state: json_value["state"]
+            .as_object()
             .unwrap_or(&serde_json::Map::new())
             .iter()
             .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
             .collect(),
-        config: json_value["config"].as_object()
+        config: json_value["config"]
+            .as_object()
             .unwrap_or(&serde_json::Map::new())
             .iter()
             .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
             .collect(),
-        annotation: json_value["annotation"].as_object()
+        annotation: json_value["annotation"]
+            .as_object()
             .unwrap_or(&serde_json::Map::new())
             .iter()
             .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
             .collect(),
-        stats: json_value["stats"].as_object()
+        stats: json_value["stats"]
+            .as_object()
             .unwrap_or(&serde_json::Map::new())
             .iter()
             .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
             .collect(),
     };
-    
+
     Ok(container_info)
 }
 
@@ -183,28 +188,33 @@ pub async fn get_all_containers() -> common::Result<Vec<ContainerInfo>> {
             Ok(json_value) => {
                 let container_info = ContainerInfo {
                     id: json_value["id"].as_str().unwrap_or_default().to_string(),
-                    names: json_value["names"].as_array()
+                    names: json_value["names"]
+                        .as_array()
                         .unwrap_or(&vec![])
                         .iter()
                         .map(|v| v.as_str().unwrap_or_default().to_string())
                         .collect(),
                     image: json_value["image"].as_str().unwrap_or_default().to_string(),
-                    state: json_value["state"].as_object()
+                    state: json_value["state"]
+                        .as_object()
                         .unwrap_or(&serde_json::Map::new())
                         .iter()
                         .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
                         .collect(),
-                    config: json_value["config"].as_object()
+                    config: json_value["config"]
+                        .as_object()
                         .unwrap_or(&serde_json::Map::new())
                         .iter()
                         .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
                         .collect(),
-                    annotation: json_value["annotation"].as_object()
+                    annotation: json_value["annotation"]
+                        .as_object()
                         .unwrap_or(&serde_json::Map::new())
                         .iter()
                         .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
                         .collect(),
-                    stats: json_value["stats"].as_object()
+                    stats: json_value["stats"]
+                        .as_object()
                         .unwrap_or(&serde_json::Map::new())
                         .iter()
                         .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
@@ -212,10 +222,7 @@ pub async fn get_all_containers() -> common::Result<Vec<ContainerInfo>> {
                 };
                 containers.push(container_info);
             }
-            Err(e) => eprintln!(
-                "[ETCD] Failed to deserialize container {}: {}",
-                kv.key, e
-            ),
+            Err(e) => eprintln!("[ETCD] Failed to deserialize container {}: {}", kv.key, e),
         }
     }
 

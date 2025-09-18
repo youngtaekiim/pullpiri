@@ -4,7 +4,7 @@
 //! a gRPC sender for communicating with the nodeagent or other services.
 //! It is designed to be thread-safe and run in an async context.
 use crate::data_structures::{BoardInfo, DataStore, SocInfo};
-use common::monitoringserver::{ContainerList, ContainerInfo, NodeInfo}; // Use protobuf types
+use common::monitoringserver::{ContainerInfo, ContainerList, NodeInfo}; // Use protobuf types
 use common::Result;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -53,22 +53,25 @@ impl MonitoringServerManager {
             container_list.containers.len()
         );
 
-        let current_container_ids: Vec<String> = container_list.containers
+        let current_container_ids: Vec<String> = container_list
+            .containers
             .iter()
             .map(|c| c.id.clone())
             .collect();
 
         let mut data_store = self.data_store.lock().await;
-        
+
         // Clean up containers that are no longer present on this node
-        data_store.cleanup_node_containers(&container_list.node_name, &current_container_ids).await;
+        data_store
+            .cleanup_node_containers(&container_list.node_name, &current_container_ids)
+            .await;
 
         // Store current containers with node association
         for container in &container_list.containers {
-            match data_store.store_container_info_with_node(
-                container.clone(), 
-                container_list.node_name.clone()
-            ).await {
+            match data_store
+                .store_container_info_with_node(container.clone(), container_list.node_name.clone())
+                .await
+            {
                 Ok(_) => {
                     println!(
                         "[MonitoringServer] SUCCESS: Stored container {} on node {}",
@@ -87,21 +90,40 @@ impl MonitoringServerManager {
 
     /// Print container summary for a node (line-wise, formatted)
     async fn print_container_summary(&self, container_list: &ContainerList) {
-        println!("\n┌───────────────────────────── CONTAINER SUMMARY ─────────────────────────────┐");
+        println!(
+            "\n┌───────────────────────────── CONTAINER SUMMARY ─────────────────────────────┐"
+        );
         println!("│ Node: {:<69} │", container_list.node_name);
-        println!("│ Total Containers: {:<59} │", container_list.containers.len());
+        println!(
+            "│ Total Containers: {:<59} │",
+            container_list.containers.len()
+        );
         println!("├─────────────────────────────────────────────────────────────────────────────┤");
         for (i, container) in container_list.containers.iter().enumerate() {
-            let name = container.names.first().cloned().unwrap_or_else(|| "unnamed".to_string());
-            let status = container.state.get("Status").cloned().unwrap_or_else(|| "unknown".to_string());
+            let name = container
+                .names
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "unnamed".to_string());
+            let status = container
+                .state
+                .get("Status")
+                .cloned()
+                .unwrap_or_else(|| "unknown".to_string());
             let status_icon = match status.as_str() {
                 "running" => "🟢",
                 "exited" => "🔴",
                 "paused" => "🟡",
                 _ => "⚪",
             };
-            println!("│ {:>2}. {} Name: {:<20} │ Image: {:<20} │ Status: {:<10} │",
-                i + 1, status_icon, name, container.image, status);
+            println!(
+                "│ {:>2}. {} Name: {:<20} │ Image: {:<20} │ Status: {:<10} │",
+                i + 1,
+                status_icon,
+                name,
+                container.image,
+                status
+            );
         }
         println!("└─────────────────────────────────────────────────────────────────────────────┘");
     }
@@ -110,20 +132,39 @@ impl MonitoringServerManager {
     pub async fn print_container_overview(&self) {
         let data_store = self.data_store.lock().await;
         let containers = data_store.get_all_containers();
-        let running_count = containers.values()
+        let running_count = containers
+            .values()
             .filter(|c| c.state.get("Running").map(|v| v == "true").unwrap_or(false))
             .count();
         let stopped_count = containers.len() - running_count;
 
-        println!("\n┌───────────────────────── SYSTEM CONTAINER OVERVIEW ─────────────────────────┐");
+        println!(
+            "\n┌───────────────────────── SYSTEM CONTAINER OVERVIEW ─────────────────────────┐"
+        );
         println!("│ Total Containers: {:<59} │", containers.len());
-        println!("│ Running: {:<8} │ Stopped: {:<8} │", running_count, stopped_count);
+        println!(
+            "│ Running: {:<8} │ Stopped: {:<8} │",
+            running_count, stopped_count
+        );
         println!("├─────────────────────────────────────────────────────────────────────────────┤");
         for (i, container) in containers.values().enumerate() {
-            let name = container.names.first().cloned().unwrap_or_else(|| "unnamed".to_string());
-            let status = container.state.get("Status").cloned().unwrap_or_else(|| "unknown".to_string());
-            println!("│ {:>2}. Name: {:<20} │ Image: {:<20} │ Status: {:<10} │",
-                i + 1, name, container.image, status);
+            let name = container
+                .names
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "unnamed".to_string());
+            let status = container
+                .state
+                .get("Status")
+                .cloned()
+                .unwrap_or_else(|| "unknown".to_string());
+            println!(
+                "│ {:>2}. Name: {:<20} │ Image: {:<20} │ Status: {:<10} │",
+                i + 1,
+                name,
+                container.image,
+                status
+            );
         }
         println!("└─────────────────────────────────────────────────────────────────────────────┘");
     }
@@ -131,7 +172,9 @@ impl MonitoringServerManager {
     /// Print all nodes (line-wise, formatted)
     pub async fn print_all_nodes(&self) {
         let data_store = self.data_store.lock().await;
-        println!("\n┌────────────────────────────────── ALL NODES ───────────────────────────────┐");
+        println!(
+            "\n┌────────────────────────────────── ALL NODES ───────────────────────────────┐"
+        );
         for (i, (_, node)) in data_store.get_all_nodes().iter().enumerate() {
             println!("│ {:>2}. Node: {:<20} │ IP: {:<15} │ CPU: {:>5.2}% │ Mem: {:>5.2}% │ Containers: {:<3} │",
                 i + 1, node.node_name, node.ip, node.cpu_usage, node.mem_usage,
@@ -143,12 +186,28 @@ impl MonitoringServerManager {
     /// Print all containers (line-wise, formatted)
     pub async fn print_all_containers(&self) {
         let data_store = self.data_store.lock().await;
-        println!("\n┌──────────────────────────────── ALL CONTAINERS ─────────────────────────────┐");
+        println!(
+            "\n┌──────────────────────────────── ALL CONTAINERS ─────────────────────────────┐"
+        );
         for (i, (_, container)) in data_store.get_all_containers().iter().enumerate() {
-            let name = container.names.first().cloned().unwrap_or_else(|| "unnamed".to_string());
-            let status = container.state.get("Status").cloned().unwrap_or_else(|| "unknown".to_string());
-            println!("│ {:>2}. Name: {:<20} │ ID: {:<12} │ Image: {:<20} │ Status: {:<10} │",
-                i + 1, name, &container.id[..std::cmp::min(12, container.id.len())], container.image, status);
+            let name = container
+                .names
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "unnamed".to_string());
+            let status = container
+                .state
+                .get("Status")
+                .cloned()
+                .unwrap_or_else(|| "unknown".to_string());
+            println!(
+                "│ {:>2}. Name: {:<20} │ ID: {:<12} │ Image: {:<20} │ Status: {:<10} │",
+                i + 1,
+                name,
+                &container.id[..std::cmp::min(12, container.id.len())],
+                container.image,
+                status
+            );
         }
         println!("└─────────────────────────────────────────────────────────────────────────────┘");
     }
@@ -156,7 +215,9 @@ impl MonitoringServerManager {
     /// Print all boards (line-wise, formatted)
     pub async fn print_all_boards(&self) {
         let data_store = self.data_store.lock().await;
-        println!("\n┌────────────────────────────────── ALL BOARDS ───────────────────────────────┐");
+        println!(
+            "\n┌────────────────────────────────── ALL BOARDS ───────────────────────────────┐"
+        );
         for (i, (_, board)) in data_store.get_all_boards().iter().enumerate() {
             println!("│ {:>2}. Board: {:<20} │ Nodes: {:<3} │ SoCs: {:<3} │ CPU: {:>5.2}% │ Mem: {:>5.2}% │",
                 i + 1, board.board_id, board.nodes.len(), board.socs.len(), board.total_cpu_usage, board.total_mem_usage);
@@ -167,10 +228,18 @@ impl MonitoringServerManager {
     /// Print all SoCs (line-wise, formatted)
     pub async fn print_all_socs(&self) {
         let data_store = self.data_store.lock().await;
-        println!("\n┌────────────────────────────────── ALL SOCs ────────────────────────────────┐");
+        println!(
+            "\n┌────────────────────────────────── ALL SOCs ────────────────────────────────┐"
+        );
         for (i, (_, soc)) in data_store.get_all_socs().iter().enumerate() {
-            println!("│ {:>2}. SoC: {:<20} │ Nodes: {:<3} │ CPU: {:>5.2}% │ Mem: {:>5.2}% │",
-                i + 1, soc.soc_id, soc.nodes.len(), soc.total_cpu_usage, soc.total_mem_usage);
+            println!(
+                "│ {:>2}. SoC: {:<20} │ Nodes: {:<3} │ CPU: {:>5.2}% │ Mem: {:>5.2}% │",
+                i + 1,
+                soc.soc_id,
+                soc.nodes.len(),
+                soc.total_cpu_usage,
+                soc.total_mem_usage
+            );
         }
         println!("└─────────────────────────────────────────────────────────────────────────────┘");
     }
@@ -599,9 +668,17 @@ impl MonitoringServerManager {
         // Print all containers
         println!("\n ALL CONTAINERS:");
         for (i, (_, container)) in data_store.get_all_containers().iter().enumerate() {
-            let name = container.names.first().unwrap_or(&"unnamed".to_string()).clone();
-            let status = container.state.get("Status").unwrap_or(&"unknown".to_string()).clone();
-            
+            let name = container
+                .names
+                .first()
+                .unwrap_or(&"unnamed".to_string())
+                .clone();
+            let status = container
+                .state
+                .get("Status")
+                .unwrap_or(&"unknown".to_string())
+                .clone();
+
             println!(
                 "{}. {} (ID: {}) - Image: {}, Status: {}",
                 i + 1,
