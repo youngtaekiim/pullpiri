@@ -173,7 +173,7 @@ install_required_packages() {
 # MASTER_IP and NODE_IP are set from command line arguments
 GRPC_PORT="47004"
 #DOWNLOAD_URL="https://github.com/piccolo-framework/piccolo/releases/download/latest"
-DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/main/examples/binarys"
+DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/clustering/examples/binarys"
 CHECKSUM_URL="${DOWNLOAD_URL}"  # Define CHECKSUM_URL
 INSTALL_DIR="/opt/piccolo"
 CONFIG_DIR="/etc/piccolo"
@@ -300,6 +300,7 @@ cat > ${CONFIG_DIR}/nodeagent.yaml << EOF
 nodeagent:
   node_name: "${NODE_NAME}"
   node_type: "${NODE_TYPE}"
+  node_role: "${NODE_ROLE}"
   master_ip: "${MASTER_IP}"
   node_ip: "${NODE_IP}"
   grpc_port: ${GRPC_PORT}
@@ -312,22 +313,6 @@ nodeagent:
     platform: "$(uname -s)"
     architecture: "$(uname -m)"
 yaml_storage: "${YAML_STORAGE_DIR}"
-EOF
-
-# Also create settings.yaml with the same values
-echo "Creating settings.yaml file..."
-cat > ${CONFIG_DIR}/settings.yaml << EOF
-yaml_storage: ${YAML_STORAGE_DIR}
-piccolo_cloud: http://${MASTER_IP}:47099
-host:
-  name: ${NODE_NAME}
-  ip: ${NODE_IP}
-  type: ${NODE_TYPE}
-  role: ${NODE_ROLE}
-master:
-  ip: ${MASTER_IP}
-dds:
-  domain_id: 100
 EOF
 
 # Check and add firewall rules
