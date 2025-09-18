@@ -103,14 +103,8 @@ impl NodeManager {
         &self,
         node_id: &str,
     ) -> Result<Option<NodeInfo>, Box<dyn std::error::Error + Send + Sync>> {
-        // node_id가 hostname-ip 형식인 경우 hostname 부분만 추출
-        let node_name = if node_id.contains('-') {
-            node_id.split('-').next().unwrap_or(node_id)
-        } else {
-            node_id
-        };
-        
-        let node_key = format!("cluster/nodes/{}", node_name);
+        // node_id를 직접 사용 (hostname으로 간주)
+        let node_key = format!("cluster/nodes/{}", node_id);
 
         match etcd::get(&node_key).await {
             Ok(encoded) => {
@@ -154,7 +148,8 @@ impl NodeManager {
             node.status = status.into();
             node.last_heartbeat = chrono::Utc::now().timestamp();
 
-            let node_key = format!("cluster/nodes/{}", node_id);
+            // node.hostname을 사용하여 키 생성 (node_id 대신)
+            let node_key = format!("cluster/nodes/{}", node.hostname);
             let mut buf = Vec::new();
             prost::Message::encode(&node, &mut buf)?;
             let encoded = base64::engine::general_purpose::STANDARD.encode(&buf);
@@ -171,11 +166,17 @@ impl NodeManager {
         &self,
         node_id: &str,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let node_key = format!("cluster/nodes/{}", node_id);
-        etcd::delete(&node_key).await?;
-
-        println!("Removed node {} from cluster", node_id);
-        Ok(())
+        // get_node를 사용하여 노드 정보를 얻고 hostname을 추출
+        if let Some(node) = self.get_node(node_id).await? {
+            let node_key = format!("cluster/nodes/{}", node.hostname);
+            etcd::delete(&node_key).await?;
+            
+            println!("Removed node {} from cluster", node_id);
+            return Ok(());
+        }
+        
+        // 노드를 찾지 못한 경우 오류 반환
+        Err(format!("Node not found: {}", node_id).into())
     }
 }
 

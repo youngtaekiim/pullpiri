@@ -3,7 +3,7 @@
 yaml_storage: /etc/piccolo/yaml
 piccolo_cloud: http://0.0.0.0:41234
 host:
-  name: auto-Legion-C730-19ICO
+  name: HPC
   ip: 0.0.0.0
   type: vehicle
   role: master

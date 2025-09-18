@@ -1,6 +1,6 @@
 #!/bin/bash
 # install_nodeagent.sh - NodeAgent installation script
-# Usage: ./install_nodeagent.sh --master <master_ip> --node <node_ip> [--name <node_name>] [--role <node_role>] [--type <node_type>]
+# Usage: ./install_nodeagent.sh --master <master_ip> --node <node_ip> [--role <node_role>] [--type <node_type>]
 
 # Exit on error
 set -e
@@ -14,7 +14,7 @@ fi
 # Initialize variables
 MASTER_IP=""
 NODE_IP=""
-NODE_NAME=""  # Node name (defaults to hostname if not provided)
+NODE_NAME=$(hostname)  # Always use system hostname
 NODE_ROLE="nodeagent"  # Default node role (master, nodeagent, bluechi)
 NODE_TYPE="vehicle"  # Default node type (vehicle, cloud)
 
@@ -27,10 +27,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --node)
             NODE_IP="$2"
-            shift 2
-            ;;
-        --name)
-            NODE_NAME="$2"
             shift 2
             ;;
         --role)
@@ -53,7 +49,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 --master <master_ip> --node <node_ip> [--name <node_name>] [--role <node_role>] [--type <node_type>]"
+            echo "Usage: $0 --master <master_ip> --node <node_ip> [--role <node_role>] [--type <node_type>]"
             exit 1
             ;;
     esac
@@ -62,14 +58,8 @@ done
 # Parameter validation
 if [ -z "$MASTER_IP" ] || [ -z "$NODE_IP" ]; then
     echo "Error: Both --master and --node options are required."
-    echo "Usage: $0 --master <master_ip> --node <node_ip> [--name <node_name>] [--role <node_role>] [--type <node_type>]"
+    echo "Usage: $0 --master <master_ip> --node <node_ip> [--role <node_role>] [--type <node_type>]"
     exit 1
-fi
-
-# Set default node name to hostname if not provided
-if [ -z "$NODE_NAME" ]; then
-    NODE_NAME=$(hostname)
-    echo "Node name not provided, using hostname: $NODE_NAME"
 fi
 
 # Initialize counters
@@ -173,7 +163,7 @@ install_required_packages() {
 # MASTER_IP and NODE_IP are set from command line arguments
 GRPC_PORT="47004"
 #DOWNLOAD_URL="https://github.com/piccolo-framework/piccolo/releases/download/latest"
-DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/clustering/examples/binarys"
+DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/main/examples/binarys"
 CHECKSUM_URL="${DOWNLOAD_URL}"  # Define CHECKSUM_URL
 INSTALL_DIR="/opt/piccolo"
 CONFIG_DIR="/etc/piccolo"

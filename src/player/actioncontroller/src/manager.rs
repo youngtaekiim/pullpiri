@@ -73,7 +73,7 @@ impl ActionControllerManager {
         };
         
         // 2. 이제 cluster/nodes 접두사에서 상세 정보 조회 시도
-        let cluster_node_key = format!("cluster/nodes/{}-{}", node_name, node_ip);
+        let cluster_node_key = format!("cluster/nodes/{}", node_name);
         let encoded = match common::etcd::get(&cluster_node_key).await {
             Ok(value) => value,
             Err(e) => {

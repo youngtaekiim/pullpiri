@@ -32,7 +32,8 @@ async fn launch_manager(rx_grpc: Receiver<HandleYamlRequest>, hostname: String, 
             // Use IP address from config file
             let host_ip = config.get_host_ip();
             let node_name = config.get_node_name();
-            let node_id = format!("{}-{}", node_name, host_ip);
+            // node_id를 node_name과 동일하게 설정 (IP 주소 제거)
+            let node_id = node_name.clone();
 
             let registration_request = NodeRegistrationRequest {
                 node_id: node_id.clone(),
@@ -100,7 +101,8 @@ async fn initialize(tx_grpc: Sender<HandleYamlRequest>, hostname: String, config
     // Use IP address from config file
     let host_ip = config.get_host_ip();
     let node_name = config.get_node_name();
-    let node_id = format!("{}-{}", node_name, host_ip);
+    // node_id를 node_name과 동일하게 설정 (IP 주소 제거)
+    let node_id = node_name.clone();
 
     let server = grpc::receiver::NodeAgentReceiver::new(
         tx_grpc.clone(),

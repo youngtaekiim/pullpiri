@@ -98,7 +98,7 @@ pub async fn find_node_from_manager() -> Option<String> {
 /// Find a node by hostname
 pub async fn find_node_by_hostname(hostname: &str) -> Option<common::apiserver::NodeInfo> {
     println!("Looking for node with hostname: {}", hostname);
-    match common::etcd::get_all_with_prefix("nodes/").await {
+    match common::etcd::get_all_with_prefix("cluster/nodes/").await {
         Ok(kvs) => {
             for kv in kvs {
                 if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(&kv.value) {
