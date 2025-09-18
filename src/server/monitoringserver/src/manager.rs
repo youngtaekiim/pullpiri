@@ -4,8 +4,9 @@
 //! a gRPC sender for communicating with the nodeagent or other services.
 //! It is designed to be thread-safe and run in an async context.
 use crate::data_structures::{BoardInfo, DataStore, SocInfo};
-use common::monitoringserver::{ContainerList, NodeInfo};
+use common::monitoringserver::{ContainerList, ContainerInfo, NodeInfo}; // Use protobuf types
 use common::Result;
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
@@ -52,15 +53,126 @@ impl MonitoringServerManager {
             container_list.containers.len()
         );
 
-        // Print container details
+        let current_container_ids: Vec<String> = container_list.containers
+            .iter()
+            .map(|c| c.id.clone())
+            .collect();
+
+        let mut data_store = self.data_store.lock().await;
+        
+        // Clean up containers that are no longer present on this node
+        data_store.cleanup_node_containers(&container_list.node_name, &current_container_ids).await;
+
+        // Store current containers with node association
         for container in &container_list.containers {
-            println!(
-                "  Container: ID={}, Names={:?}, Image={}",
-                container.id, container.names, container.image
-            );
+            match data_store.store_container_info_with_node(
+                container.clone(), 
+                container_list.node_name.clone()
+            ).await {
+                Ok(_) => {
+                    println!(
+                        "[MonitoringServer] SUCCESS: Stored container {} on node {}",
+                        container.id, container_list.node_name
+                    );
+                }
+                Err(e) => eprintln!(
+                    "[MonitoringServer] ERROR: Failed to store container {}: {}",
+                    container.id, e
+                ),
+            }
         }
 
-        // TODO: Add your container processing logic here
+        self.print_container_summary(&container_list).await;
+    }
+
+    /// Print container summary for a node (line-wise, formatted)
+    async fn print_container_summary(&self, container_list: &ContainerList) {
+        println!("\n┌───────────────────────────── CONTAINER SUMMARY ─────────────────────────────┐");
+        println!("│ Node: {:<69} │", container_list.node_name);
+        println!("│ Total Containers: {:<59} │", container_list.containers.len());
+        println!("├─────────────────────────────────────────────────────────────────────────────┤");
+        for (i, container) in container_list.containers.iter().enumerate() {
+            let name = container.names.first().cloned().unwrap_or_else(|| "unnamed".to_string());
+            let status = container.state.get("Status").cloned().unwrap_or_else(|| "unknown".to_string());
+            let status_icon = match status.as_str() {
+                "running" => "🟢",
+                "exited" => "🔴",
+                "paused" => "🟡",
+                _ => "⚪",
+            };
+            println!("│ {:>2}. {} Name: {:<20} │ Image: {:<20} │ Status: {:<10} │",
+                i + 1, status_icon, name, container.image, status);
+        }
+        println!("└─────────────────────────────────────────────────────────────────────────────┘");
+    }
+
+    /// Print comprehensive container overview (line-wise, formatted)
+    pub async fn print_container_overview(&self) {
+        let data_store = self.data_store.lock().await;
+        let containers = data_store.get_all_containers();
+        let running_count = containers.values()
+            .filter(|c| c.state.get("Running").map(|v| v == "true").unwrap_or(false))
+            .count();
+        let stopped_count = containers.len() - running_count;
+
+        println!("\n┌───────────────────────── SYSTEM CONTAINER OVERVIEW ─────────────────────────┐");
+        println!("│ Total Containers: {:<59} │", containers.len());
+        println!("│ Running: {:<8} │ Stopped: {:<8} │", running_count, stopped_count);
+        println!("├─────────────────────────────────────────────────────────────────────────────┤");
+        for (i, container) in containers.values().enumerate() {
+            let name = container.names.first().cloned().unwrap_or_else(|| "unnamed".to_string());
+            let status = container.state.get("Status").cloned().unwrap_or_else(|| "unknown".to_string());
+            println!("│ {:>2}. Name: {:<20} │ Image: {:<20} │ Status: {:<10} │",
+                i + 1, name, container.image, status);
+        }
+        println!("└─────────────────────────────────────────────────────────────────────────────┘");
+    }
+
+    /// Print all nodes (line-wise, formatted)
+    pub async fn print_all_nodes(&self) {
+        let data_store = self.data_store.lock().await;
+        println!("\n┌────────────────────────────────── ALL NODES ───────────────────────────────┐");
+        for (i, (_, node)) in data_store.get_all_nodes().iter().enumerate() {
+            println!("│ {:>2}. Node: {:<20} │ IP: {:<15} │ CPU: {:>5.2}% │ Mem: {:>5.2}% │ Containers: {:<3} │",
+                i + 1, node.node_name, node.ip, node.cpu_usage, node.mem_usage,
+                data_store.get_containers_by_node(&node.node_name).len());
+        }
+        println!("└─────────────────────────────────────────────────────────────────────────────┘");
+    }
+
+    /// Print all containers (line-wise, formatted)
+    pub async fn print_all_containers(&self) {
+        let data_store = self.data_store.lock().await;
+        println!("\n┌──────────────────────────────── ALL CONTAINERS ─────────────────────────────┐");
+        for (i, (_, container)) in data_store.get_all_containers().iter().enumerate() {
+            let name = container.names.first().cloned().unwrap_or_else(|| "unnamed".to_string());
+            let status = container.state.get("Status").cloned().unwrap_or_else(|| "unknown".to_string());
+            println!("│ {:>2}. Name: {:<20} │ ID: {:<12} │ Image: {:<20} │ Status: {:<10} │",
+                i + 1, name, &container.id[..std::cmp::min(12, container.id.len())], container.image, status);
+        }
+        println!("└─────────────────────────────────────────────────────────────────────────────┘");
+    }
+
+    /// Print all boards (line-wise, formatted)
+    pub async fn print_all_boards(&self) {
+        let data_store = self.data_store.lock().await;
+        println!("\n┌────────────────────────────────── ALL BOARDS ───────────────────────────────┐");
+        for (i, (_, board)) in data_store.get_all_boards().iter().enumerate() {
+            println!("│ {:>2}. Board: {:<20} │ Nodes: {:<3} │ SoCs: {:<3} │ CPU: {:>5.2}% │ Mem: {:>5.2}% │",
+                i + 1, board.board_id, board.nodes.len(), board.socs.len(), board.total_cpu_usage, board.total_mem_usage);
+        }
+        println!("└─────────────────────────────────────────────────────────────────────────────┘");
+    }
+
+    /// Print all SoCs (line-wise, formatted)
+    pub async fn print_all_socs(&self) {
+        let data_store = self.data_store.lock().await;
+        println!("\n┌────────────────────────────────── ALL SOCs ────────────────────────────────┐");
+        for (i, (_, soc)) in data_store.get_all_socs().iter().enumerate() {
+            println!("│ {:>2}. SoC: {:<20} │ Nodes: {:<3} │ CPU: {:>5.2}% │ Mem: {:>5.2}% │",
+                i + 1, soc.soc_id, soc.nodes.len(), soc.total_cpu_usage, soc.total_mem_usage);
+        }
+        println!("└─────────────────────────────────────────────────────────────────────────────┘");
     }
 
     /// Processes NodeInfo messages from nodeagent.
@@ -74,7 +186,6 @@ impl MonitoringServerManager {
         {
             let mut data_store = self.data_store.lock().await;
             match data_store.store_node_info(node_info.clone()).await {
-                // Add .await here
                 Ok(_) => {
                     println!(
                         "[MonitoringServer] SUCCESS: Successfully stored NodeInfo for {}",
@@ -436,15 +547,6 @@ impl MonitoringServerManager {
         )
     }
 
-    /// Gets a snapshot of all stored data
-    pub async fn get_data_snapshot(&self) -> (Vec<NodeInfo>, Vec<SocInfo>, Vec<BoardInfo>) {
-        let data_store = self.data_store.lock().await;
-        let nodes: Vec<NodeInfo> = data_store.get_all_nodes().values().cloned().collect();
-        let socs: Vec<SocInfo> = data_store.get_all_socs().values().cloned().collect();
-        let boards: Vec<BoardInfo> = data_store.get_all_boards().values().cloned().collect();
-        (nodes, socs, boards)
-    }
-
     /// Print all current data in a comprehensive format
     pub async fn print_all_data(&self) {
         let data_store = self.data_store.lock().await;
@@ -455,13 +557,15 @@ impl MonitoringServerManager {
         // Print all nodes
         println!("\n ALL NODES:");
         for (i, (_, node)) in data_store.get_all_nodes().iter().enumerate() {
+            let node_containers = data_store.get_containers_by_node(&node.node_name);
             println!(
-                "{}. {} (IP: {}) - CPU: {:.2}%, Memory: {:.2}%",
+                "{}. {} (IP: {}) - CPU: {:.2}%, Memory: {:.2}%, Containers: {}",
                 i + 1,
                 node.node_name,
                 node.ip,
                 node.cpu_usage,
-                node.mem_usage
+                node.mem_usage,
+                node_containers.len()
             );
         }
 
@@ -479,7 +583,7 @@ impl MonitoringServerManager {
         }
 
         // Print all Boards
-        println!("\n  ALL BOARDS:");
+        println!("\n ALL BOARDS:");
         for (i, (_, board)) in data_store.get_all_boards().iter().enumerate() {
             println!(
                 "{}. {} - {} nodes, {} SoCs, Avg CPU: {:.2}%, Avg Memory: {:.2}%",
@@ -492,7 +596,24 @@ impl MonitoringServerManager {
             );
         }
 
+        // Print all containers
+        println!("\n ALL CONTAINERS:");
+        for (i, (_, container)) in data_store.get_all_containers().iter().enumerate() {
+            let name = container.names.first().unwrap_or(&"unnamed".to_string()).clone();
+            let status = container.state.get("Status").unwrap_or(&"unknown".to_string()).clone();
+            
+            println!(
+                "{}. {} (ID: {}) - Image: {}, Status: {}",
+                i + 1,
+                name,
+                &container.id[..std::cmp::min(12, container.id.len())], // Show only first 12 chars of ID
+                container.image,
+                status
+            );
+        }
+
         self.print_summary_stats(&data_store).await;
+        self.print_container_overview().await;
     }
 
     /// Main loop for processing incoming gRPC ContainerList messages.

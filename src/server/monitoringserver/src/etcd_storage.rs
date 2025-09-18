@@ -6,7 +6,7 @@
 //! Store and retrieve monitoring data in etcd
 
 use crate::data_structures::{BoardInfo, SocInfo};
-use common::monitoringserver::NodeInfo;
+use common::monitoringserver::{NodeInfo, ContainerInfo}; // Use protobuf types
 use serde::{de::DeserializeOwned, Serialize};
 
 /// Generic function to store info in etcd
@@ -88,6 +88,22 @@ pub async fn store_board_info(board_info: &BoardInfo) -> common::Result<()> {
     store_info("boards", &board_info.board_id, board_info).await
 }
 
+/// Store ContainerInfo in etcd - Using same pattern as others
+pub async fn store_container_info(container_info: &ContainerInfo) -> common::Result<()> {
+    // Convert protobuf ContainerInfo to JSON for storage using the same pattern
+    let json_value = serde_json::json!({
+        "id": container_info.id,
+        "names": container_info.names,
+        "image": container_info.image,
+        "state": container_info.state,
+        "config": container_info.config,
+        "annotation": container_info.annotation,
+        "stats": container_info.stats,
+    });
+    
+    store_info("containers", &container_info.id, &json_value).await
+}
+
 /// Retrieve NodeInfo from etcd
 pub async fn get_node_info(node_name: &str) -> common::Result<NodeInfo> {
     get_info("nodes", node_name).await
@@ -101,6 +117,44 @@ pub async fn get_soc_info(soc_id: &str) -> common::Result<SocInfo> {
 /// Retrieve BoardInfo from etcd
 pub async fn get_board_info(board_id: &str) -> common::Result<BoardInfo> {
     get_info("boards", board_id).await
+}
+
+/// Get ContainerInfo from etcd - Using same pattern as others
+pub async fn get_container_info(container_id: &str) -> common::Result<ContainerInfo> {
+    let json_value: serde_json::Value = get_info("containers", container_id).await?;
+    
+    // Convert JSON back to protobuf ContainerInfo
+    let container_info = ContainerInfo {
+        id: json_value["id"].as_str().unwrap_or_default().to_string(),
+        names: json_value["names"].as_array()
+            .unwrap_or(&vec![])
+            .iter()
+            .map(|v| v.as_str().unwrap_or_default().to_string())
+            .collect(),
+        image: json_value["image"].as_str().unwrap_or_default().to_string(),
+        state: json_value["state"].as_object()
+            .unwrap_or(&serde_json::Map::new())
+            .iter()
+            .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
+            .collect(),
+        config: json_value["config"].as_object()
+            .unwrap_or(&serde_json::Map::new())
+            .iter()
+            .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
+            .collect(),
+        annotation: json_value["annotation"].as_object()
+            .unwrap_or(&serde_json::Map::new())
+            .iter()
+            .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
+            .collect(),
+        stats: json_value["stats"].as_object()
+            .unwrap_or(&serde_json::Map::new())
+            .iter()
+            .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
+            .collect(),
+    };
+    
+    Ok(container_info)
 }
 
 /// Get all nodes from etcd
@@ -118,6 +172,56 @@ pub async fn get_all_boards() -> common::Result<Vec<BoardInfo>> {
     get_all_info("boards").await
 }
 
+/// Get all containers from etcd
+pub async fn get_all_containers() -> common::Result<Vec<ContainerInfo>> {
+    let prefix = format!("/piccolo/metrics/containers/");
+    let kv_pairs = common::etcd::get_all_with_prefix(&prefix).await?;
+
+    let mut containers = Vec::new();
+    for kv in kv_pairs {
+        match serde_json::from_str::<serde_json::Value>(&kv.value) {
+            Ok(json_value) => {
+                let container_info = ContainerInfo {
+                    id: json_value["id"].as_str().unwrap_or_default().to_string(),
+                    names: json_value["names"].as_array()
+                        .unwrap_or(&vec![])
+                        .iter()
+                        .map(|v| v.as_str().unwrap_or_default().to_string())
+                        .collect(),
+                    image: json_value["image"].as_str().unwrap_or_default().to_string(),
+                    state: json_value["state"].as_object()
+                        .unwrap_or(&serde_json::Map::new())
+                        .iter()
+                        .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
+                        .collect(),
+                    config: json_value["config"].as_object()
+                        .unwrap_or(&serde_json::Map::new())
+                        .iter()
+                        .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
+                        .collect(),
+                    annotation: json_value["annotation"].as_object()
+                        .unwrap_or(&serde_json::Map::new())
+                        .iter()
+                        .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
+                        .collect(),
+                    stats: json_value["stats"].as_object()
+                        .unwrap_or(&serde_json::Map::new())
+                        .iter()
+                        .map(|(k, v)| (k.clone(), v.as_str().unwrap_or_default().to_string()))
+                        .collect(),
+                };
+                containers.push(container_info);
+            }
+            Err(e) => eprintln!(
+                "[ETCD] Failed to deserialize container {}: {}",
+                kv.key, e
+            ),
+        }
+    }
+
+    Ok(containers)
+}
+
 /// Delete NodeInfo from etcd
 pub async fn delete_node_info(node_name: &str) -> common::Result<()> {
     delete_info("nodes", node_name).await
@@ -131,4 +235,9 @@ pub async fn delete_soc_info(soc_id: &str) -> common::Result<()> {
 /// Delete BoardInfo from etcd
 pub async fn delete_board_info(board_id: &str) -> common::Result<()> {
     delete_info("boards", board_id).await
+}
+
+/// Delete ContainerInfo from etcd
+pub async fn delete_container_info(container_id: &str) -> common::Result<()> {
+    delete_info("containers", container_id).await
 }
