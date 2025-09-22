@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+use common::monitoringserver::ContainerInfo;
 use common::monitoringserver::NodeInfo;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -54,6 +55,8 @@ pub struct DataStore {
     pub nodes: HashMap<String, NodeInfo>,
     pub socs: HashMap<String, SocInfo>,
     pub boards: HashMap<String, BoardInfo>,
+    pub containers: HashMap<String, ContainerInfo>,
+    pub container_node_mapping: HashMap<String, String>, // ADD THIS LINE
 }
 
 impl DataStore {
@@ -62,6 +65,8 @@ impl DataStore {
             nodes: HashMap::new(),
             socs: HashMap::new(),
             boards: HashMap::new(),
+            containers: HashMap::new(),
+            container_node_mapping: HashMap::new(), // ADD THIS LINE
         }
     }
 
@@ -208,6 +213,133 @@ impl DataStore {
         Ok(())
     }
 
+    /// Stores ContainerInfo to memory and etcd
+    pub async fn store_container_info(
+        &mut self,
+        container_info: ContainerInfo,
+    ) -> Result<(), String> {
+        let container_id = container_info.id.clone();
+
+        // Store container in memory
+        self.containers
+            .insert(container_id.clone(), container_info.clone());
+
+        // Store to etcd with error handling
+        if let Err(e) = crate::etcd_storage::store_container_info(&container_info).await {
+            eprintln!(
+                "[ETCD] Warning: Failed to store ContainerInfo to etcd: {}",
+                e
+            );
+            // Don't fail the entire operation, just log the warning
+        }
+
+        println!(
+            "[DataStore] Stored container info: {} from node {}",
+            container_id,
+            container_info
+                .names
+                .first()
+                .unwrap_or(&"unnamed".to_string())
+        );
+        Ok(())
+    }
+
+    /// Stores ContainerInfo to memory and etcd, with explicit node association
+    pub async fn store_container_info_with_node(
+        &mut self,
+        container_info: ContainerInfo,
+        node_name: String,
+    ) -> Result<(), String> {
+        let container_id = container_info.id.clone();
+
+        // Store container in memory
+        self.containers
+            .insert(container_id.clone(), container_info.clone());
+
+        // Store the node association
+        self.container_node_mapping
+            .insert(container_id.clone(), node_name.clone());
+
+        // Store to etcd
+        if let Err(e) = crate::etcd_storage::store_container_info(&container_info).await {
+            eprintln!(
+                "[ETCD] Warning: Failed to store ContainerInfo to etcd: {}",
+                e
+            );
+        }
+
+        println!(
+            "[DataStore] Stored container {} on node {}",
+            container_id, node_name
+        );
+        Ok(())
+    }
+
+    /// Retrieves ContainerInfo from memory, fallback to etcd
+    pub async fn get_container_info(&self, container_id: &str) -> Result<ContainerInfo, String> {
+        // Try memory first
+        if let Some(container_info) = self.containers.get(container_id) {
+            return Ok(container_info.clone());
+        }
+
+        // Fallback to etcd
+        match crate::etcd_storage::get_container_info(container_id).await {
+            Ok(container_info) => Ok(container_info),
+            Err(e) => Err(format!("Container not found in memory or etcd: {}", e)),
+        }
+    }
+
+    /// Gets all containers from memory
+    pub fn get_all_containers(&self) -> &HashMap<String, ContainerInfo> {
+        &self.containers
+    }
+
+    /// Gets all containers for a specific node
+    pub fn get_containers_by_node(&self, node_name: &str) -> Vec<&ContainerInfo> {
+        self.container_node_mapping
+            .iter()
+            .filter(|(_, mapped_node)| *mapped_node == node_name)
+            .filter_map(|(container_id, _)| self.containers.get(container_id))
+            .collect()
+    }
+
+    /// Removes container from memory and etcd
+    pub async fn remove_container_info(&mut self, container_id: &str) -> Result<(), String> {
+        // Remove from memory
+        self.containers.remove(container_id);
+
+        // Remove from etcd
+        if let Err(e) = crate::etcd_storage::delete_container_info(container_id).await {
+            eprintln!(
+                "[ETCD] Warning: Failed to delete ContainerInfo from etcd: {}",
+                e
+            );
+        }
+
+        println!("[DataStore] Removed container info: {}", container_id);
+        Ok(())
+    }
+
+    /// Load all containers from etcd into memory (useful for initialization)
+    pub async fn load_containers_from_etcd(&mut self) -> Result<(), String> {
+        match crate::etcd_storage::get_all_containers().await {
+            Ok(containers) => {
+                for container in containers {
+                    self.containers.insert(container.id.clone(), container);
+                }
+                println!(
+                    "[DataStore] Loaded {} containers from etcd",
+                    self.containers.len()
+                );
+                Ok(())
+            }
+            Err(e) => {
+                eprintln!("[ETCD] Warning: Failed to load containers from etcd: {}", e);
+                Ok(()) // Don't fail initialization
+            }
+        }
+    }
+
     pub fn get_node_info(&self, node_name: &str) -> Option<&NodeInfo> {
         self.nodes.get(node_name)
     }
@@ -230,6 +362,40 @@ impl DataStore {
 
     pub fn get_all_boards(&self) -> &HashMap<String, BoardInfo> {
         &self.boards
+    }
+
+    /// ADD THIS METHOD for cleanup with etcd deletion
+    pub async fn cleanup_node_containers(
+        &mut self,
+        node_name: &str,
+        current_containers: &[String],
+    ) {
+        let containers_to_remove: Vec<String> = self
+            .container_node_mapping
+            .iter()
+            .filter(|(_, mapped_node)| *mapped_node == node_name)
+            .filter(|(container_id, _)| !current_containers.contains(container_id))
+            .map(|(container_id, _)| container_id.clone())
+            .collect();
+
+        for container_id in containers_to_remove {
+            // Remove from memory
+            self.containers.remove(&container_id);
+            self.container_node_mapping.remove(&container_id);
+
+            // Remove from etcd
+            if let Err(e) = crate::etcd_storage::delete_container_info(&container_id).await {
+                eprintln!(
+                    "[ETCD] Warning: Failed to delete container {} from etcd: {}",
+                    container_id, e
+                );
+            }
+
+            println!(
+                "[DataStore] Removed obsolete container {} from node {}",
+                container_id, node_name
+            );
+        }
     }
 }
 
