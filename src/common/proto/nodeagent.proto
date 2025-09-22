@@ -31,9 +31,10 @@ message NodeRegistrationRequest {
   string node_id = 1;
   string hostname = 2;
   string ip_address = 3;
-  NodeRole role = 4;
-  ResourceInfo resources = 5;
-  map<string, string> metadata = 6;
+  NodeType node_type = 4;
+  NodeRole node_role = 5;
+  ResourceInfo resources = 6;
+  map<string, string> metadata = 7;
 }
 
 message NodeRegistrationResponse {
@@ -76,10 +77,17 @@ message ConfigResponse {
 }
 
 // Supporting data structures
+enum NodeType {
+  NODE_TYPE_UNSPECIFIED = 0;
+  NODE_TYPE_CLOUD = 1;
+  NODE_TYPE_VEHICLE = 2;
+}
+
 enum NodeRole {
   NODE_ROLE_UNSPECIFIED = 0;
   NODE_ROLE_MASTER = 1;
-  NODE_ROLE_SUB = 2;
+  NODE_ROLE_NODEAGENT = 2;
+  NODE_ROLE_BLUECHI = 3;
 }
 
 enum NodeStatus {

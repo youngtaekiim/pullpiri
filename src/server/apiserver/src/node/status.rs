@@ -52,12 +52,15 @@ impl NodeStatusManager {
 
         let master_nodes = nodes
             .iter()
-            .filter(|node| node.role == common::nodeagent::NodeRole::Master as i32)
+            .filter(|node| node.node_role == common::nodeagent::NodeRole::Master as i32)
             .count();
 
-        let sub_nodes = nodes
+        let nodeagent_nodes = nodes
             .iter()
-            .filter(|node| node.role == common::nodeagent::NodeRole::Sub as i32)
+            .filter(|node| 
+                node.node_role == common::nodeagent::NodeRole::Nodeagent as i32 || 
+                node.node_role == common::nodeagent::NodeRole::Bluechi as i32
+            )
             .count();
 
         let ready_nodes = nodes
@@ -70,7 +73,7 @@ impl NodeStatusManager {
             healthy_nodes,
             unhealthy_nodes,
             master_nodes,
-            sub_nodes,
+            nodeagent_nodes,
             ready_nodes,
             cluster_status: if unhealthy_nodes == 0 {
                 ClusterStatus::Healthy
@@ -103,7 +106,7 @@ pub struct ClusterHealthSummary {
     pub healthy_nodes: usize,
     pub unhealthy_nodes: usize,
     pub master_nodes: usize,
-    pub sub_nodes: usize,
+    pub nodeagent_nodes: usize,
     pub ready_nodes: usize,
     pub cluster_status: ClusterStatus,
 }
@@ -126,7 +129,8 @@ mod tests {
             node_id: node_id.to_string(),
             hostname: format!("host-{}", node_id),
             ip_address: "192.168.1.100".to_string(),
-            role: NodeRole::Sub.into(),
+            node_type: 2, // Vehicle
+            node_role: NodeRole::Nodeagent.into(),
             status: status.into(),
             resources: Some(ResourceInfo {
                 cpu_cores: 4,

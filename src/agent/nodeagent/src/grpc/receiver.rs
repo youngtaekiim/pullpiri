@@ -66,12 +66,15 @@ impl NodeAgentConnection for NodeAgentReceiver {
 
         // TODO: Implement node registration logic
         // This is typically called by the master node, not the node itself
+        let config = crate::config::Config::get();
+        let master_ip = config.nodeagent.master_ip.clone();
+        
         let response = NodeRegistrationResponse {
             success: true,
             message: "Node registration processed".to_string(),
             cluster_token: "node-token".to_string(),
             cluster_config: Some(common::nodeagent::ClusterConfig {
-                master_endpoint: "http://localhost:47098".to_string(),
+                master_endpoint: format!("http://{}:47098", master_ip),
                 heartbeat_interval: 30,
                 settings: std::collections::HashMap::new(),
             }),
@@ -110,10 +113,13 @@ impl NodeAgentConnection for NodeAgentReceiver {
         // TODO: Process heartbeat and update last seen time
         println!("Heartbeat from node: {} at {}", req.node_id, req.timestamp);
 
+        let config = crate::config::Config::get();
+        let master_ip = config.nodeagent.master_ip.clone();
+        
         let response = HeartbeatResponse {
             ack: true,
             updated_config: Some(common::nodeagent::ClusterConfig {
-                master_endpoint: "http://localhost:47098".to_string(),
+                master_endpoint: format!("http://{}:47098", master_ip),
                 heartbeat_interval: 30,
                 settings: std::collections::HashMap::new(),
             }),
