@@ -12,6 +12,7 @@ clean:
 	cargo clean --manifest-path=player/Cargo.toml
 	cargo clean --manifest-path=server/Cargo.toml
 	cargo clean --manifest-path=tools/Cargo.toml
+        cargo clean --manifest-path=agent/Cargo.toml
 
 .PHONY: tool
 tool:
@@ -23,6 +24,7 @@ fmt:
 	cd player && cargo fmt
 	cd server && cargo fmt
 	cd tools && cargo fmt
+        cd agent && cargo fmt
 
 .PHONY: clippy
 clippy:
@@ -30,3 +32,4 @@ clippy:
 	cd player && cargo clippy
 	cd server && cargo clippy
 	cd tools && cargo clippy
+        cd agent && cargo clippy
