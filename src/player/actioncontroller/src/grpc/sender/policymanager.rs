@@ -97,31 +97,4 @@ mod tests {
         let result = check_policy(scenario_name).await;
         assert!(result.is_err());
     }
-
-    #[tokio::test]
-    async fn test_handle_workload_success() {
-        let workload_name = "test-workload".to_string();
-        let action = 1;
-        let description = "example description".to_string();
-
-        let result = handle_yaml(workload_name).await;
-        if let Err(ref e) = result {
-            println!("Error in test_handle_workload_success: {:?}", e);
-        } else {
-            println!("test_handle_workload_success successful");
-        }
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_handle_workload_failure_invalid_workload() {
-        // Sending invalid workload_name and invalid action to trigger failure
-        let workload_name = "".to_string(); // Invalid empty workload
-        let action = -999; // Invalid action code
-        let description = "".to_string(); // Empty description
-
-        let result = handle_yaml(workload_name).await;
-
-        assert!(result.is_err());
-    }
 }

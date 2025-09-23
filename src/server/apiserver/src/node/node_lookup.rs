@@ -17,7 +17,7 @@ pub async fn find_node_by_simple_key() -> Option<String> {
     match etcd::get_all_with_prefix("nodes/").await {
         Ok(kvs) => {
             println!("Found {} simplified node keys", kvs.len());
-            for kv in &kvs {
+            if let Some(kv) = kvs.iter().next() {
                 println!("Node key: {}", kv.key);
                 let ip_address = kv.key.trim_start_matches("nodes/");
                 println!("Found node IP directly from key: {}", ip_address);
