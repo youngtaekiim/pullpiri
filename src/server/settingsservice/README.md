@@ -8,6 +8,7 @@ The Settings Service is a core component of the PICCOLO framework that provides 
 - **Schema Validation**: Validate configurations against JSON schemas
 - **Change History**: Track configuration changes with rollback capabilities
 - **Metrics Retrieval**: Retrieve and filter monitoring metrics from ETCD (NodeInfo, ContainerInfo, SocInfo, BoardInfo)
+- **Resource Management**: Create and delete vehicle orchestration resources (nodes, containers, SoCs, boards)
 - **Multiple Interfaces**: REST API and CLI interfaces
 - **ETCD Integration**: Direct integration with monitoring ETCD storage for real-time vehicle orchestration data
 
@@ -28,12 +29,14 @@ The Settings Service consists of the following modules:
 
 ## Building
 
+```bash
 # Build the settings service
 cd src/server/settingsservice
 cargo build
 
 # Or build the entire project
 make build
+```
 
 ## Running
 
@@ -74,17 +77,45 @@ The Settings Service provides a comprehensive REST API:
 - `DELETE /api/v1/settings/{path}` - Delete configuration
 - `POST /api/v1/settings/validate` - Validate configuration
 
+### Vehicle Resource Management
+
+**Node Management:**
+- `GET /api/v1/nodes` - List all nodes
+- `GET /api/v1/nodes/{name}` - Get specific node
+- `POST /api/v1/nodes` - Create new node
+- `DELETE /api/v1/nodes/{name}` - Delete node
+- `GET /api/v1/nodes/{name}/pods/metrics` - Get pod metrics for specific node (enhanced with hostname)
+- `GET /api/v1/nodes/{name}/containers` - Get all containers for specific node
+
+**Container Management:**
+- `GET /api/v1/containers` - List all containers
+- `GET /api/v1/containers/{id}` - Get specific container (includes logs)
+- `POST /api/v1/containers` - Create new container (enhanced with hostname labeling)
+- `DELETE /api/v1/containers/{id}` - Delete container
+
+**SoC Management:**
+- `GET /api/v1/socs` - List all SoCs
+- `GET /api/v1/socs/{name}` - Get specific SoC
+- `POST /api/v1/socs` - Create new SoC
+- `DELETE /api/v1/socs/{name}` - Delete SoC
+
+**Board Management:**
+- `GET /api/v1/boards` - List all boards
+- `GET /api/v1/boards/{name}` - Get specific board
+- `POST /api/v1/boards` - Create new board
+- `DELETE /api/v1/boards/{name}` - Delete board
+
 ### Metrics Management (Vehicle Orchestration)
 
 **Enhanced endpoints with direct ETCD access:**
 
 - `GET /api/v1/metrics` - Get all metrics from ETCD with optional filtering
-- `GET /api/v1/metrics/nodes` - Get all node metrics (NodeInfo) - **FIXED**
-- `GET /api/v1/metrics/containers` - Get all container metrics (ContainerInfo) - **FIXED**
-- `GET /api/v1/metrics/socs` - Get all SoC metrics (SocInfo) - **FIXED**
-- `GET /api/v1/metrics/boards` - Get all board metrics (BoardInfo) - **FIXED**
-- `GET /api/v1/metrics/nodes/{node_name}` - Get specific node metric - **FIXED**
-- `GET /api/v1/metrics/containers/{container_id}` - Get specific container metric - **FIXED**
+- `GET /api/v1/metrics/nodes` - Get all node metrics (NodeInfo)
+- `GET /api/v1/metrics/containers` - Get all container metrics (ContainerInfo)
+- `GET /api/v1/metrics/socs` - Get all SoC metrics (SocInfo)
+- `GET /api/v1/metrics/boards` - Get all board metrics (BoardInfo)
+- `GET /api/v1/metrics/nodes/{node_name}` - Get specific node metric
+- `GET /api/v1/metrics/containers/{container_id}` - Get specific container metric
 - `GET /api/v1/metrics/filters` - List metric filters
 - `POST /api/v1/metrics/filters` - Create metric filter
 - `DELETE /api/v1/metrics/{component}/{id}` - Delete specific metric
@@ -93,6 +124,7 @@ The Settings Service provides a comprehensive REST API:
 - `?component=node|container|soc|board` - Filter by component type
 - `?max_items=N` - Limit number of results
 - `?metric_type=NodeInfo|ContainerInfo|SocInfo|BoardInfo` - Filter by metric type
+- `?filter=search_term` - Filter by resource name/ID
 
 ### History Management
 
@@ -104,6 +136,7 @@ The Settings Service provides a comprehensive REST API:
 
 - `GET /api/v1/system/status` - Get system status
 - `GET /api/v1/system/health` - Health check
+- `POST /api/v1/monitoring/sync` - Sync with monitoring server
 
 ## CLI Commands
 
@@ -117,6 +150,34 @@ config get <path>              # Get configuration
 config set <path> <value>      # Set configuration
 config delete <path>           # Delete configuration
 config validate <path>         # Validate configuration
+```
+
+### Resource Management Commands
+
+```bash
+# Node management
+nodes list                     # List all nodes
+nodes get <name>               # Get specific node
+nodes create <name> <config>   # Create new node
+nodes delete <name>            # Delete node
+
+# Container management
+containers list                # List all containers
+containers get <id>            # Get specific container
+containers create <config>     # Create new container
+containers delete <id>         # Delete container
+
+# SoC management
+socs list                      # List all SoCs
+socs get <name>                # Get specific SoC
+socs create <name> <config>    # Create new SoC
+socs delete <name>             # Delete SoC
+
+# Board management
+boards list                    # List all boards
+boards get <name>              # Get specific board
+boards create <name> <config>  # Create new board
+boards delete <name>           # Delete board
 ```
 
 ### Metrics Commands (Vehicle Orchestration)
@@ -157,6 +218,12 @@ cargo test
 
 # Run with output
 cargo test -- --nocapture
+
+# Validate code formatting
+export PATH="$HOME/.cargo/bin:$PATH" && scripts/fmt_check.sh
+
+# Run linting checks
+export PATH="$HOME/.cargo/bin:$PATH" && scripts/clippy_check.sh
 ```
 
 ## Example Usage
@@ -187,13 +254,96 @@ curl -X POST http://localhost:8080/api/v1/settings/vehicle/orchestrator \
   }'
 ```
 
+### Create a New Node
+
+```bash
+curl -X POST http://localhost:8080/api/v1/nodes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "vehicle-ecu-02",
+    "image": "pullpiri/node-agent:latest",
+    "ip": "192.168.1.102",
+    "labels": {
+      "zone": "engine_bay",
+      "tier": "edge",
+      "capability": "processing"
+    }
+  }'
+```
+
+### Create a New Container
+
+```bash
+curl -X POST http://localhost:8080/api/v1/containers \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "vehicle-diagnostics",
+    "image": "pullpiri/diagnostics:v1.0.0",
+    "node_name": "vehicle-ecu-01",
+    "description": "Vehicle diagnostic service container",
+    "labels": {
+      "service": "diagnostics",
+      "version": "1.0.0",
+      "critical": "true"
+    }
+  }'
+```
+
+### Create a New SoC
+
+```bash
+curl -X POST http://localhost:8080/api/v1/socs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "nvidia-xavier-01",
+    "description": "NVIDIA Xavier SoC for AI processing",
+    "labels": {
+      "vendor": "nvidia",
+      "series": "xavier",
+      "capability": "ai_inference"
+    }
+  }'
+```
+
+### Create a New Board
+
+```bash
+curl -X POST http://localhost:8080/api/v1/boards \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "vehicle-mainboard-01",
+    "description": "Primary vehicle compute board",
+    "labels": {
+      "type": "main_compute",
+      "location": "dashboard",
+      "power_class": "high"
+    }
+  }'
+```
+
+### Delete Resources
+
+```bash
+# Delete a container
+curl -X DELETE http://localhost:8080/api/v1/containers/vehicle-diagnostics
+
+# Delete a node
+curl -X DELETE http://localhost:8080/api/v1/nodes/vehicle-ecu-02
+
+# Delete a SoC
+curl -X DELETE http://localhost:8080/api/v1/socs/nvidia-xavier-01
+
+# Delete a board
+curl -X DELETE http://localhost:8080/api/v1/boards/vehicle-mainboard-01
+```
+
 ### Get Configuration
 
 ```bash
 curl http://localhost:8080/api/v1/settings/vehicle/orchestrator
 ```
 
-### Get All Node Metrics - **WORKING**
+### Get All Node Metrics
 
 ```bash
 curl http://localhost:8080/api/v1/metrics/nodes
@@ -205,16 +355,16 @@ curl http://localhost:8080/api/v1/metrics/nodes
 curl http://localhost:8080/api/v1/metrics/nodes/vehicle-ecu-01
 ```
 
-### Get All Container Metrics - **WORKING**
+### Get All Container Metrics
 
 ```bash
 curl http://localhost:8080/api/v1/metrics/containers
 ```
 
-### Get Container Metrics for Specific Container
+### Get Container Metrics for Specific Container (with logs)
 
 ```bash
-curl http://localhost:8080/api/v1/metrics/containers/db368045fa4d40ffa3ba8cae61eeb9df36e120a2350e36d71e547b7ce3f1a9d5
+curl http://localhost:8080/api/v1/containers/vehicle-diagnostics
 ```
 
 ### Filter Metrics with Query Parameters
@@ -225,6 +375,9 @@ curl "http://localhost:8080/api/v1/metrics?component=node&max_items=10"
 
 # Get all container metrics
 curl "http://localhost:8080/api/v1/metrics?component=container"
+
+# Filter containers by name
+curl "http://localhost:8080/api/v1/containers?filter=diagnostics"
 
 # Get all SoC metrics
 curl "http://localhost:8080/api/v1/metrics/socs"
@@ -239,14 +392,99 @@ curl "http://localhost:8080/api/v1/metrics/boards"
 RUST_LOG=debug ./target/debug/settingsservice
 ```
 
+## Request/Response Schemas
+
+### Container Creation Request
+
+```json
+{
+  "name": "string (required)",
+  "image": "string (required)", 
+  "node_name": "string (required)",
+  "description": "string (optional)",
+  "labels": {
+    "key": "value"
+  }
+}
+```
+
+### Node Creation Request
+
+```json
+{
+  "name": "string (required)",
+  "image": "string (required)",
+  "ip": "string (required)",
+  "labels": {
+    "key": "value"
+  }
+}
+```
+
+### SoC Creation Request
+
+```json
+{
+  "name": "string (required)",
+  "description": "string (optional)",
+  "labels": {
+    "key": "value"
+  }
+}
+```
+
+### Board Creation Request
+
+```json
+{
+  "name": "string (required)",
+  "description": "string (optional)",
+  "labels": {
+    "key": "value"
+  }
+}
+```
+
+### Pod Metrics Response (Enhanced)
+
+```json
+{
+  "node_name": "string",
+  "hostname": "string (optional)",
+  "pod_count": "number",
+  "pods": [
+    {
+      "container_id": "string",
+      "container_name": "string (optional)",
+      "image": "string",
+      "status": "string (optional)",
+      "node_name": "string",
+      "hostname": "string (optional)",
+      "labels": {
+        "key": "value"
+      },
+      "created_at": "ISO 8601 timestamp"
+    }
+  ]
+}
+```
+
+### Query Parameters (Enhanced)
+
+**Pod and Container queries now support:**
+- `?page=N` - Page number for pagination
+- `?page_size=N` - Number of items per page
+- `?filter=search_term` - Filter by container name, node_name, or hostname
+
 ## Vehicle Service Orchestration Integration
 
 The Settings Service integrates directly with the Pullpiri vehicle orchestration framework:
 
 - **MonitoringServer**: Stores vehicle node, container, SoC, and board metrics in ETCD at `/piccolo/metrics/`
 - **NodeAgent**: Reports node resource utilization and container status to MonitoringServer
-- **APIServer**: Consumes configurations for orchestration policies
+- **APIServer**: Consumes configurations for orchestration policies and resource management
 - **ETCD**: Central storage for both configurations (`/piccolo/settings/`) and real-time metrics (`/piccolo/metrics/`)
+- **Resource Lifecycle**: Create/delete operations are synchronized with the monitoring server for consistent state management
 
 ## Port Usage
 
@@ -254,6 +492,26 @@ Following Pullpiri networking conventions:
 - **Settings Service**: `8080` (configurable within Pullpiri's 47001-47099 range)
 - **ETCD**: `2379, 2380` (standard ETCD ports)
 - **Other Pullpiri Services**: `47001-47099` (gRPC: 47001+, REST: up to 47099)
+
+## Error Handling
+
+The API returns standard HTTP status codes:
+
+- `200 OK` - Successful operation
+- `201 Created` - Resource created successfully
+- `204 No Content` - Resource deleted successfully
+- `400 Bad Request` - Invalid request data
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Server error
+
+Error responses include detailed error messages:
+
+```json
+{
+  "error": "Error description",
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
 
 ## Dependencies
 
