@@ -97,6 +97,38 @@ pub struct ErrorResponse {
     pub details: Option<Value>,
 }
 
+/// Request body for container creation
+#[derive(Debug, Deserialize)]
+pub struct CreateContainerRequest {
+    pub name: String,
+    pub image: String,
+    pub node_name: String,
+    pub description: Option<String>,
+    pub labels: HashMap<String, String>,
+}
+
+/// Enhanced pod metrics response with node information
+#[derive(Debug, Serialize)]
+pub struct PodMetricsResponse {
+    pub node_name: String,
+    pub hostname: Option<String>,
+    pub pod_count: usize,
+    pub pods: Vec<PodInfo>,
+}
+
+/// Pod information structure following nodeagent resource pattern
+#[derive(Debug, Serialize)]
+pub struct PodInfo {
+    pub container_id: String,
+    pub container_name: Option<String>,
+    pub image: String,
+    pub status: Option<String>,
+    pub node_name: String,
+    pub hostname: Option<String>,
+    pub labels: HashMap<String, String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
 /// API server
 pub struct ApiServer {
     bind_address: String,
@@ -187,6 +219,19 @@ impl ApiServer {
             .route("/api/v1/nodes", get(list_nodes).post(create_node))
             .route("/api/v1/nodes/:name", get(get_node).delete(delete_node))
             .route("/api/v1/nodes/:name/pods/metrics", get(get_pod_metrics))
+            // Container Management APIs
+            .route(
+                "/api/v1/containers",
+                get(list_containers).post(create_container),
+            )
+            .route(
+                "/api/v1/containers/:id",
+                get(get_container).delete(delete_container),
+            )
+            .route(
+                "/api/v1/nodes/:name/containers",
+                get(get_containers_by_node),
+            )
             // SoC Management APIs
             .route("/api/v1/socs", get(list_socs).post(create_soc))
             .route("/api/v1/socs/:name", get(get_soc).delete(delete_soc))
@@ -987,37 +1032,82 @@ async fn get_pod_metrics(
     Path(node_name): Path<String>,
     Query(query): Query<ResourceQuery>,
     State(state): State<ApiState>,
-) -> Result<Json<Vec<Metric>>, (StatusCode, Json<ErrorResponse>)> {
+) -> Result<Json<PodMetricsResponse>, (StatusCode, Json<ErrorResponse>)> {
     debug!("GET /api/v1/nodes/{}/pods/metrics", node_name);
 
     let mut monitoring_manager = state.monitoring_manager.write().await;
 
-    // Create filter for pod metrics on specific node - Fix the HashMap type
-    let mut label_selectors = std::collections::HashMap::new();
-    label_selectors.insert("node".to_string(), node_name.clone());
+    match monitoring_manager.get_containers_by_node(&node_name).await {
+        Ok(containers) => {
+            let mut pods = Vec::new();
+            let mut hostname = None;
 
-    let pod_filter = MetricsFilter {
-        id: format!("pod_metrics_{}", node_name),
-        name: format!("Pod metrics for node {}", node_name),
-        enabled: true,
-        components: Some(vec!["pod".to_string()]),
-        metric_types: Some(vec![
-            "cpu".to_string(),
-            "memory".to_string(),
-            "network".to_string(),
-        ]),
-        label_selectors: Some(label_selectors),
-        time_range: None,
-        refresh_interval: None,
-        max_items: query.page_size.map(|ps| ps as usize),
-        version: 1,
-        created_at: Utc::now(),
-        modified_at: Utc::now(),
-    };
+            for container in containers {
+                if hostname.is_none() {
+                    hostname = container
+                        .config
+                        .get("Hostname")
+                        .or_else(|| container.annotation.get("hostname"))
+                        .or_else(|| container.state.get("hostname"))
+                        .cloned();
+                }
 
-    match monitoring_manager.get_metrics(Some(&pod_filter)).await {
-        Ok(metrics) => Ok(Json(metrics)),
-        Err(e) => Err(internal_error(&format!("Failed to get pod metrics: {}", e))),
+                let labels: HashMap<String, String> = container
+                    .annotation
+                    .iter()
+                    .filter(|(key, _)| {
+                        !key.starts_with("_") && *key != "node_name" && *key != "hostname"
+                    })
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect();
+
+                let pod_info = PodInfo {
+                    container_id: container.id.clone(),
+                    container_name: container.names.first().cloned(),
+                    image: container.image.clone(),
+                    status: container.state.get("Status").cloned(),
+                    node_name: node_name.clone(),
+                    hostname: container
+                        .config
+                        .get("Hostname")
+                        .or_else(|| container.annotation.get("hostname"))
+                        .or_else(|| container.state.get("hostname"))
+                        .cloned(),
+                    labels,
+                    created_at: chrono::Utc::now(),
+                };
+
+                pods.push(pod_info);
+            }
+
+            let total_pods = pods.len();
+            if let Some(page_size) = query.page_size {
+                let start_idx = query.page.unwrap_or(0) * page_size;
+
+                if start_idx < total_pods as u32 {
+                    pods = pods
+                        .into_iter()
+                        .skip(start_idx as usize)
+                        .take(page_size as usize)
+                        .collect();
+                } else {
+                    pods.clear();
+                }
+            }
+
+            let response = PodMetricsResponse {
+                node_name: node_name.clone(),
+                hostname,
+                pod_count: total_pods,
+                pods,
+            };
+
+            Ok(Json(response))
+        }
+        Err(e) => {
+            error!("Failed to get pod metrics for node {}: {}", node_name, e);
+            Err(internal_error(&format!("Failed to get pod metrics: {}", e)))
+        }
     }
 }
 
@@ -1194,6 +1284,234 @@ async fn get_all_node_metrics(
                 e
             )))
         }
+    }
+}
+
+// Container API handlers
+async fn list_containers(
+    Query(query): Query<ResourceQuery>,
+    State(state): State<ApiState>,
+) -> Result<Json<Vec<ContainerInfo>>, (StatusCode, Json<ErrorResponse>)> {
+    debug!("GET /api/v1/containers with query: {:?}", query);
+
+    let mut monitoring_manager = state.monitoring_manager.write().await;
+
+    match monitoring_manager.get_container_metrics().await {
+        Ok(containers) => {
+            let filtered_containers = if let Some(filter) = query.filter {
+                containers
+                    .into_iter()
+                    .filter(|container| container.id.contains(&filter))
+                    .collect()
+            } else {
+                containers
+            };
+
+            Ok(Json(filtered_containers))
+        }
+        Err(e) => Err(internal_error(&format!(
+            "Failed to fetch containers: {}",
+            e
+        ))),
+    }
+}
+
+async fn get_container(
+    Path(id): Path<String>,
+    State(state): State<ApiState>,
+) -> Result<Json<ContainerInfo>, (StatusCode, Json<ErrorResponse>)> {
+    debug!("GET /api/v1/containers/{}", id);
+
+    let mut monitoring_manager = state.monitoring_manager.write().await;
+
+    match monitoring_manager.get_container_metric_by_id(&id).await {
+        Ok(Some(container)) => {
+            // Fetch logs for this container
+            if let Ok(logs) = monitoring_manager.get_container_logs(&id).await {
+                // Add logs to the response - we might need to extend ContainerInfo struct
+                // For now, we'll add it as a custom field in the response
+                let mut container_with_logs = serde_json::to_value(&container).unwrap();
+                container_with_logs["logs"] = serde_json::to_value(&logs).unwrap();
+
+                return Ok(Json(
+                    serde_json::from_value(container_with_logs).unwrap_or(container),
+                ));
+            }
+            Ok(Json(container))
+        }
+        Ok(None) => Err(not_found_error("Container not found")),
+        Err(e) => Err(internal_error(&format!("Failed to get container: {}", e))),
+    }
+}
+
+async fn create_container(
+    State(state): State<ApiState>,
+    Json(request): Json<CreateContainerRequest>,
+) -> Result<Json<ContainerInfo>, (StatusCode, Json<ErrorResponse>)> {
+    debug!("POST /api/v1/containers with request: {:?}", request);
+
+    // Validate required fields
+    if request.name.is_empty() {
+        return Err(bad_request_error("Container name is required"));
+    }
+    if request.image.is_empty() {
+        return Err(bad_request_error("Container image is required"));
+    }
+    if request.node_name.is_empty() {
+        return Err(bad_request_error("Node name is required"));
+    }
+
+    let mut monitoring_manager = state.monitoring_manager.write().await;
+
+    // Create state HashMap
+    let mut state_map = HashMap::new();
+    state_map.insert("status".to_string(), "Created".to_string());
+    state_map.insert("node_name".to_string(), request.node_name.clone());
+
+    let hostname = resolve_hostname_for_node(&request.node_name)
+        .await
+        .unwrap_or_else(|| request.node_name.clone());
+    state_map.insert("hostname".to_string(), hostname.clone());
+
+    // Create config HashMap
+    let mut config_map = HashMap::new();
+    config_map.insert("image".to_string(), request.image.clone());
+    config_map.insert("hostname".to_string(), hostname.clone());
+    if let Some(ref description) = request.description {
+        config_map.insert("description".to_string(), description.clone());
+    }
+
+    // Create annotation HashMap with labels and metadata
+    let mut annotation_map = HashMap::new();
+    annotation_map.insert("node_name".to_string(), request.node_name.clone());
+    annotation_map.insert("hostname".to_string(), hostname.clone());
+    if let Some(ref description) = request.description {
+        annotation_map.insert("description".to_string(), description.clone());
+    }
+    // Add labels to annotations
+    for (key, value) in &request.labels {
+        annotation_map.insert(format!("label.{}", key), value.clone());
+    }
+
+    // Create stats HashMap (empty for new container)
+    let stats_map = HashMap::new();
+
+    // Create ContainerInfo from request with proper field types
+    let container_info = ContainerInfo {
+        id: request.name.clone(),
+        names: vec![request.name.clone()],
+        image: request.image.clone(),
+        state: state_map,
+        config: config_map,
+        annotation: annotation_map,
+        stats: stats_map,
+    };
+
+    // Store the container
+    match monitoring_manager.create_container(&container_info).await {
+        Ok(_) => {
+            // Store labels and metadata separately if needed
+            if !request.labels.is_empty() || request.description.is_some() {
+                let metadata = serde_json::json!({
+                    "image": request.image,
+                    "description": request.description,
+                    "labels": request.labels,
+                    "node_name": request.node_name
+                });
+
+                if let Err(e) = monitoring_manager
+                    .store_container_metadata(&request.name, &metadata)
+                    .await
+                {
+                    return Err(internal_error(&format!(
+                        "Failed to store container metadata: {}",
+                        e
+                    )));
+                }
+            }
+
+            info!(
+                "Successfully created container: {} with image: {} on node: {}",
+                request.name, request.image, request.node_name
+            );
+            Ok(Json(container_info))
+        }
+        Err(e) => Err(internal_error(&format!(
+            "Failed to create container: {}",
+            e
+        ))),
+    }
+}
+
+async fn delete_container(
+    Path(id): Path<String>,
+    State(state): State<ApiState>,
+) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
+    debug!("DELETE /api/v1/containers/{}", id);
+
+    let mut monitoring_manager = state.monitoring_manager.write().await;
+
+    match monitoring_manager.delete_container(&id).await {
+        Ok(_) => {
+            info!("Successfully deleted container: {}", id);
+            Ok(StatusCode::NO_CONTENT)
+        }
+        Err(e) => {
+            // Check if it's a not found error by examining the error message
+            if e.to_string().contains("not found") {
+                Err(not_found_error("Container not found"))
+            } else {
+                Err(internal_error(&format!(
+                    "Failed to delete container: {}",
+                    e
+                )))
+            }
+        }
+    }
+}
+
+async fn get_containers_by_node(
+    Path(node_name): Path<String>,
+    Query(query): Query<ResourceQuery>,
+    State(state): State<ApiState>,
+) -> Result<Json<Vec<ContainerInfo>>, (StatusCode, Json<ErrorResponse>)> {
+    debug!("GET /api/v1/nodes/{}/containers", node_name);
+
+    let mut monitoring_manager = state.monitoring_manager.write().await;
+
+    match monitoring_manager.get_containers_by_node(&node_name).await {
+        Ok(mut containers) => {
+            if let Some(page_size) = query.page_size {
+                let start_idx = query.page.unwrap_or(0) * page_size;
+                if start_idx < containers.len() as u32 {
+                    containers = containers
+                        .into_iter()
+                        .skip(start_idx as usize)
+                        .take(page_size as usize)
+                        .collect();
+                } else {
+                    containers.clear();
+                }
+            }
+
+            debug!(
+                "Found {} containers for node {}",
+                containers.len(),
+                node_name
+            );
+            Ok(Json(containers))
+        }
+        Err(e) => Err(internal_error(&format!(
+            "Failed to get containers by node: {}",
+            e
+        ))),
+    }
+}
+
+async fn resolve_hostname_for_node(node_name: &str) -> Option<String> {
+    match crate::monitoring_etcd::get_node_info(node_name).await {
+        Ok(node_info) => Some(node_info.node_name.clone()),
+        Err(_) => None,
     }
 }
 
