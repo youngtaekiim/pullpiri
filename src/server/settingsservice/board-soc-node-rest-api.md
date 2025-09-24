@@ -208,12 +208,6 @@ http://localhost:8080/api/v1
 
 ---
 
-## Example Usage
-
-See the "Example Usage" section in the original documentation for sample `curl` commands.
-
----
-
 ## Data Storage
 
 - **etcd** at `localhost:2379`
