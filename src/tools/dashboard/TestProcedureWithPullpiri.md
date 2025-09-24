@@ -1,126 +1,128 @@
-# Pullpiri REST API Testing Guide
+# Test Procedure: Dashboard Integration with Monitoring Server and Settings Service
 
-This guide describes how to test Pullpiri REST API endpoints using `curl`.  
-**Always run the full validation sequence before testing. Never cancel builds or lint checks.**
-
----
-
-## 1. Environment Setup
-
-```bash
-export PATH="$HOME/.cargo/bin:$PATH"
-```
+This guide describes how to set up and validate the integration between the NodeAgent, Monitoring Server, and Settings Service for dashboard development.
 
 ---
 
-## 2. Build and Validate (Mandatory)
+## Prerequisites
 
-```bash
-scripts/fmt_check.sh
-scripts/clippy_check.sh
-make build
-```
-
----
-
-## 3. Start the Settings Service
-
-```bash
-cd src/server/settingsservice
-cargo run --bin settingsservice
-
-```
+- **Hardware:** 2 NUCs (NUC1 and NUC2)
+- **Software:**  
+  - Rust toolchain installed (`rustup`, `cargo`)
+  - Podman installed for container management
+  - ETCD v3.5.11 container image
+  - Pullpiri source code checked out on both NUCs
 
 ---
 
-## 4. Test REST API Endpoints with curl
+## Step 1: Start ETCD on NUC1
 
-> **Note:**  
-> For pod or container data to appear in API responses, there **must be at least one running container on the specified node**.  
-> If no containers are running, the response will be empty.
-
-### Node Management
+Run the following command on **NUC1** to start ETCD as a container named `piccolo-etcd`:
 
 ```bash
-curl http://localhost:8080/api/v1/nodes
-curl http://localhost:8080/api/v1/nodes/{node_name}
+podman run -it -d --net=host --name=piccolo-etcd \
+  gcr.io/etcd-development/etcd:v3.5.11 "/usr/local/bin/etcd"
 ```
 
-### Pod Metrics (Enhanced)
+Verify ETCD is running:
 
 ```bash
-curl http://localhost:8080/api/v1/nodes/{node_name}/pods/metrics
-curl "http://localhost:8080/api/v1/nodes/{node_name}/pods/metrics?page=0&page_size=2"
-```
-
-### Containers by Node
-
-```bash
-curl http://localhost:8080/api/v1/nodes/{node_name}/containers
-curl "http://localhost:8080/api/v1/nodes/{node_name}/containers?page=0&page_size=2"
-```
-
-### Container Management
-
-```bash
-curl http://localhost:8080/api/v1/containers
-curl http://localhost:8080/api/v1/containers/{container_id}
-curl -X POST http://localhost:8080/api/v1/containers \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "test-vehicle-diagnostics",
-    "image": "docker.io/library/alpine:3.21.3",
-    "node_name": "{node_name}",
-    "description": "Test vehicle diagnostic service",
-    "labels": {
-      "service": "diagnostics",
-      "version": "1.0.0",
-      "environment": "test"
-    }
-  }'
-```
-
-### Metrics Endpoints
-
-```bash
-curl http://localhost:8080/api/v1/metrics/containers
-curl http://localhost:8080/api/v1/metrics/nodes
+podman ps | grep piccolo-etcd
 ```
 
 ---
 
-## 5. Pretty Print JSON Output
+## Step 2: Prepare NodeAgent Configuration on NUC2
 
-If you have `jq` installed:
+Create the configuration file at `/etc/piccolo/nodeagent.yaml` on **NUC2**:
+
+```yaml
+nodeagent:
+  node_name: "acrn-NUC11TNHi5"         # Hostname of NUC2
+  node_type: "vehicle"
+  node_role: "bluechi"
+  master_ip: "<NUC1_IP_ADDRESS>"       # IP address of NUC1
+  node_ip: "<NUC2_IP_ADDRESS>"         # IP address of NUC2
+  grpc_port: 47004
+  log_level: "info"
+  metrics:
+    collection_interval: 5
+    batch_size: 50
+  system:
+    hostname: "acrn-NUC11TNHi5"        # Hostname of NUC2
+    platform: "Linux"                  # Modify according to NUC2 system
+    architecture: "x86_64"
+yaml_storage: "/etc/piccolo/yaml"
+```
+
+> **Note:** Replace `<NUC1_IP_ADDRESS>` and `<NUC2_IP_ADDRESS>` with the actual IP addresses.
+
+---
+
+## Step 3: Start Monitoring Server on NUC1
+
+On **NUC1**, run the monitoring server:
 
 ```bash
-curl -s http://localhost:8080/api/v1/nodes/{node_name}/pods/metrics | jq .
+cd ~/new_ak/new/pullpiri/src/server/monitoringserver
+cargo run
 ```
 
 ---
 
-## 6. Error Case Testing
+## Step 4: Start Settings Service on NUC1
+
+On **NUC1**, run the settings service:
 
 ```bash
-curl -v http://localhost:8080/api/v1/nodes/nonexistent/pods/metrics
-curl -v "http://localhost:8080/api/v1/nodes/{node_name}/pods/metrics?page=-1&page_size=0"
+cd ~/new_ak/new/pullpiri/src/server/settingsservice
+cargo run
 ```
 
 ---
 
-## 7. Troubleshooting
+## Step 5: Start NodeAgent on NUC2
 
-- Check service logs:  
-  `journalctl -u settingsservice -f`  
-  or  
-  `tail -f /tmp/settingsservice.log`
-- Check etcd health:  
-  `etcdctl --endpoints=http://localhost:2379 endpoint health`
-- Check if service is running:  
-  `netstat -tlnp | grep 8080`
+On **NUC2**, run the nodeagent with the prepared configuration:
+
+```bash
+cd ~/new_ak/new/pullpiri/src/agent/nodeagent
+cargo run
+```
 
 ---
 
-**Always run the full validation sequence before testing. Never cancel build or lint operations.**
+## Step 6: Validate Data Flow
 
-Apache-2.0 (following Pullpiri framework licensing)
+- **On NUC1 (Monitoring Server):**  
+  Check the logs for messages indicating receipt of SOC/Board/Node/Container info from NUC2's NodeAgent.
+
+- **On NUC1 (Settings Service):**  
+  Use the REST API endpoints to query real-time info about nodes, boards, SOCs, and containers.
+
+  Example (replace port and endpoint as needed):Or Follow /src/server/settingsservice/testing_procedure.md
+
+  ```bash
+  curl http://localhost:8080/api/v1/settings
+  curl http://localhost:8080/api/v1/metrics
+  curl http://localhost:8080/api/v1/history
+  curl http://localhost:8080/api/v1/system/health
+  ```
+
+---
+
+## Expected Results
+
+- Monitoring server on NUC1 logs incoming data from NUC2 NodeAgent.
+- Settings service REST APIs on NUC1 provide real-time information about node, board, SOC, and container status.
+
+---
+
+## Troubleshooting
+
+- Ensure ETCD is running and accessible from both NUCs.
+- Verify network connectivity between NUC1 and NUC2.
+- Check configuration files for correct IP addresses and hostnames.
+- Review logs for errors and resolve any issues with service startup.
+
+---
