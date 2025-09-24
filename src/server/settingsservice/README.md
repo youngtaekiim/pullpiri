@@ -24,7 +24,6 @@ The Settings Service consists of the following modules:
 - `monitoring_types`: Type definitions for vehicle orchestration metrics (NodeInfo, SocInfo, BoardInfo)
 - `settings_storage`: ETCD client for configuration data persistence
 - `settings_api`: REST API server with comprehensive metrics endpoints
-- `settings_cli`: Command-line interface with interactive shell
 - `settings_utils`: Common utilities (error handling, logging, YAML processing)
 
 ## Building
@@ -52,16 +51,6 @@ make build
   --bind-address 0.0.0.0 \
   --bind-port 8080 \
   --log-level info
-```
-
-### CLI Mode
-
-```bash
-# Run the CLI
-./target/debug/settingsservice --cli
-
-# Or use the dedicated CLI binary
-./target/debug/settings-cli
 ```
 
 ## REST API
@@ -137,67 +126,6 @@ The Settings Service provides a comprehensive REST API:
 - `GET /api/v1/system/status` - Get system status
 - `GET /api/v1/system/health` - Health check
 - `POST /api/v1/monitoring/sync` - Sync with monitoring server
-
-## CLI Commands
-
-The CLI provides an interactive shell with the following commands:
-
-### Configuration Commands
-
-```bash
-config list [prefix]           # List configurations
-config get <path>              # Get configuration
-config set <path> <value>      # Set configuration
-config delete <path>           # Delete configuration
-config validate <path>         # Validate configuration
-```
-
-### Resource Management Commands
-
-```bash
-# Node management
-nodes list                     # List all nodes
-nodes get <name>               # Get specific node
-nodes create <name> <config>   # Create new node
-nodes delete <name>            # Delete node
-
-# Container management
-containers list                # List all containers
-containers get <id>            # Get specific container
-containers create <config>     # Create new container
-containers delete <id>         # Delete container
-
-# SoC management
-socs list                      # List all SoCs
-socs get <name>                # Get specific SoC
-socs create <name> <config>    # Create new SoC
-socs delete <name>             # Delete SoC
-
-# Board management
-boards list                    # List all boards
-boards get <name>              # Get specific board
-boards create <name> <config>  # Create new board
-boards delete <name>           # Delete board
-```
-
-### Metrics Commands (Vehicle Orchestration)
-
-```bash
-metrics nodes                  # List all node metrics
-metrics containers             # List all container metrics  
-metrics socs                   # List all SoC metrics
-metrics boards                 # List all board metrics
-metrics node <name>            # Get specific node metric
-metrics container <id>         # Get specific container metric
-metrics stats                  # Show metrics statistics
-```
-
-### History Commands
-
-```bash
-history <path>                 # Show configuration history
-history rollback <path> <ver>  # Rollback to version
-```
 
 ## Configuration
 
