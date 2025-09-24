@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { X, Minimize2/*, Square*/, Settings } from "lucide-react";
+import { X, Minimize2, /*Square,*/ Settings } from "lucide-react";  // 2025-09-23 comment out
 
 interface TerminalViewProps {
   isVisible: boolean;
