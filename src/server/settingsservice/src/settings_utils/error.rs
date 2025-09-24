@@ -42,8 +42,14 @@ pub enum StorageError {
     #[error("ETCD operation failed: {0}")]
     OperationFailed(String),
 
+    #[error("ETCD error: {0}")]
+    EtcdError(String),
+
     #[error("Key not found: {0}")]
     KeyNotFound(String),
+
+    #[error("Not found: {0}")]
+    NotFound(String),
 
     #[error("Serialization error: {0}")]
     SerializationError(String),

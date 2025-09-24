@@ -248,7 +248,7 @@ impl MonitoringManager {
                             if let Some(status) = container_info.state.get("Status") {
                                 labels.insert("status".to_string(), status.clone());
                             }
-                            labels // RETURN the labels HashMap
+                            labels
                         },
                         value: MetricValue::ContainerInfo {
                             value: container_info,
@@ -365,19 +365,123 @@ impl MonitoringManager {
     pub async fn get_container_metrics(&mut self) -> Result<Vec<ContainerInfo>, SettingsError> {
         debug!("Getting all container metrics");
 
-        match crate::monitoring_etcd::get_all_containers().await {
-            Ok(containers) => {
-                info!("Retrieved {} container metrics", containers.len());
-                Ok(containers)
-            }
-            Err(e) => {
-                warn!("Failed to get container metrics: {}", e);
-                Err(SettingsError::Metrics(format!(
-                    "Failed to get container metrics: {}",
+        crate::monitoring_etcd::get_all_containers()
+            .await
+            .map_err(|e| {
+                SettingsError::Storage(crate::settings_utils::error::StorageError::OperationFailed(
+                    format!("Failed to get containers: {}", e),
+                ))
+            })
+    }
+
+    /// Get container metric by ID
+    pub async fn get_container_metric_by_id(
+        &mut self,
+        container_id: &str,
+    ) -> Result<Option<ContainerInfo>, SettingsError> {
+        debug!("Getting container metric for ID: {}", container_id);
+
+        match crate::monitoring_etcd::get_container_info(container_id).await {
+            Ok(container) => Ok(Some(container)),
+            Err(crate::monitoring_etcd::MonitoringEtcdError::NotFound) => Ok(None),
+            Err(e) => Err(SettingsError::Storage(
+                crate::settings_utils::error::StorageError::OperationFailed(format!(
+                    "Failed to get container: {}",
                     e
-                )))
-            }
+                )),
+            )),
         }
+    }
+
+    /// Create a new container
+    pub async fn create_container(
+        &mut self,
+        container: &ContainerInfo,
+    ) -> Result<(), SettingsError> {
+        debug!("Creating container: {}", container.id);
+
+        // Store container info in etcd
+        crate::monitoring_etcd::store_container_info(container)
+            .await
+            .map_err(|e| {
+                SettingsError::Storage(crate::settings_utils::error::StorageError::OperationFailed(
+                    format!("Failed to store container: {}", e),
+                ))
+            })?;
+
+        info!("Successfully created container: {}", container.id);
+        Ok(())
+    }
+
+    /// Delete a container by ID
+    pub async fn delete_container(&mut self, container_id: &str) -> Result<(), SettingsError> {
+        debug!("Deleting container: {}", container_id);
+
+        // Check if container exists first
+        match crate::monitoring_etcd::get_container_info(container_id).await {
+            Ok(_) => {
+                // Container exists, proceed with deletion
+                crate::monitoring_etcd::delete_container_info(container_id)
+                    .await
+                    .map_err(|e| {
+                        SettingsError::Storage(
+                            crate::settings_utils::error::StorageError::OperationFailed(format!(
+                                "Failed to delete container: {}",
+                                e
+                            )),
+                        )
+                    })?;
+
+                info!("Successfully deleted container: {}", container_id);
+                Ok(())
+            }
+            Err(crate::monitoring_etcd::MonitoringEtcdError::NotFound) => Err(
+                SettingsError::Storage(crate::settings_utils::error::StorageError::NotFound(
+                    format!("Container {} not found", container_id),
+                )),
+            ),
+            Err(e) => Err(SettingsError::Storage(
+                crate::settings_utils::error::StorageError::OperationFailed(format!(
+                    "Failed to check container existence: {}",
+                    e
+                )),
+            )),
+        }
+    }
+
+    /// Store container metadata (labels, description, etc.)
+    pub async fn store_container_metadata(
+        &mut self,
+        container_id: &str,
+        metadata: &serde_json::Value,
+    ) -> Result<(), SettingsError> {
+        debug!("Storing metadata for container: {}", container_id);
+
+        crate::monitoring_etcd::store_container_metadata(container_id, metadata)
+            .await
+            .map_err(|e| {
+                SettingsError::Storage(crate::settings_utils::error::StorageError::OperationFailed(
+                    format!("Failed to store container metadata: {}", e),
+                ))
+            })?;
+
+        Ok(())
+    }
+
+    /// Get container logs
+    pub async fn get_container_logs(
+        &mut self,
+        container_id: &str,
+    ) -> Result<Vec<String>, SettingsError> {
+        debug!("Getting logs for container: {}", container_id);
+
+        crate::monitoring_etcd::get_container_logs(container_id)
+            .await
+            .map_err(|e| {
+                SettingsError::Storage(crate::settings_utils::error::StorageError::OperationFailed(
+                    format!("Failed to get container logs: {}", e),
+                ))
+            })
     }
 
     /// Get all soc metrics - SIMPLIFIED to use monitoring_etcd directly
@@ -427,19 +531,6 @@ impl MonitoringManager {
 
         match crate::monitoring_etcd::get_node_info(node_name).await {
             Ok(node_info) => Ok(Some(node_info)),
-            Err(_) => Ok(None),
-        }
-    }
-
-    /// Get container metric by ID - SIMPLIFIED to use monitoring_etcd directly
-    pub async fn get_container_metric_by_id(
-        &mut self,
-        container_id: &str,
-    ) -> Result<Option<ContainerInfo>, SettingsError> {
-        debug!("Getting container metric for: {}", container_id);
-
-        match crate::monitoring_etcd::get_container_info(container_id).await {
-            Ok(container_info) => Ok(Some(container_info)),
             Err(_) => Ok(None),
         }
     }
@@ -862,6 +953,220 @@ impl MonitoringManager {
         } else {
             // No wildcards - exact match
             pattern == text
+        }
+    }
+
+    /// Get containers by node name with proper hostname extraction
+    pub async fn get_containers_by_node(
+        &mut self,
+        node_name: &str,
+    ) -> Result<Vec<ContainerInfo>, SettingsError> {
+        debug!("Getting containers for node: {}", node_name);
+
+        // Get all containers first
+        let all_containers = self.get_container_metrics().await?;
+
+        // Filter containers by node_name using hostname or node_name fields
+        let filtered_containers: Vec<ContainerInfo> = all_containers
+            .into_iter()
+            .filter(|container| {
+                // Check multiple sources for node identification
+                self.container_belongs_to_node(container, node_name)
+            })
+            .collect();
+
+        debug!(
+            "Found {} containers for node {}",
+            filtered_containers.len(),
+            node_name
+        );
+        Ok(filtered_containers)
+    }
+
+    /// Check if container belongs to specific node using hostname and node_name
+    fn container_belongs_to_node(&self, container: &ContainerInfo, node_name: &str) -> bool {
+        // Match node_name against config.Hostname, state["Hostname"], annotation["hostname"], etc.
+        container
+            .config
+            .get("Hostname")
+            .map_or(false, |h| h == node_name)
+            || container
+                .state
+                .get("Hostname")
+                .map_or(false, |h| h == node_name)
+            || container
+                .annotation
+                .get("hostname")
+                .map_or(false, |h| h == node_name)
+            || container
+                .annotation
+                .get("node_name")
+                .map_or(false, |h| h == node_name)
+            || container
+                .state
+                .get("node_name")
+                .map_or(false, |h| h == node_name)
+            || container
+                .config
+                .get("node_name")
+                .map_or(false, |h| h == node_name)
+    }
+
+    /// Get pod metrics for a specific node (enhanced to include hostname)
+    pub async fn get_pod_metrics_for_node(
+        &mut self,
+        node_name: &str,
+    ) -> Result<Vec<Metric>, SettingsError> {
+        debug!("Getting pod metrics for node: {}", node_name);
+
+        // Get containers for the specific node
+        let containers = self.get_containers_by_node(node_name).await?;
+
+        let mut metrics = Vec::new();
+
+        for container in containers {
+            // Create container metric with node_name and hostname labels
+            let mut labels = HashMap::new();
+            labels.insert("container_id".to_string(), container.id.clone());
+            labels.insert("image".to_string(), container.image.clone());
+            labels.insert("node_name".to_string(), node_name.to_string());
+
+            // Add container name if available
+            if let Some(name) = container.names.first() {
+                labels.insert("container_name".to_string(), name.clone());
+            }
+
+            // Add hostname from container annotation or state
+            if let Some(hostname) = container
+                .annotation
+                .get("hostname")
+                .or_else(|| container.state.get("hostname"))
+                .or_else(|| container.config.get("hostname"))
+            {
+                labels.insert("hostname".to_string(), hostname.clone());
+            }
+
+            // Add status if available
+            if let Some(status) = container.state.get("Status") {
+                labels.insert("status".to_string(), status.clone());
+            }
+
+            let metric = Metric {
+                id: format!("pod_{}_{}", node_name, container.id),
+                component: "pod".to_string(),
+                metric_type: "PodInfo".to_string(),
+                labels,
+                value: MetricValue::ContainerInfo { value: container },
+                timestamp: Utc::now(),
+            };
+
+            metrics.push(metric);
+        }
+
+        info!(
+            "Retrieved {} pod metrics for node {}",
+            metrics.len(),
+            node_name
+        );
+        Ok(metrics)
+    }
+
+    /// Store container with node_name and hostname labeling
+    pub async fn create_container_with_node(
+        &mut self,
+        container: &ContainerInfo,
+        node_name: &str,
+        hostname: Option<&str>,
+    ) -> Result<(), SettingsError> {
+        debug!(
+            "Creating container: {} for node: {}",
+            container.id, node_name
+        );
+
+        // Clone container and enhance with node information
+        let mut enhanced_container = container.clone();
+
+        // Add node_name to all relevant fields
+        enhanced_container
+            .state
+            .insert("node_name".to_string(), node_name.to_string());
+        enhanced_container
+            .config
+            .insert("node_name".to_string(), node_name.to_string());
+        enhanced_container
+            .annotation
+            .insert("node_name".to_string(), node_name.to_string());
+        enhanced_container
+            .stats
+            .insert("node_name".to_string(), node_name.to_string());
+
+        // Add hostname if provided
+        if let Some(hostname) = hostname {
+            enhanced_container
+                .state
+                .insert("hostname".to_string(), hostname.to_string());
+            enhanced_container
+                .config
+                .insert("hostname".to_string(), hostname.to_string());
+            enhanced_container
+                .annotation
+                .insert("hostname".to_string(), hostname.to_string());
+        }
+
+        // Store the enhanced container
+        self.create_container(&enhanced_container).await
+    }
+
+    /// Get containers with enhanced node information
+    pub async fn get_container_metrics_with_node_info(
+        &mut self,
+    ) -> Result<Vec<ContainerInfo>, SettingsError> {
+        debug!("Getting all container metrics with node information");
+
+        let mut containers = self.get_container_metrics().await?;
+
+        // Enhance each container with node information
+        for container in &mut containers {
+            self.ensure_node_hostname_in_container(container);
+        }
+
+        Ok(containers)
+    }
+
+    /// Ensure container has both node_name and hostname information
+    fn ensure_node_hostname_in_container(&self, container: &mut ContainerInfo) {
+        // If we have hostname but not node_name, use hostname as node_name
+        if !container.annotation.contains_key("node_name") {
+            let hostname = container
+                .annotation
+                .get("hostname")
+                .or_else(|| container.state.get("hostname"))
+                .or_else(|| container.config.get("hostname"))
+                .cloned();
+
+            if let Some(hostname) = hostname {
+                container
+                    .annotation
+                    .insert("node_name".to_string(), hostname.clone());
+                container.state.insert("node_name".to_string(), hostname);
+            }
+        }
+
+        // If we have node_name but not hostname, use node_name as hostname
+        if !container.annotation.contains_key("hostname") {
+            let node_name = container
+                .annotation
+                .get("node_name")
+                .or_else(|| container.state.get("node_name"))
+                .or_else(|| container.config.get("node_name"))
+                .cloned();
+
+            if let Some(node_name) = node_name {
+                container
+                    .annotation
+                    .insert("hostname".to_string(), node_name.clone());
+                container.state.insert("hostname".to_string(), node_name);
+            }
         }
     }
 }
