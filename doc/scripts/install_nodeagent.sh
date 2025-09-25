@@ -353,6 +353,9 @@ ProtectSystem=full
 ProtectHome=true
 NoNewPrivileges=true
 
+ReadWritePaths=/etc/piccolo
+ReadWritePaths=/etc/containers/systemd
+
 [Install]
 WantedBy=multi-user.target
 EOF
