@@ -8,8 +8,8 @@ The Settings Service is a core component of the PICCOLO framework that provides 
 - **Schema Validation**: Validate configurations against JSON schemas
 - **Change History**: Track configuration changes with rollback capabilities
 - **Metrics Retrieval**: Retrieve and filter monitoring metrics from ETCD (NodeInfo, ContainerInfo, SocInfo, BoardInfo)
-- **Resource Management**: Create and delete vehicle orchestration resources (nodes, containers, SoCs, boards)
-- **Multiple Interfaces**: REST API and CLI interfaces
+- **Resource Management**: List vehicle orchestration resources (nodes, containers, SoCs, boards)
+- **Multiple Interfaces**: REST API interface
 - **ETCD Integration**: Direct integration with monitoring ETCD storage for real-time vehicle orchestration data
 
 ## Architecture
@@ -71,8 +71,6 @@ The Settings Service provides a comprehensive REST API:
 **Node Management:**
 - `GET /api/v1/nodes` - List all nodes
 - `GET /api/v1/nodes/{name}` - Get specific node
-- `POST /api/v1/nodes` - Create new node
-- `DELETE /api/v1/nodes/{name}` - Delete node
 - `GET /api/v1/nodes/{name}/pods/metrics` - Get pod metrics for specific node (enhanced with hostname)
 - `GET /api/v1/nodes/{name}/containers` - Get all containers for specific node
 
@@ -85,14 +83,10 @@ The Settings Service provides a comprehensive REST API:
 **SoC Management:**
 - `GET /api/v1/socs` - List all SoCs
 - `GET /api/v1/socs/{name}` - Get specific SoC
-- `POST /api/v1/socs` - Create new SoC
-- `DELETE /api/v1/socs/{name}` - Delete SoC
 
 **Board Management:**
 - `GET /api/v1/boards` - List all boards
 - `GET /api/v1/boards/{name}` - Get specific board
-- `POST /api/v1/boards` - Create new board
-- `DELETE /api/v1/boards/{name}` - Delete board
 
 ### Metrics Management (Vehicle Orchestration)
 
@@ -136,7 +130,6 @@ The service can be configured using command-line arguments or environment variab
 - `--bind-address`: HTTP server bind address (default: `0.0.0.0`)
 - `--bind-port`: HTTP server bind port (default: `8080`)
 - `--log-level`: Log level (default: `info`)
-- `--cli`: Run in CLI mode instead of server mode
 
 ## Testing
 
@@ -180,89 +173,6 @@ curl -X POST http://localhost:8080/api/v1/settings/vehicle/orchestrator \
     "author": "vehicle-admin",
     "comment": "Vehicle service orchestration configuration"
   }'
-```
-
-### Create a New Node
-
-```bash
-curl -X POST http://localhost:8080/api/v1/nodes \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "vehicle-ecu-02",
-    "image": "pullpiri/node-agent:latest",
-    "ip": "192.168.1.102",
-    "labels": {
-      "zone": "engine_bay",
-      "tier": "edge",
-      "capability": "processing"
-    }
-  }'
-```
-
-### Create a New Container
-
-```bash
-curl -X POST http://localhost:8080/api/v1/containers \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "vehicle-diagnostics",
-    "image": "pullpiri/diagnostics:v1.0.0",
-    "node_name": "vehicle-ecu-01",
-    "description": "Vehicle diagnostic service container",
-    "labels": {
-      "service": "diagnostics",
-      "version": "1.0.0",
-      "critical": "true"
-    }
-  }'
-```
-
-### Create a New SoC
-
-```bash
-curl -X POST http://localhost:8080/api/v1/socs \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "nvidia-xavier-01",
-    "description": "NVIDIA Xavier SoC for AI processing",
-    "labels": {
-      "vendor": "nvidia",
-      "series": "xavier",
-      "capability": "ai_inference"
-    }
-  }'
-```
-
-### Create a New Board
-
-```bash
-curl -X POST http://localhost:8080/api/v1/boards \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "vehicle-mainboard-01",
-    "description": "Primary vehicle compute board",
-    "labels": {
-      "type": "main_compute",
-      "location": "dashboard",
-      "power_class": "high"
-    }
-  }'
-```
-
-### Delete Resources
-
-```bash
-# Delete a container
-curl -X DELETE http://localhost:8080/api/v1/containers/vehicle-diagnostics
-
-# Delete a node
-curl -X DELETE http://localhost:8080/api/v1/nodes/vehicle-ecu-02
-
-# Delete a SoC
-curl -X DELETE http://localhost:8080/api/v1/socs/nvidia-xavier-01
-
-# Delete a board
-curl -X DELETE http://localhost:8080/api/v1/boards/vehicle-mainboard-01
 ```
 
 ### Get Configuration
@@ -336,43 +246,6 @@ RUST_LOG=debug ./target/debug/settingsservice
 }
 ```
 
-### Node Creation Request
-
-```json
-{
-  "name": "string (required)",
-  "image": "string (required)",
-  "ip": "string (required)",
-  "labels": {
-    "key": "value"
-  }
-}
-```
-
-### SoC Creation Request
-
-```json
-{
-  "name": "string (required)",
-  "description": "string (optional)",
-  "labels": {
-    "key": "value"
-  }
-}
-```
-
-### Board Creation Request
-
-```json
-{
-  "name": "string (required)",
-  "description": "string (optional)",
-  "labels": {
-    "key": "value"
-  }
-}
-```
-
 ### Pod Metrics Response (Enhanced)
 
 ```json
@@ -412,7 +285,6 @@ The Settings Service integrates directly with the Pullpiri vehicle orchestration
 - **NodeAgent**: Reports node resource utilization and container status to MonitoringServer
 - **APIServer**: Consumes configurations for orchestration policies and resource management
 - **ETCD**: Central storage for both configurations (`/piccolo/settings/`) and real-time metrics (`/piccolo/metrics/`)
-- **Resource Lifecycle**: Create/delete operations are synchronized with the monitoring server for consistent state management
 
 ## Port Usage
 
@@ -426,8 +298,6 @@ Following Pullpiri networking conventions:
 The API returns standard HTTP status codes:
 
 - `200 OK` - Successful operation
-- `201 Created` - Resource created successfully
-- `204 No Content` - Resource deleted successfully
 - `400 Bad Request` - Invalid request data
 - `404 Not Found` - Resource not found
 - `500 Internal Server Error` - Server error

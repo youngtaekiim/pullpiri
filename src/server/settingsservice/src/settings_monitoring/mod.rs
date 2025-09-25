@@ -39,28 +39,6 @@ fn default_version() -> u64 {
     1
 }
 
-#[derive(Debug, Deserialize)]
-pub struct CreateNodeRequest {
-    pub name: String,
-    pub image: String,
-    pub labels: std::collections::HashMap<String, String>,
-    pub ip: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreateSocRequest {
-    pub name: String,
-    pub description: Option<String>,
-    pub labels: std::collections::HashMap<String, String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreateBoardRequest {
-    pub name: String,
-    pub description: Option<String>,
-    pub labels: std::collections::HashMap<String, String>,
-}
-
 #[derive(Debug, Serialize)]
 pub struct NodeListResponse {
     pub nodes: Vec<NodeInfo>,
