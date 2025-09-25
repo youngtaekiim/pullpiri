@@ -7,8 +7,8 @@ use crate::monitoring_types::{BoardInfo, NodeInfo, SocInfo};
 use crate::settings_config::{Config, ConfigManager, ConfigSummary, ValidationResult};
 use crate::settings_history::{HistoryEntry, HistoryManager};
 use crate::settings_monitoring::{
-    BoardListResponse, CreateBoardRequest, CreateNodeRequest, CreateSocRequest, FilterSummary,
-    Metric, MetricsFilter, MonitoringManager, NodeListResponse, SocListResponse,
+    BoardListResponse, FilterSummary, Metric, MetricsFilter, MonitoringManager, NodeListResponse,
+    SocListResponse,
 };
 use crate::settings_storage::filter_key;
 use crate::settings_utils::error::SettingsError;
@@ -215,9 +215,9 @@ impl ApiServer {
             // System endpoints
             .route("/api/v1/system/status", get(get_system_status))
             .route("/api/v1/system/health", get(health_check))
-            // Node Management APIs
-            .route("/api/v1/nodes", get(list_nodes).post(create_node))
-            .route("/api/v1/nodes/:name", get(get_node).delete(delete_node))
+            // Node Management APIs - READ ONLY
+            .route("/api/v1/nodes", get(list_nodes))
+            .route("/api/v1/nodes/:name", get(get_node))
             .route("/api/v1/nodes/:name/pods/metrics", get(get_pod_metrics))
             // Container Management APIs
             .route(
@@ -232,12 +232,12 @@ impl ApiServer {
                 "/api/v1/nodes/:name/containers",
                 get(get_containers_by_node),
             )
-            // SoC Management APIs
-            .route("/api/v1/socs", get(list_socs).post(create_soc))
-            .route("/api/v1/socs/:name", get(get_soc).delete(delete_soc))
-            // Board Management APIs
-            .route("/api/v1/boards", get(list_boards).post(create_board))
-            .route("/api/v1/boards/:name", get(get_board).delete(delete_board))
+            // SoC Management APIs - READ ONLY
+            .route("/api/v1/socs", get(list_socs))
+            .route("/api/v1/socs/:name", get(get_soc))
+            // Board Management APIs - READ ONLY
+            .route("/api/v1/boards", get(list_boards))
+            .route("/api/v1/boards/:name", get(get_board))
             // Integration with monitoring server
             .route("/api/v1/monitoring/sync", post(sync_with_monitoring_server))
             // Additional metrics routes
@@ -725,75 +725,6 @@ async fn get_node(
     }
 }
 
-async fn create_node(
-    State(_state): State<ApiState>,
-    Json(request): Json<CreateNodeRequest>,
-) -> Result<Json<NodeInfo>, (StatusCode, Json<ErrorResponse>)> {
-    debug!("POST /api/v1/nodes with request: {:?}", request);
-
-    // Validate required fields
-    if request.name.is_empty() {
-        return Err(bad_request_error("Node name is required"));
-    }
-    if request.ip.is_empty() {
-        return Err(bad_request_error("Node IP is required"));
-    }
-    if request.image.is_empty() {
-        return Err(bad_request_error("Node image is required"));
-    }
-
-    // Create NodeInfo from request with proper validation
-    let node_info = NodeInfo {
-        node_name: request.name.clone(),
-        ip: request.ip.clone(),
-        cpu_usage: 0.0,
-        cpu_count: 0,
-        gpu_count: 0,
-        used_memory: 0,
-        total_memory: 0,
-        mem_usage: 0.0,
-        rx_bytes: 0,
-        tx_bytes: 0,
-        read_bytes: 0,
-        write_bytes: 0,
-        os: "Unknown".to_string(),
-        arch: "Unknown".to_string(),
-    };
-
-    // Store labels and image metadata separately if needed
-    if !request.labels.is_empty() {
-        if let Err(e) = store_node_metadata(&request.name, &request.image, &request.labels).await {
-            return Err(internal_error(&format!(
-                "Failed to store node metadata: {}",
-                e
-            )));
-        }
-    }
-
-    match create_node_in_monitoring_server(node_info.clone()).await {
-        Ok(_) => {
-            info!(
-                "Successfully created node: {} with image: {}",
-                request.name, request.image
-            );
-            Ok(Json(node_info))
-        }
-        Err(e) => Err(internal_error(&format!("Failed to create node: {}", e))),
-    }
-}
-
-async fn delete_node(
-    Path(name): Path<String>,
-    State(_state): State<ApiState>,
-) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
-    debug!("DELETE /api/v1/nodes/{}", name);
-
-    match delete_node_from_monitoring_server(&name).await {
-        Ok(_) => Ok(StatusCode::NO_CONTENT),
-        Err(e) => Err(internal_error(&format!("Failed to delete node: {}", e))),
-    }
-}
-
 // SoC API handlers
 async fn list_socs(
     Query(query): Query<ResourceQuery>,
@@ -839,66 +770,6 @@ async fn get_soc(
         }
         Ok(None) => Err(not_found_error("SoC not found")),
         Err(e) => Err(internal_error(&format!("Failed to get SoC: {}", e))),
-    }
-}
-
-async fn create_soc(
-    State(_state): State<ApiState>,
-    Json(request): Json<CreateSocRequest>,
-) -> Result<Json<SocInfo>, (StatusCode, Json<ErrorResponse>)> {
-    debug!("POST /api/v1/socs with request: {:?}", request);
-
-    // Validate required fields
-    if request.name.is_empty() {
-        return Err(bad_request_error("SoC name is required"));
-    }
-
-    let soc_info = SocInfo {
-        soc_id: request.name.clone(),
-        nodes: Vec::new(),
-        total_cpu_usage: 0.0,
-        total_cpu_count: 0,
-        total_gpu_count: 0,
-        total_used_memory: 0,
-        total_memory: 0,
-        total_mem_usage: 0.0,
-        total_rx_bytes: 0,
-        total_tx_bytes: 0,
-        total_read_bytes: 0,
-        total_write_bytes: 0,
-        last_updated: std::time::SystemTime::now(),
-    };
-
-    // Store labels and metadata
-    if !request.labels.is_empty() {
-        if let Err(e) =
-            store_soc_metadata(&request.name, &request.description, &request.labels).await
-        {
-            return Err(internal_error(&format!(
-                "Failed to store SoC metadata: {}",
-                e
-            )));
-        }
-    }
-
-    match create_soc_in_monitoring_server(soc_info.clone()).await {
-        Ok(_) => {
-            info!("Successfully created SoC: {}", request.name);
-            Ok(Json(soc_info))
-        }
-        Err(e) => Err(internal_error(&format!("Failed to create SoC: {}", e))),
-    }
-}
-
-async fn delete_soc(
-    Path(name): Path<String>,
-    State(_state): State<ApiState>,
-) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
-    debug!("DELETE /api/v1/socs/{}", name);
-
-    match delete_soc_from_monitoring_server(&name).await {
-        Ok(_) => Ok(StatusCode::NO_CONTENT),
-        Err(e) => Err(internal_error(&format!("Failed to delete SoC: {}", e))),
     }
 }
 
@@ -953,67 +824,7 @@ async fn get_board(
     }
 }
 
-async fn create_board(
-    State(_state): State<ApiState>,
-    Json(request): Json<CreateBoardRequest>,
-) -> Result<Json<BoardInfo>, (StatusCode, Json<ErrorResponse>)> {
-    debug!("POST /api/v1/boards with request: {:?}", request);
-
-    // Validate required fields
-    if request.name.is_empty() {
-        return Err(bad_request_error("Board name is required"));
-    }
-
-    let board_info = BoardInfo {
-        board_id: request.name.clone(),
-        nodes: Vec::new(),
-        socs: Vec::new(),
-        total_cpu_usage: 0.0,
-        total_cpu_count: 0,
-        total_gpu_count: 0,
-        total_used_memory: 0,
-        total_memory: 0,
-        total_mem_usage: 0.0,
-        total_rx_bytes: 0,
-        total_tx_bytes: 0,
-        total_read_bytes: 0,
-        total_write_bytes: 0,
-        last_updated: std::time::SystemTime::now(),
-    };
-
-    // Store labels and metadata
-    if !request.labels.is_empty() {
-        if let Err(e) =
-            store_board_metadata(&request.name, &request.description, &request.labels).await
-        {
-            return Err(internal_error(&format!(
-                "Failed to store board metadata: {}",
-                e
-            )));
-        }
-    }
-
-    match create_board_in_monitoring_server(board_info.clone()).await {
-        Ok(_) => {
-            info!("Successfully created board: {}", request.name);
-            Ok(Json(board_info))
-        }
-        Err(e) => Err(internal_error(&format!("Failed to create board: {}", e))),
-    }
-}
-
-async fn delete_board(
-    Path(name): Path<String>,
-    State(_state): State<ApiState>,
-) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
-    debug!("DELETE /api/v1/boards/{}", name);
-
-    match delete_board_from_monitoring_server(&name).await {
-        Ok(_) => Ok(StatusCode::NO_CONTENT),
-        Err(e) => Err(internal_error(&format!("Failed to delete board: {}", e))),
-    }
-}
-
+// Integration with monitoring server
 async fn sync_with_monitoring_server(
     State(_state): State<ApiState>,
 ) -> Result<Json<SuccessResponse>, (StatusCode, Json<ErrorResponse>)> {
@@ -1132,52 +943,6 @@ async fn fetch_board_logs(board_id: &str) -> Result<Vec<String>, String> {
         .map_err(|e| format!("Failed to fetch board logs: {}", e))
 }
 
-// Metadata storage functions
-async fn store_node_metadata(
-    node_name: &str,
-    image: &str,
-    labels: &std::collections::HashMap<String, String>,
-) -> Result<(), String> {
-    let metadata = serde_json::json!({
-        "image": image,
-        "labels": labels
-    });
-
-    monitoring_etcd::store_node_metadata(node_name, &metadata)
-        .await
-        .map_err(|e| format!("Failed to store node metadata: {}", e))
-}
-
-async fn store_soc_metadata(
-    soc_id: &str,
-    description: &Option<String>,
-    labels: &std::collections::HashMap<String, String>,
-) -> Result<(), String> {
-    let metadata = serde_json::json!({
-        "description": description,
-        "labels": labels
-    });
-
-    monitoring_etcd::store_soc_metadata(soc_id, &metadata)
-        .await
-        .map_err(|e| format!("Failed to store SoC metadata: {}", e))
-}
-
-async fn store_board_metadata(
-    board_id: &str,
-    description: &Option<String>,
-    labels: &std::collections::HashMap<String, String>,
-) -> Result<(), String> {
-    let metadata = serde_json::json!({
-        "description": description,
-        "labels": labels
-    });
-
-    monitoring_etcd::store_board_metadata(board_id, &metadata)
-        .await
-        .map_err(|e| format!("Failed to store board metadata: {}", e))
-}
-
 // Integration functions with monitoring server
 async fn fetch_all_nodes_from_monitoring_server() -> Result<Vec<NodeInfo>, String> {
     crate::monitoring_etcd::get_all_nodes()
@@ -1191,18 +956,6 @@ async fn fetch_node_from_monitoring_server(name: &str) -> Result<Option<NodeInfo
         Err(crate::monitoring_etcd::MonitoringEtcdError::NotFound) => Ok(None),
         Err(e) => Err(format!("ETCD error: {}", e)),
     }
-}
-
-async fn create_node_in_monitoring_server(node: NodeInfo) -> Result<(), String> {
-    crate::monitoring_etcd::store_node_info(&node)
-        .await
-        .map_err(|e| format!("ETCD error: {}", e))
-}
-
-async fn delete_node_from_monitoring_server(name: &str) -> Result<(), String> {
-    crate::monitoring_etcd::delete_node_info(name)
-        .await
-        .map_err(|e| format!("ETCD error: {}", e))
 }
 
 async fn fetch_all_socs_from_monitoring_server() -> Result<Vec<SocInfo>, String> {
@@ -1620,18 +1373,6 @@ async fn fetch_soc_from_monitoring_server(name: &str) -> Result<Option<SocInfo>,
     }
 }
 
-async fn create_soc_in_monitoring_server(soc: SocInfo) -> Result<(), String> {
-    crate::monitoring_etcd::store_soc_info(&soc)
-        .await
-        .map_err(|e| format!("ETCD error: {}", e))
-}
-
-async fn delete_soc_from_monitoring_server(name: &str) -> Result<(), String> {
-    crate::monitoring_etcd::delete_soc_info(name)
-        .await
-        .map_err(|e| format!("ETCD error: {}", e))
-}
-
 // Board integration functions
 async fn fetch_board_from_monitoring_server(name: &str) -> Result<Option<BoardInfo>, String> {
     match crate::monitoring_etcd::get_board_info(name).await {
@@ -1639,18 +1380,6 @@ async fn fetch_board_from_monitoring_server(name: &str) -> Result<Option<BoardIn
         Err(crate::monitoring_etcd::MonitoringEtcdError::NotFound) => Ok(None),
         Err(e) => Err(format!("ETCD error: {}", e)),
     }
-}
-
-async fn create_board_in_monitoring_server(board: BoardInfo) -> Result<(), String> {
-    crate::monitoring_etcd::store_board_info(&board)
-        .await
-        .map_err(|e| format!("ETCD error: {}", e))
-}
-
-async fn delete_board_from_monitoring_server(name: &str) -> Result<(), String> {
-    crate::monitoring_etcd::delete_board_info(name)
-        .await
-        .map_err(|e| format!("ETCD error: {}", e))
 }
 
 // sync function

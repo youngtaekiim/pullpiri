@@ -4,6 +4,11 @@ This guide describes how to set up and validate the integration between the Node
 
 ---
 
+> **Note:**  
+> NUC1 and NUC2 must be on the same subnet network to ensure proper communication between services.
+
+---
+
 ## Prerequisites
 
 - **Hardware:** 2 NUCs (NUC1 and NUC2)
