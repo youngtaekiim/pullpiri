@@ -13,9 +13,11 @@
 //! state transitions, monitoring, reconciliation, and recovery for all resource types
 //! (Scenario, Package, Model, Volume, Network, Node).
 
+use crate::grpc::sender;
 use crate::state_machine::StateMachine;
 use crate::types::{ActionCommand, TransitionResult};
 use common::monitoringserver::ContainerList;
+use common::spec::artifact::Artifact;
 
 use common::statemanager::{
     ErrorCode, ModelState, PackageState, ResourceType, ScenarioState, StateChange,
@@ -328,6 +330,33 @@ impl StateManagerManager {
             println!("    Success Message: {}", result.message);
             println!("    Transition ID: {}", result.transition_id);
 
+            // 🔍 COMMENT 6: Save scenario state changes to ETCD
+            // StateManager receives state change requests from FilterGateway, ActionController, and PolicyManager
+            // and saves the scenario state transitions to ETCD for persistence
+            if resource_type == ResourceType::Scenario {
+                println!("💾 SCENARIO STATE PERSISTENCE: StateManager ETCD Storage");
+                println!("   📋 Scenario: {}", state_change.resource_name);
+                println!("   🔄 Final State: {}", new_state_str);
+                println!("   🔍 Reason: Successful state transition completed");
+
+                let etcd_key = format!("/scenario/{}/state", state_change.resource_name);
+                let etcd_value = new_state_str;
+
+                println!("   📤 Saving to ETCD:");
+                println!("      • Key: {}", etcd_key);
+                println!("      • Value: {}", etcd_value);
+                println!("      • Operation: common::etcd::put()");
+
+                if let Err(e) = common::etcd::put(&etcd_key, etcd_value).await {
+                    println!("   ❌ Failed to save scenario state to ETCD: {:?}", e);
+                } else {
+                    println!(
+                        "   ✅ Successfully saved scenario state to ETCD: {} → {}",
+                        etcd_key, etcd_value
+                    );
+                }
+            }
+
             // Log any actions that were queued for asynchronous execution
             // Actions are processed separately to keep state transitions fast
             if !result.actions_to_execute.is_empty() {
@@ -416,77 +445,363 @@ impl StateManagerManager {
         // - Update monitoring metrics
     }
 
-    /// Processes a ContainerList message for container health monitoring.
+    /// Processes a ContainerList message for container health monitoring and model state management.
     ///
     /// This method handles container status updates from nodeagent and
-    /// triggers appropriate state transitions based on container health.
+    /// triggers appropriate model state transitions based on container health.
     ///
     /// # Arguments
     /// * `container_list` - ContainerList message with node and container status
     ///
     /// # Processing Steps
     /// 1. Analyze container health and status changes
-    /// 2. Identify resources affected by container changes
-    /// 3. Trigger state transitions for failed or recovered containers
-    /// 4. Update resource health status and monitoring data
+    /// 2. Identify models affected by container changes  
+    /// 3. Evaluate model state based on container states
+    /// 4. Update model states in ETCD if transitions occur
     async fn process_container_list(&self, container_list: ContainerList) {
         println!("=== PROCESSING CONTAINER LIST ===");
         println!("  Node Name: {}", container_list.node_name);
         println!("  Container Count: {}", container_list.containers.len());
 
-        // Process each container for health status analysis
-        for (i, container) in container_list.containers.iter().enumerate() {
-            // container.names is a Vec<String>, so join them for display
-            let container_names = container.names.join(", ");
-            println!("  Container {}: {}", i + 1, container_names);
-            println!("    Image: {}", container.image);
-            println!("    State: {:?}", container.state);
-            println!("    ID: {}", container.id);
+        // Process containers and group by model
+        let model_containers = self
+            .group_containers_by_model(&container_list.containers)
+            .await;
 
-            // container.config is a HashMap, not an Option
-            if !container.config.is_empty() {
-                println!("    Config: {:?}", container.config);
+        // Process each model's container states
+        for (model_name, containers) in model_containers {
+            println!("  Processing model: {}", model_name);
+
+            // Process the state evaluation and transition through the state machine
+            let mut state_machine = self.state_machine.lock().await;
+            let transition_result =
+                state_machine.process_model_state_update(&model_name, &containers);
+
+            if transition_result.is_success() {
+                // Check if state actually changed by looking at actions_to_execute
+                let state_changed = !transition_result.actions_to_execute.is_empty();
+
+                if state_changed {
+                    println!(
+                        "    State transition successful: {}",
+                        transition_result.message
+                    );
+
+                    // Extract the new model state from the transition result
+                    let new_model_state = match transition_result.new_state {
+                        1 => common::statemanager::ModelState::Created,
+                        2 => common::statemanager::ModelState::Paused,
+                        3 => common::statemanager::ModelState::Exited,
+                        4 => common::statemanager::ModelState::Dead,
+                        5 => common::statemanager::ModelState::Running,
+                        _ => common::statemanager::ModelState::Running,
+                    };
+
+                    // Save the new model state to ETCD
+                    drop(state_machine); // Release the lock before async operation
+                    if let Err(e) = self
+                        .save_model_state_to_etcd(&model_name, new_model_state)
+                        .await
+                    {
+                        println!("    Failed to save model state to ETCD: {:?}", e);
+                    } else {
+                        println!("    Successfully saved model state to ETCD");
+
+                        // Trigger package state evaluation based on model state change
+                        // This implements the chain reaction described in the Korean documentation
+                        self.trigger_package_state_evaluation(&model_name).await;
+                    }
+                } else {
+                    println!("    Model state unchanged: {}", transition_result.message);
+                }
+            } else {
+                println!("    State evaluation failed: {}", transition_result.message);
             }
-
-            // Process container annotations if available
-            if !container.annotation.is_empty() {
-                println!("    Annotations: {:?}", container.annotation);
-            }
-
-            // TODO: Implement comprehensive container processing:
-            //
-            // 1. HEALTH STATUS ANALYSIS
-            //    - Analyze container state changes (running -> failed, etc.)
-            //    - Check exit codes for failure conditions
-            //    - Monitor resource usage and performance metrics
-            //    - Detect container restart loops and crash patterns
-            //
-            // 2. RESOURCE MAPPING
-            //    - Map containers to managed resources (scenarios, packages, models)
-            //    - Identify which resources are affected by container changes
-            //    - Determine impact on dependent resources
-            //
-            // 3. STATE TRANSITION TRIGGERS
-            //    - Trigger state transitions for failed containers
-            //    - Handle container recovery and restart scenarios
-            //    - Update resource states based on container health
-            //    - Escalate to recovery management for critical failures
-            //
-            // 4. HEALTH STATUS UPDATES
-            //    - Update resource health status based on container state
-            //    - Generate health check events and notifications
-            //    - Update monitoring and observability data
-            //    - Maintain health history for trend analysis
-            //
-            // 5. ASIL COMPLIANCE MONITORING
-            //    - Monitor ASIL-critical containers for safety violations
-            //    - Generate alerts for safety-critical container failures
-            //    - Implement timing constraints for container recovery
-            //    - Ensure safety systems remain operational
         }
 
-        println!("  Status: Container list processing completed (implementation pending)");
+        println!("  Status: Container list processing completed");
         println!("=====================================");
+    }
+
+    /// Groups containers by their associated model based on annotations or naming conventions
+    async fn group_containers_by_model<'a>(
+        &self,
+        containers: &'a [common::monitoringserver::ContainerInfo],
+    ) -> std::collections::HashMap<String, Vec<&'a common::monitoringserver::ContainerInfo>> {
+        let mut model_containers = std::collections::HashMap::new();
+
+        for container in containers {
+            // Try to extract model name from container annotations first
+            if let Some(model_name) = self.extract_model_name_from_container(container).await {
+                model_containers
+                    .entry(model_name)
+                    .or_insert_with(Vec::new)
+                    .push(container);
+            }
+        }
+
+        model_containers
+    }
+
+    /// Extracts model name from container annotations or configuration
+    async fn extract_model_name_from_container(
+        &self,
+        container: &common::monitoringserver::ContainerInfo,
+    ) -> Option<String> {
+        // Check annotations for model information
+        if let Some(model_name) = container.annotation.get("model") {
+            return Some(model_name.clone());
+        }
+
+        if let Some(model_name) = container.annotation.get("pullpiri.model") {
+            return Some(model_name.clone());
+        }
+
+        // Check config for model information
+        if let Some(model_name) = container.config.get("model") {
+            return Some(model_name.clone());
+        }
+
+        // Try to extract from container names (as fallback)
+        for name in &container.names {
+            if name.contains("model-") {
+                if let Some(model_name) = name.strip_prefix("model-") {
+                    return Some(model_name.to_string());
+                }
+            }
+        }
+
+        None
+    }
+
+    /// Saves model state to ETCD using the format specified in the documentation
+    async fn save_model_state_to_etcd(
+        &self,
+        model_name: &str,
+        model_state: common::statemanager::ModelState,
+    ) -> std::result::Result<(), String> {
+        let key = format!("/model/{}/state", model_name);
+        let value = match model_state {
+            common::statemanager::ModelState::Created => "Created",
+            common::statemanager::ModelState::Paused => "Paused",
+            common::statemanager::ModelState::Exited => "Exited",
+            common::statemanager::ModelState::Dead => "Dead",
+            common::statemanager::ModelState::Running => "Running",
+            _ => "Unknown",
+        };
+
+        println!("    Saving to ETCD - Key: {}, Value: {}", key, value);
+
+        if let Err(e) = common::etcd::put(&key, value).await {
+            println!("    Failed to save model state: {:?}", e);
+            return Err(format!(
+                "Failed to save model state for {}: {:?}",
+                model_name, e
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Saves package state to ETCD using the format specified in the Korean documentation
+    ///
+    /// Format: /package/{package_name}/state -> state_value (e.g., "running", "degraded", "error")
+    async fn save_package_state_to_etcd(
+        &self,
+        package_name: &str,
+        package_state: common::statemanager::PackageState,
+    ) -> std::result::Result<(), String> {
+        let key = format!("/package/{}/state", package_name);
+        let value = package_state.as_str_name();
+
+        println!(
+            "    Saving package state to ETCD - Key: {}, Value: {}",
+            key, value
+        );
+
+        if let Err(e) = common::etcd::put(&key, value).await {
+            println!("    Failed to save package state: {:?}", e);
+            return Err(format!(
+                "Failed to save package state for {}: {:?}",
+                package_name, e
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Triggers package state evaluation and update based on model state changes
+    ///
+    /// This function implements the chain reaction described in the Korean documentation:
+    /// When a model state changes, it triggers package state evaluation to see if the
+    /// package state should also change based on the states of all models in the package.
+    async fn trigger_package_state_evaluation(&self, changed_model_name: &str) {
+        println!(
+            "  Triggering package state evaluation for model: {}",
+            changed_model_name
+        );
+
+        // Find all packages that contain this model using StateMachine
+        let packages = match StateMachine::find_packages_containing_model(changed_model_name).await
+        {
+            Ok(pkgs) => pkgs,
+            Err(e) => {
+                println!(
+                    "    Failed to find packages for model {}: {:?}",
+                    changed_model_name, e
+                );
+                return;
+            }
+        };
+
+        // Evaluate and update state for each package using state machine
+        for package_name in packages {
+            let state_machine = self.state_machine.lock().await;
+            match state_machine
+                .evaluate_and_update_package_state(&package_name)
+                .await
+            {
+                Ok((state_changed, new_state)) => {
+                    drop(state_machine); // Release lock before async operations
+
+                    if state_changed {
+                        // Save new state to ETCD
+                        if let Err(e) = self
+                            .save_package_state_to_etcd(&package_name, new_state)
+                            .await
+                        {
+                            println!("      Failed to save package state: {:?}", e);
+                            continue;
+                        }
+
+                        // If package is in error or degraded state, trigger ActionController reconcile
+                        if new_state == common::statemanager::PackageState::Error
+                            || new_state == common::statemanager::PackageState::Degraded
+                        {
+                            if let Err(e) = self
+                                .trigger_action_controller_reconcile_internal(&package_name)
+                                .await
+                            {
+                                println!(
+                                    "      Failed to trigger ActionController reconcile: {:?}",
+                                    e
+                                );
+                            }
+                        }
+
+                        println!(
+                            "      Successfully updated package {} state to {}",
+                            package_name,
+                            new_state.as_str_name()
+                        );
+                    }
+                }
+                Err(e) => {
+                    println!(
+                        "    Failed to evaluate package state for {}: {:?}",
+                        package_name, e
+                    );
+                }
+            }
+        }
+    }
+
+    /// Trigger ActionController reconcile request for dead/error package state
+    ///
+    /// This implements the requirement from the Korean documentation to send gRPC
+    /// reconcile request to ActionController when package enters error (dead) state.
+    #[cfg(test)]
+    pub async fn trigger_action_controller_reconcile(
+        &self,
+        package_name: &str,
+    ) -> std::result::Result<(), String> {
+        self.trigger_action_controller_reconcile_internal(package_name).await
+    }
+
+    /// Internal implementation of ActionController reconcile trigger
+    async fn trigger_action_controller_reconcile_internal(
+        &self,
+        package_name: &str,
+    ) -> std::result::Result<(), String> {
+        println!(
+            "      Triggering ActionController reconcile for package: {}",
+            package_name
+        );
+
+        // Find scenario that contains this package
+        let scenario_name = match self.find_scenario_for_package(package_name).await {
+            Ok(Some(name)) => name,
+            Ok(None) => {
+                println!("      No scenario found for package: {}", package_name);
+                return Err(format!("No scenario found for package: {}", package_name));
+            }
+            Err(e) => {
+                println!(
+                    "      Failed to find scenario for package {}: {:?}",
+                    package_name, e
+                );
+                return Err(format!("Failed to find scenario for package: {}", e));
+            }
+        };
+
+        // Create reconcile request using the gRPC sender
+        let reconcile_request = common::actioncontroller::ReconcileRequest {
+            scenario_name: scenario_name.clone(),
+            current: common::actioncontroller::PodStatus::Failed.into(),
+            desired: common::actioncontroller::PodStatus::Running.into(),
+        };
+
+        match sender::_send(reconcile_request).await {
+            Ok(response) => {
+                println!(
+                    "      Successfully sent reconcile request for scenario: {}",
+                    scenario_name
+                );
+                println!(
+                    "      ActionController response: status={:?}",
+                    response.get_ref().status
+                );
+                Ok(())
+            }
+            Err(e) => {
+                let error_msg = format!(
+                    "Failed to send reconcile request to ActionController: {:?}",
+                    e
+                );
+                println!("      {}", error_msg);
+                Err(error_msg)
+            }
+        }
+    }
+
+    /// Find scenario that contains the given package
+    async fn find_scenario_for_package(
+        &self,
+        package_name: &str,
+    ) -> std::result::Result<Option<String>, String> {
+        // Get all scenarios from ETCD
+        match common::etcd::get_all_with_prefix("Scenario/").await {
+            Ok(scenario_entries) => {
+                for kv in scenario_entries {
+                    match serde_yaml::from_str::<common::spec::artifact::Scenario>(&kv.value) {
+                        Ok(scenario) => {
+                            // Check if this scenario references the package
+                            if scenario.get_targets() == package_name {
+                                return Ok(Some(scenario.get_name()));
+                            }
+                        }
+                        Err(e) => {
+                            println!("      Failed to parse scenario {}: {:?}", kv.key, e);
+                        }
+                    }
+                }
+                Ok(None) // No scenario found containing this package
+            }
+            Err(e) => {
+                println!("      Failed to get scenarios from ETCD: {:?}", e);
+                Err(format!("Failed to get scenarios from ETCD: {:?}", e))
+            }
+        }
     }
 
     /// Main message processing loop for handling gRPC requests.
@@ -874,3 +1189,205 @@ async fn execute_action(command: ActionCommand) {
 //    - Resource usage monitoring and optimization
 //    - Health check automation and reporting
 //    - Metrics collection and observability integration
+
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+    use common::actioncontroller::{
+        action_controller_connection_server::{ActionControllerConnection, ActionControllerConnectionServer},
+        ReconcileRequest, ReconcileResponse, TriggerActionRequest, TriggerActionResponse,
+        CompleteNetworkSettingRequest, CompleteNetworkSettingResponse,
+    };
+    use std::sync::Arc;
+    use tonic::{transport::Server, Request, Response, Status};
+
+    /// Mock ActionController receiver for testing
+    #[derive(Clone)]
+    struct MockActionControllerReceiver {
+        reconcile_requests: Arc<tokio::sync::Mutex<Vec<ReconcileRequest>>>,
+    }
+
+    impl MockActionControllerReceiver {
+        fn new() -> Self {
+            Self {
+                reconcile_requests: Arc::new(tokio::sync::Mutex::new(Vec::new())),
+            }
+        }
+
+        async fn get_received_requests(&self) -> Vec<ReconcileRequest> {
+            self.reconcile_requests.lock().await.clone()
+        }
+    }
+
+    #[tonic::async_trait]
+    impl ActionControllerConnection for MockActionControllerReceiver {
+        async fn trigger_action(
+            &self,
+            _request: Request<TriggerActionRequest>,
+        ) -> std::result::Result<Response<TriggerActionResponse>, Status> {
+            Ok(Response::new(TriggerActionResponse {
+                status: 0,
+                desc: "Mock trigger action success".to_string(),
+            }))
+        }
+
+        async fn reconcile(
+            &self,
+            request: Request<ReconcileRequest>,
+        ) -> std::result::Result<Response<ReconcileResponse>, Status> {
+            let req = request.into_inner();
+            println!("📨 Mock ActionController received reconcile request:");
+            println!("   - Scenario: {}", req.scenario_name);
+            println!("   - Current: {}", req.current);
+            println!("   - Desired: {}", req.desired);
+            
+            // Store the request for verification
+            self.reconcile_requests.lock().await.push(req.clone());
+            
+            Ok(Response::new(ReconcileResponse {
+                status: 0,
+                desc: "Mock reconcile success".to_string(),
+            }))
+        }
+
+        async fn complete_network_setting(
+            &self,
+            _request: Request<CompleteNetworkSettingRequest>,
+        ) -> std::result::Result<Response<CompleteNetworkSettingResponse>, Status> {
+            Ok(Response::new(CompleteNetworkSettingResponse {
+                acknowledged: true,
+            }))
+        }
+    }
+
+    #[tokio::test]
+    async fn test_statemanager_actioncontroller_communication() {
+        println!("🧪 Testing StateManager → ActionController Communication");
+        println!("=========================================================");
+
+        // Setup mock ActionController receiver
+        let mock_receiver = MockActionControllerReceiver::new();
+        let receiver_clone = mock_receiver.clone();
+
+        // Start mock ActionController server
+        let addr = "127.0.0.1:47001".parse().unwrap();
+        let server_handle = tokio::spawn(async move {
+            println!("🚀 Starting mock ActionController server on {}", addr);
+            Server::builder()
+                .add_service(ActionControllerConnectionServer::new(receiver_clone))
+                .serve(addr)
+                .await
+                .unwrap();
+        });
+
+        // Give server time to start
+        tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+
+        // Create test scenario and package data in etcd
+        let scenario_yaml = r#"
+apiVersion: v1
+kind: Scenario
+metadata:
+    name: test-communication-scenario
+spec:
+    condition:
+        express: eq
+        value: "true"
+        operands:
+            type: DDS
+            name: value
+            value: TestSignal
+    action: update
+    target: test-communication-package
+"#;
+
+        let package_yaml = r#"
+apiVersion: v1
+kind: Package
+metadata:
+    name: test-communication-package
+spec:
+    node: TestNode
+    image: test-image:latest
+    network:
+        mode: host
+"#;
+
+        // Put test data in etcd
+        common::etcd::put("Scenario/test-communication-scenario", scenario_yaml)
+            .await
+            .expect("Failed to put scenario in etcd");
+        
+        common::etcd::put("Package/test-communication-package", package_yaml)
+            .await
+            .expect("Failed to put package in etcd");
+
+        // Create StateManager and test the reconcile communication
+        let (tx_container, rx_container) = tokio::sync::mpsc::channel(100);
+        let (tx_state_change, rx_state_change) = tokio::sync::mpsc::channel(100);
+        
+        let mut state_manager = StateManagerManager::new(rx_container, rx_state_change).await;
+        state_manager.initialize().await.expect("Failed to initialize StateManager");
+
+        println!("🔄 Testing trigger_action_controller_reconcile...");
+        
+        // Call the function we're testing
+        let result = state_manager
+            .trigger_action_controller_reconcile("test-communication-package")
+            .await;
+
+        // Verify the result
+        assert!(result.is_ok(), "trigger_action_controller_reconcile should succeed: {:?}", result);
+        println!("✅ StateManager successfully sent reconcile request");
+
+        // Give some time for the request to be processed
+        tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+
+        // Verify that ActionController received the request
+        let received_requests = mock_receiver.get_received_requests().await;
+        assert_eq!(received_requests.len(), 1, "ActionController should receive exactly one reconcile request");
+        
+        let received_request = &received_requests[0];
+        assert_eq!(received_request.scenario_name, "test-communication-scenario");
+        assert_eq!(received_request.current, 5); // PodStatus::FAILED
+        assert_eq!(received_request.desired, 3); // PodStatus::RUNNING
+
+        println!("✅ ActionController properly received reconcile request:");
+        println!("   - Scenario: {}", received_request.scenario_name);
+        println!("   - Current Status: {} (FAILED)", received_request.current);
+        println!("   - Desired Status: {} (RUNNING)", received_request.desired);
+
+        // Cleanup
+        common::etcd::delete("Scenario/test-communication-scenario")
+            .await
+            .expect("Failed to cleanup scenario from etcd");
+        
+        common::etcd::delete("Package/test-communication-package")
+            .await
+            .expect("Failed to cleanup package from etcd");
+
+        server_handle.abort();
+        println!("🎉 Test completed successfully!");
+    }
+
+    #[tokio::test]
+    async fn test_statemanager_error_handling() {
+        println!("🧪 Testing StateManager Error Handling");
+        println!("======================================");
+
+        // Test with package that doesn't have an associated scenario
+        let (tx_container, rx_container) = tokio::sync::mpsc::channel(100);
+        let (tx_state_change, rx_state_change) = tokio::sync::mpsc::channel(100);
+        
+        let mut state_manager = StateManagerManager::new(rx_container, rx_state_change).await;
+        state_manager.initialize().await.expect("Failed to initialize StateManager");
+
+        let result = state_manager
+            .trigger_action_controller_reconcile("nonexistent-package")
+            .await;
+
+        assert!(result.is_err(), "Should return error for nonexistent package");
+        assert!(result.unwrap_err().contains("No scenario found for package"));
+        println!("✅ Properly handles nonexistent package error");
+    }
+}

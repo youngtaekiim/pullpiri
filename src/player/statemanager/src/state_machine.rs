@@ -26,20 +26,20 @@
 //! let result = state_machine.process_state_change(state_change);
 //! ```
 
-use crate::types::{ActionCommand, HealthStatus, ResourceState, StateTransition, TransitionResult};
+use crate::types::{
+    ActionCommand, ContainerState, HealthStatus, ResourceState, StateTransition, TransitionResult,
+};
+use common::spec::artifact::Artifact;
 use common::statemanager::{
     ErrorCode, ModelState, PackageState, ResourceType, ScenarioState, StateChange,
 };
 use std::collections::HashMap;
 use tokio::sync::mpsc;
-use tokio::time::{Duration, Instant};
+use tokio::time::Instant;
 
 // ========================================
 // CONSTANTS AND CONFIGURATION
 // ========================================
-
-/// Default backoff duration for CrashLoopBackOff states
-const BACKOFF_DURATION_SECS: u64 = 30;
 
 /// Maximum consecutive failures before marking resource as unhealthy
 const MAX_CONSECUTIVE_FAILURES: u32 = 3;
@@ -98,12 +98,6 @@ pub struct StateMachine {
     /// and contain complete state information including metadata and health status.
     resource_states: HashMap<String, ResourceState>,
 
-    /// Backoff timers for CrashLoopBackOff and retry management
-    ///
-    /// Tracks when resources that have failed transitions can be retried,
-    /// implementing exponential backoff to prevent resource thrashing.
-    backoff_timers: HashMap<String, Instant>,
-
     /// Action command sender for async execution
     action_sender: Option<mpsc::UnboundedSender<ActionCommand>>,
 }
@@ -125,14 +119,11 @@ impl StateMachine {
         let mut state_machine = StateMachine {
             transition_tables: HashMap::new(),
             resource_states: HashMap::new(),
-            backoff_timers: HashMap::new(),
             action_sender: None,
         };
 
         // Initialize transition tables for each resource type
         state_machine.initialize_scenario_transitions();
-        state_machine.initialize_package_transitions();
-        state_machine.initialize_model_transitions();
 
         state_machine
     }
@@ -174,261 +165,34 @@ impl StateMachine {
             StateTransition {
                 from_state: ScenarioState::Waiting as i32,
                 event: "condition_met".to_string(),
-                to_state: ScenarioState::Allowed as i32,
+                to_state: ScenarioState::Satisfied as i32,
                 condition: None,
                 action: "start_policy_verification".to_string(),
             },
             StateTransition {
-                from_state: ScenarioState::Allowed as i32,
+                from_state: ScenarioState::Satisfied as i32,
                 event: "policy_verification_success".to_string(),
-                to_state: ScenarioState::Playing as i32,
+                to_state: ScenarioState::Allowed as i32,
                 condition: None,
                 action: "execute_action_on_target_package".to_string(),
             },
             StateTransition {
-                from_state: ScenarioState::Allowed as i32,
+                from_state: ScenarioState::Satisfied as i32,
                 event: "policy_verification_failure".to_string(),
                 to_state: ScenarioState::Denied as i32,
                 condition: None,
                 action: "log_denial_generate_alert".to_string(),
             },
+            StateTransition {
+                from_state: ScenarioState::Allowed as i32,
+                event: "scenario_completion".to_string(),
+                to_state: ScenarioState::Completed as i32,
+                condition: None,
+                action: "finalize_scenario".to_string(),
+            },
         ];
         self.transition_tables
             .insert(ResourceType::Scenario, scenario_transitions);
-    }
-
-    /// Initialize the state transition table for Package resources
-    ///
-    /// Configures all valid state transitions for Package resources, including:
-    /// - Download and installation states
-    /// - Verification and validation phases
-    /// - Update and rollback mechanisms
-    /// - Cleanup and removal operations
-    ///
-    /// # Implementation Note
-    /// Package transitions typically involve more complex workflows due to
-    /// dependency management and rollback requirements.
-    fn initialize_package_transitions(&mut self) {
-        let package_transitions = vec![
-            StateTransition {
-                from_state: PackageState::Unspecified as i32,
-                event: "launch_request".to_string(),
-                to_state: PackageState::Initializing as i32,
-                condition: None,
-                action: "start_model_creation_allocate_resources".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Initializing as i32,
-                event: "initialization_complete".to_string(),
-                to_state: PackageState::Running as i32,
-                condition: Some("all_models_normal".to_string()),
-                action: "update_state_announce_availability".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Initializing as i32,
-                event: "partial_initialization_failure".to_string(),
-                to_state: PackageState::Degraded as i32,
-                condition: Some("critical_models_normal".to_string()),
-                action: "log_warning_activate_partial_functionality".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Initializing as i32,
-                event: "critical_initialization_failure".to_string(),
-                to_state: PackageState::Error as i32,
-                condition: Some("critical_models_failed".to_string()),
-                action: "log_error_attempt_recovery".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Running as i32,
-                event: "model_issue_detected".to_string(),
-                to_state: PackageState::Degraded as i32,
-                condition: Some("non_critical_model_issues".to_string()),
-                action: "log_warning_maintain_partial_functionality".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Running as i32,
-                event: "critical_issue_detected".to_string(),
-                to_state: PackageState::Error as i32,
-                condition: Some("critical_model_issues".to_string()),
-                action: "log_error_attempt_recovery".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Running as i32,
-                event: "pause_request".to_string(),
-                to_state: PackageState::Paused as i32,
-                condition: None,
-                action: "pause_models_preserve_state".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Degraded as i32,
-                event: "model_recovery".to_string(),
-                to_state: PackageState::Running as i32,
-                condition: Some("all_models_recovered".to_string()),
-                action: "update_state_restore_full_functionality".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Degraded as i32,
-                event: "additional_model_issues".to_string(),
-                to_state: PackageState::Error as i32,
-                condition: Some("critical_models_affected".to_string()),
-                action: "log_error_attempt_recovery".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Degraded as i32,
-                event: "pause_request".to_string(),
-                to_state: PackageState::Paused as i32,
-                condition: None,
-                action: "pause_models_preserve_state".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Error as i32,
-                event: "recovery_successful".to_string(),
-                to_state: PackageState::Running as i32,
-                condition: Some("depends_on_recovery_level".to_string()),
-                action: "update_state_announce_functionality_restoration".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Paused as i32,
-                event: "resume_request".to_string(),
-                to_state: PackageState::Running as i32,
-                condition: Some("depends_on_previous_state".to_string()),
-                action: "resume_models_restore_state".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Running as i32,
-                event: "update_request".to_string(),
-                to_state: PackageState::Updating as i32,
-                condition: None,
-                action: "start_update_process".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Updating as i32,
-                event: "update_successful".to_string(),
-                to_state: PackageState::Running as i32,
-                condition: None,
-                action: "activate_new_version_update_state".to_string(),
-            },
-            StateTransition {
-                from_state: PackageState::Updating as i32,
-                event: "update_failed".to_string(),
-                to_state: PackageState::Error as i32,
-                condition: Some("depends_on_rollback_settings".to_string()),
-                action: "rollback_or_error_handling".to_string(),
-            },
-        ];
-
-        self.transition_tables
-            .insert(ResourceType::Package, package_transitions);
-    }
-
-    /// Initialize the state transition table for Model resources
-    ///
-    /// Sets up state transitions specific to Model resources, covering:
-    /// - Model loading and initialization
-    /// - Training and inference states
-    /// - Model versioning and updates
-    /// - Resource allocation and cleanup
-    ///
-    /// # Implementation Note
-    /// Model transitions may include resource-intensive operations and
-    /// should account for memory and compute constraints.
-    fn initialize_model_transitions(&mut self) {
-        let model_transitions = vec![
-            StateTransition {
-                from_state: ModelState::Unspecified as i32,
-                event: "creation_request".to_string(),
-                to_state: ModelState::Pending as i32,
-                condition: None,
-                action: "start_node_selection_and_allocation".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::Pending as i32,
-                event: "node_allocation_complete".to_string(),
-                to_state: ModelState::ContainerCreating as i32,
-                condition: Some("sufficient_resources".to_string()),
-                action: "pull_container_images_mount_volumes".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::Pending as i32,
-                event: "node_allocation_failed".to_string(),
-                to_state: ModelState::Failed as i32,
-                condition: Some("timeout_or_error".to_string()),
-                action: "log_error_retry_or_reschedule".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::ContainerCreating as i32,
-                event: "container_creation_complete".to_string(),
-                to_state: ModelState::Running as i32,
-                condition: Some("all_containers_started".to_string()),
-                action: "update_state_start_readiness_checks".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::ContainerCreating as i32,
-                event: "container_creation_failed".to_string(),
-                to_state: ModelState::Failed as i32,
-                condition: None,
-                action: "log_error_retry_or_reschedule".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::Running as i32,
-                event: "temporary_task_complete".to_string(),
-                to_state: ModelState::Succeeded as i32,
-                condition: Some("one_time_task".to_string()),
-                action: "log_completion_clean_up_resources".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::Running as i32,
-                event: "container_termination".to_string(),
-                to_state: ModelState::Failed as i32,
-                condition: Some("unexpected_termination".to_string()),
-                action: "log_error_evaluate_automatic_restart".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::Running as i32,
-                event: "repeated_crash_detection".to_string(),
-                to_state: ModelState::CrashLoopBackOff as i32,
-                condition: Some("consecutive_restart_failures".to_string()),
-                action: "set_backoff_timer_collect_logs".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::Running as i32,
-                event: "monitoring_failure".to_string(),
-                to_state: ModelState::Unknown as i32,
-                condition: Some("node_communication_issues".to_string()),
-                action: "attempt_diagnostics_restore_communication".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::CrashLoopBackOff as i32,
-                event: "backoff_time_elapsed".to_string(),
-                to_state: ModelState::Running as i32,
-                condition: Some("restart_successful".to_string()),
-                action: "resume_monitoring_reset_counter".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::CrashLoopBackOff as i32,
-                event: "maximum_retries_exceeded".to_string(),
-                to_state: ModelState::Failed as i32,
-                condition: Some("retry_limit_reached".to_string()),
-                action: "log_error_notify_for_manual_intervention".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::Unknown as i32,
-                event: "state_check_recovered".to_string(),
-                to_state: ModelState::Running as i32,
-                condition: Some("depends_on_actual_state".to_string()),
-                action: "synchronize_state_recover_if_needed".to_string(),
-            },
-            StateTransition {
-                from_state: ModelState::Failed as i32,
-                event: "manual_automatic_recovery".to_string(),
-                to_state: ModelState::Pending as i32,
-                condition: Some("according_to_restart_policy".to_string()),
-                action: "start_model_recreation".to_string(),
-            },
-        ];
-
-        self.transition_tables
-            .insert(ResourceType::Model, model_transitions);
     }
 
     // ========================================
@@ -483,21 +247,7 @@ impl StateMachine {
             ),
         };
 
-        // Check for special CrashLoopBackOff handling
-        if current_state == ModelState::CrashLoopBackOff as i32 {
-            if let Some(backoff_time) = self.backoff_timers.get(&resource_key) {
-                if backoff_time.elapsed() < Duration::from_secs(BACKOFF_DURATION_SECS) {
-                    return TransitionResult {
-                        new_state: current_state,
-                        error_code: ErrorCode::PreconditionFailed,
-                        message: "Resource is in backoff period".to_string(),
-                        actions_to_execute: vec![],
-                        transition_id: state_change.transition_id.clone(),
-                        error_details: "Backoff timer has not elapsed yet".to_string(),
-                    };
-                }
-            }
-        }
+        // Special state-specific handling removed - using simplified state model
 
         // Find valid transition
         let transition_event = self.infer_event_from_states(
@@ -581,11 +331,7 @@ impl StateMachine {
 
             self.update_health_status(&resource_key, &transition_result);
 
-            // Handle special state-specific logic
-            if transition.to_state == ModelState::CrashLoopBackOff as i32 {
-                self.backoff_timers
-                    .insert(resource_key.clone(), Instant::now());
-            }
+            // State-specific logic removed for simplified state model
 
             transition_result
         } else {
@@ -660,6 +406,433 @@ impl StateMachine {
 
             self.update_health_status(&resource_key, &transition_result);
             transition_result
+        }
+    }
+
+    /// Process model state update based on container states
+    ///
+    /// This method handles model state evaluation and transitions triggered by container state changes,
+    /// implementing the business logic defined in the StateManager_Model.md documentation.
+    ///
+    /// # Parameters
+    /// - `model_name`: The name of the model to update
+    /// - `containers`: List of containers associated with this model
+    ///
+    /// # Returns
+    /// - `TransitionResult`: Results of the state evaluation and transition attempt
+    ///   - Contains whether state changed, the new state, and transition details
+    pub fn process_model_state_update(
+        &mut self,
+        model_name: &str,
+        containers: &[&common::monitoringserver::ContainerInfo],
+    ) -> TransitionResult {
+        let resource_key = self.generate_resource_key(ResourceType::Model, model_name);
+        let timestamp_ns = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos() as i64;
+
+        // Evaluate the new model state based on container states
+        let new_model_state = self.evaluate_model_state_from_containers(containers);
+
+        // Create a pseudo state change for internal processing
+        let state_change = StateChange {
+            resource_type: ResourceType::Model as i32,
+            resource_name: model_name.to_string(),
+            current_state: self
+                .resource_states
+                .get(&resource_key)
+                .map(|rs| self.state_enum_to_str(rs.current_state, ResourceType::Model))
+                .unwrap_or_else(|| "Created".to_string()),
+            target_state: self.model_state_to_str(new_model_state),
+            transition_id: format!("model_update_{}_{}", model_name, timestamp_ns),
+            timestamp_ns,
+            source: "container_analysis".to_string(),
+        };
+
+        // Get current state from existing resource or default to Created
+        let current_state = self
+            .resource_states
+            .get(&resource_key)
+            .map(|rs| rs.current_state)
+            .unwrap_or(ModelState::Created as i32);
+
+        let target_state = new_model_state as i32;
+
+        // Check if state change is needed
+        if current_state == target_state {
+            return TransitionResult {
+                new_state: target_state,
+                error_code: ErrorCode::Success,
+                message: "Model already in target state".to_string(),
+                actions_to_execute: vec![],
+                transition_id: state_change.transition_id.clone(),
+                error_details: String::new(),
+            };
+        }
+
+        // Update internal state tracking
+        self.update_resource_state(
+            &resource_key,
+            &state_change,
+            target_state,
+            ResourceType::Model,
+        );
+
+        // Return successful transition result indicating state changed
+        TransitionResult {
+            new_state: target_state,
+            error_code: ErrorCode::Success,
+            message: format!(
+                "Model state successfully transitioned from {} to {}",
+                self.state_enum_to_str(current_state, ResourceType::Model),
+                self.model_state_to_str(new_model_state)
+            ),
+            actions_to_execute: vec!["update_etcd".to_string()],
+            transition_id: state_change.transition_id,
+            error_details: String::new(),
+        }
+    }
+
+    /// Evaluates the model state based on container states according to the state transition rules
+    fn evaluate_model_state_from_containers(
+        &self,
+        containers: &[&common::monitoringserver::ContainerInfo],
+    ) -> ModelState {
+        if containers.is_empty() {
+            return ModelState::Created;
+        }
+
+        let mut _running_count = 0;
+        let mut paused_count = 0;
+        let mut exited_count = 0;
+        let mut dead_count = 0;
+        let mut _created_count = 0;
+        let mut _initialized_count = 0;
+        let mut _unknown_count = 0;
+
+        for container in containers {
+            match self.parse_container_state(container) {
+                ContainerState::Running => _running_count += 1,
+                ContainerState::Paused => paused_count += 1,
+                ContainerState::Exited => exited_count += 1,
+                ContainerState::Dead => dead_count += 1,
+                ContainerState::Created => _created_count += 1,
+                ContainerState::Initialized => _initialized_count += 1,
+                ContainerState::Unknown => _unknown_count += 1,
+            }
+        }
+
+        let total_containers = containers.len();
+
+        // Apply state transition rules from documentation
+        // Rule 1: Dead - if one or more containers are dead or unknown
+        if dead_count > 0 {
+            return ModelState::Dead;
+        }
+
+        // Rule 2: Paused - if all containers are paused
+        if paused_count == total_containers {
+            return ModelState::Paused;
+        }
+
+        // Rule 3: Exited - if all containers are exited
+        if exited_count == total_containers {
+            return ModelState::Exited;
+        }
+
+        // Rule 4: Running - default state (none of above conditions met)
+        ModelState::Running
+    }
+
+    /// Evaluates package state based on model states according to Korean documentation requirements
+    ///
+    /// This function implements the package state transition rules defined in StateManager_Package.md:
+    /// - idle: Initial package state (creation default)
+    /// - paused: All models are in paused state
+    /// - exited: All models are in exited state
+    /// - degraded: Some (1+) models are in dead state, but not all models are dead
+    /// - error: All models are in dead state
+    /// - running: Default state when none of the above conditions are met
+    ///
+    /// # Parameters
+    /// - `model_states`: List of (model_name, model_state) tuples
+    ///
+    /// # Returns
+    /// - `PackageState`: The determined package state based on model states
+    pub fn evaluate_package_state_from_models(
+        &self,
+        model_states: &[(String, ModelState)],
+    ) -> PackageState {
+        if model_states.is_empty() {
+            return PackageState::Idle;
+        }
+
+        let total_models = model_states.len();
+        let mut paused_count = 0;
+        let mut exited_count = 0;
+        let mut dead_count = 0;
+
+        // Count models in each relevant state
+        for (_, model_state) in model_states {
+            match model_state {
+                ModelState::Paused => paused_count += 1,
+                ModelState::Exited => exited_count += 1,
+                ModelState::Dead => dead_count += 1,
+                _ => {} // Other states don't directly impact package state rules
+            }
+        }
+
+        // Apply package state transition rules from documentation
+        // Rule 1: error - All models are in dead state
+        if dead_count == total_models {
+            return PackageState::Error;
+        }
+
+        // Rule 2: degraded - Some (1+) models are in dead state, but not all
+        if dead_count > 0 && dead_count < total_models {
+            return PackageState::Degraded;
+        }
+
+        // Rule 3: paused - All models are in paused state
+        if paused_count == total_models {
+            return PackageState::Paused;
+        }
+
+        // Rule 4: exited - All models are in exited state
+        if exited_count == total_models {
+            return PackageState::Exited;
+        }
+
+        // Rule 5: running - Default state when none of above conditions are met
+        PackageState::Running
+    }
+
+    /// Retrieves all model states for models that belong to a given package
+    ///
+    /// This function queries ETCD to get all model states and filters them
+    /// to find models that belong to the specified package.
+    pub async fn get_models_for_package(
+        package_name: &str,
+    ) -> std::result::Result<Vec<(String, common::statemanager::ModelState)>, String> {
+        // Get package definition from ETCD to find its models
+        let package_key = format!("Package/{}", package_name);
+        let package_yaml = match common::etcd::get(&package_key).await {
+            Ok(yaml) => yaml,
+            Err(e) => {
+                println!("    Failed to get package definition: {:?}", e);
+                return Ok(Vec::new());
+            }
+        };
+
+        // Parse package YAML to extract model names
+        let package: common::spec::artifact::Package = match serde_yaml::from_str(&package_yaml) {
+            Ok(pkg) => pkg,
+            Err(e) => {
+                println!("    Failed to parse package YAML: {:?}", e);
+                return Ok(Vec::new());
+            }
+        };
+
+        let mut model_states = Vec::new();
+
+        // Get state for each model in the package
+        for model_info in package.get_models() {
+            let model_name = model_info.get_name();
+            let model_state_key = format!("/model/{}/state", model_name);
+
+            match common::etcd::get(&model_state_key).await {
+                Ok(state_str) => {
+                    let model_state = match state_str.as_str() {
+                        "Created" => common::statemanager::ModelState::Created,
+                        "Paused" => common::statemanager::ModelState::Paused,
+                        "Exited" => common::statemanager::ModelState::Exited,
+                        "Dead" => common::statemanager::ModelState::Dead,
+                        "Running" => common::statemanager::ModelState::Running,
+                        _ => common::statemanager::ModelState::Running, // Default to Running
+                    };
+                    model_states.push((model_name, model_state));
+                }
+                Err(_) => {
+                    // If model state not found, assume it's in Created state
+                    model_states.push((model_name, common::statemanager::ModelState::Created));
+                }
+            }
+        }
+
+        Ok(model_states)
+    }
+
+    /// Find all packages that contain the given model
+    pub async fn find_packages_containing_model(
+        model_name: &str,
+    ) -> std::result::Result<Vec<String>, String> {
+        let mut packages = Vec::new();
+
+        // Get all packages from ETCD with prefix
+        match common::etcd::get_all_with_prefix("Package/").await {
+            Ok(package_entries) => {
+                for kv in package_entries {
+                    match serde_yaml::from_str::<common::spec::artifact::Package>(&kv.value) {
+                        Ok(package) => {
+                            // Check if this package contains the model
+                            for model_info in package.get_models() {
+                                if model_info.get_name() == model_name {
+                                    packages.push(package.get_name());
+                                    break;
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            println!("    Failed to parse package {}: {:?}", kv.key, e);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                println!("    Failed to get packages from ETCD: {:?}", e);
+                return Err(format!("Failed to get packages from ETCD: {:?}", e));
+            }
+        }
+
+        Ok(packages)
+    }
+
+    /// Get current package state from ETCD
+    pub async fn get_current_package_state(
+        package_name: &str,
+    ) -> Option<common::statemanager::PackageState> {
+        let key = format!("/package/{}/state", package_name);
+        match common::etcd::get(&key).await {
+            Ok(state_str) => match state_str.as_str() {
+                "PACKAGE_STATE_IDLE" | "idle" => Some(common::statemanager::PackageState::Idle),
+                "PACKAGE_STATE_PAUSED" | "paused" => {
+                    Some(common::statemanager::PackageState::Paused)
+                }
+                "PACKAGE_STATE_EXITED" | "exited" => {
+                    Some(common::statemanager::PackageState::Exited)
+                }
+                "PACKAGE_STATE_DEGRADED" | "degraded" => {
+                    Some(common::statemanager::PackageState::Degraded)
+                }
+                "PACKAGE_STATE_ERROR" | "error" => Some(common::statemanager::PackageState::Error),
+                "PACKAGE_STATE_RUNNING" | "running" => {
+                    Some(common::statemanager::PackageState::Running)
+                }
+                _ => Some(common::statemanager::PackageState::Idle),
+            },
+            Err(_) => None,
+        }
+    }
+
+    /// Evaluate and update package state based on current model states
+    pub async fn evaluate_and_update_package_state(
+        &self,
+        package_name: &str,
+    ) -> std::result::Result<(bool, common::statemanager::PackageState), String> {
+        println!("    Evaluating package state for: {}", package_name);
+
+        // Get model states for this package
+        let model_states = Self::get_models_for_package(package_name).await?;
+
+        if model_states.is_empty() {
+            println!("      No models found for package {}", package_name);
+            return Ok((false, common::statemanager::PackageState::Idle));
+        }
+
+        // Convert to format expected by state machine
+        let model_states_for_evaluation: Vec<(String, ModelState)> = model_states
+            .iter()
+            .map(|(name, state)| {
+                let converted_state = match state {
+                    common::statemanager::ModelState::Created => ModelState::Created,
+                    common::statemanager::ModelState::Paused => ModelState::Paused,
+                    common::statemanager::ModelState::Exited => ModelState::Exited,
+                    common::statemanager::ModelState::Dead => ModelState::Dead,
+                    common::statemanager::ModelState::Running => ModelState::Running,
+                    _ => ModelState::Running,
+                };
+                (name.clone(), converted_state)
+            })
+            .collect();
+
+        // Get current package state
+        let current_package_state = Self::get_current_package_state(package_name)
+            .await
+            .unwrap_or(common::statemanager::PackageState::Idle);
+
+        // Evaluate new package state using state machine
+        let evaluated_state = self.evaluate_package_state_from_models(&model_states_for_evaluation);
+
+        // Convert back to common::statemanager::PackageState
+        let new_package_state = match evaluated_state {
+            PackageState::Idle => common::statemanager::PackageState::Idle,
+            PackageState::Paused => common::statemanager::PackageState::Paused,
+            PackageState::Exited => common::statemanager::PackageState::Exited,
+            PackageState::Degraded => common::statemanager::PackageState::Degraded,
+            PackageState::Error => common::statemanager::PackageState::Error,
+            PackageState::Running => common::statemanager::PackageState::Running,
+            _ => common::statemanager::PackageState::Running,
+        };
+
+        // Check if package state changed
+        let state_changed = new_package_state != current_package_state;
+        if state_changed {
+            println!(
+                "      Package state changed: {} -> {}",
+                current_package_state.as_str_name(),
+                new_package_state.as_str_name()
+            );
+        } else {
+            println!(
+                "      Package {} state unchanged: {}",
+                package_name,
+                current_package_state.as_str_name()
+            );
+        }
+
+        Ok((state_changed, new_package_state))
+    }
+
+    /// Parses container state from the state HashMap
+    fn parse_container_state(
+        &self,
+        container: &common::monitoringserver::ContainerInfo,
+    ) -> ContainerState {
+        // Check the "Status" field first
+        if let Some(status) = container.state.get("Status") {
+            match status.to_lowercase().as_str() {
+                "running" => return ContainerState::Running,
+                "paused" => return ContainerState::Paused,
+                "exited" => return ContainerState::Exited,
+                "dead" => return ContainerState::Dead,
+                "created" => return ContainerState::Created,
+                "initialized" => return ContainerState::Initialized,
+                "unknown" => return ContainerState::Unknown,
+                _ => return ContainerState::Unknown,
+            }
+        }
+
+        // Check "Running" boolean field as fallback
+        if let Some(running) = container.state.get("Running") {
+            if running == "true" {
+                return ContainerState::Running;
+            }
+        }
+
+        // Default to Unknown if state cannot be determined
+        ContainerState::Unknown
+    }
+
+    /// Convert ModelState enum to string representation
+    fn model_state_to_str(&self, state: ModelState) -> String {
+        match state {
+            ModelState::Created => "Created".to_string(),
+            ModelState::Paused => "Paused".to_string(),
+            ModelState::Exited => "Exited".to_string(),
+            ModelState::Dead => "Dead".to_string(),
+            ModelState::Running => "Running".to_string(),
+            _ => "Unknown".to_string(),
         }
     }
 
@@ -839,45 +1012,44 @@ impl StateMachine {
                     "scenario_activation".to_string()
                 }
                 (x, y)
-                    if x == ScenarioState::Waiting as i32 && y == ScenarioState::Allowed as i32 =>
+                    if x == ScenarioState::Waiting as i32
+                        && y == ScenarioState::Satisfied as i32 =>
                 {
                     "condition_met".to_string()
                 }
                 (x, y)
-                    if x == ScenarioState::Allowed as i32 && y == ScenarioState::Playing as i32 =>
+                    if x == ScenarioState::Satisfied as i32
+                        && y == ScenarioState::Allowed as i32 =>
                 {
                     "policy_verification_success".to_string()
                 }
                 (x, y)
-                    if x == ScenarioState::Allowed as i32 && y == ScenarioState::Denied as i32 =>
+                    if x == ScenarioState::Satisfied as i32
+                        && y == ScenarioState::Denied as i32 =>
                 {
                     "policy_verification_failure".to_string()
+                }
+                (x, y)
+                    if x == ScenarioState::Allowed as i32
+                        && y == ScenarioState::Completed as i32 =>
+                {
+                    "scenario_completion".to_string()
                 }
                 _ => format!("transition_{current_state}_{target_state}"),
             },
             ResourceType::Package => match (current_state, target_state) {
                 (x, y)
-                    if x == PackageState::Unspecified as i32
-                        && y == PackageState::Initializing as i32 =>
+                    if x == PackageState::Unspecified as i32 && y == PackageState::Idle as i32 =>
                 {
                     "launch_request".to_string()
                 }
-                (x, y)
-                    if x == PackageState::Initializing as i32
-                        && y == PackageState::Running as i32 =>
-                {
+                (x, y) if x == PackageState::Idle as i32 && y == PackageState::Running as i32 => {
                     "initialization_complete".to_string()
                 }
-                (x, y)
-                    if x == PackageState::Initializing as i32
-                        && y == PackageState::Degraded as i32 =>
-                {
+                (x, y) if x == PackageState::Idle as i32 && y == PackageState::Degraded as i32 => {
                     "partial_initialization_failure".to_string()
                 }
-                (x, y)
-                    if x == PackageState::Initializing as i32
-                        && y == PackageState::Error as i32 =>
-                {
+                (x, y) if x == PackageState::Idle as i32 && y == PackageState::Error as i32 => {
                     "critical_initialization_failure".to_string()
                 }
                 (x, y)
@@ -891,10 +1063,8 @@ impl StateMachine {
                 (x, y) if x == PackageState::Running as i32 && y == PackageState::Paused as i32 => {
                     "pause_request".to_string()
                 }
-                (x, y)
-                    if x == PackageState::Running as i32 && y == PackageState::Updating as i32 =>
-                {
-                    "update_request".to_string()
+                (x, y) if x == PackageState::Running as i32 && y == PackageState::Exited as i32 => {
+                    "all_models_exited".to_string()
                 }
                 (x, y)
                     if x == PackageState::Degraded as i32 && y == PackageState::Running as i32 =>
@@ -915,74 +1085,48 @@ impl StateMachine {
                 (x, y) if x == PackageState::Paused as i32 && y == PackageState::Running as i32 => {
                     "resume_request".to_string()
                 }
-                (x, y)
-                    if x == PackageState::Updating as i32 && y == PackageState::Running as i32 =>
-                {
-                    "update_successful".to_string()
+                (x, y) if x == PackageState::Paused as i32 && y == PackageState::Exited as i32 => {
+                    "all_models_exited".to_string()
                 }
-                (x, y) if x == PackageState::Updating as i32 && y == PackageState::Error as i32 => {
-                    "update_failed".to_string()
+                (x, y) if x == PackageState::Exited as i32 && y == PackageState::Running as i32 => {
+                    "restart_request".to_string()
                 }
                 _ => format!("transition_{current_state}_{target_state}"),
             },
             ResourceType::Model => match (current_state, target_state) {
                 (x, y)
-                    if x == ModelState::Unspecified as i32 && y == ModelState::Pending as i32 =>
+                    if x == ModelState::Unspecified as i32 && y == ModelState::Created as i32 =>
                 {
                     "creation_request".to_string()
                 }
-                (x, y)
-                    if x == ModelState::Pending as i32
-                        && y == ModelState::ContainerCreating as i32 =>
-                {
+                (x, y) if x == ModelState::Created as i32 && y == ModelState::Running as i32 => {
                     "node_allocation_complete".to_string()
                 }
-                (x, y) if x == ModelState::Pending as i32 && y == ModelState::Failed as i32 => {
+                (x, y) if x == ModelState::Created as i32 && y == ModelState::Dead as i32 => {
                     "node_allocation_failed".to_string()
                 }
-                (x, y)
-                    if x == ModelState::ContainerCreating as i32
-                        && y == ModelState::Running as i32 =>
-                {
-                    "container_creation_complete".to_string()
+                (x, y) if x == ModelState::Running as i32 && y == ModelState::Paused as i32 => {
+                    "all_containers_paused".to_string()
                 }
-                (x, y)
-                    if x == ModelState::ContainerCreating as i32
-                        && y == ModelState::Failed as i32 =>
-                {
-                    "container_creation_failed".to_string()
+                (x, y) if x == ModelState::Running as i32 && y == ModelState::Exited as i32 => {
+                    "all_containers_exited".to_string()
                 }
-                (x, y) if x == ModelState::Running as i32 && y == ModelState::Succeeded as i32 => {
-                    "temporary_task_complete".to_string()
+                (x, y) if x == ModelState::Running as i32 && y == ModelState::Dead as i32 => {
+                    "container_dead_or_info_failure".to_string()
                 }
-                (x, y) if x == ModelState::Running as i32 && y == ModelState::Failed as i32 => {
-                    "container_termination".to_string()
+                (x, y) if x == ModelState::Paused as i32 && y == ModelState::Running as i32 => {
+                    "resume_request".to_string()
                 }
-                (x, y)
-                    if x == ModelState::Running as i32
-                        && y == ModelState::CrashLoopBackOff as i32 =>
-                {
-                    "repeated_crash_detection".to_string()
+                (x, y) if x == ModelState::Paused as i32 && y == ModelState::Exited as i32 => {
+                    "all_containers_exited".to_string()
                 }
-                (x, y) if x == ModelState::Running as i32 && y == ModelState::Unknown as i32 => {
-                    "monitoring_failure".to_string()
+                (x, y) if x == ModelState::Paused as i32 && y == ModelState::Dead as i32 => {
+                    "container_dead_or_info_failure".to_string()
                 }
-                (x, y)
-                    if x == ModelState::CrashLoopBackOff as i32
-                        && y == ModelState::Running as i32 =>
-                {
-                    "backoff_time_elapsed".to_string()
+                (x, y) if x == ModelState::Exited as i32 && y == ModelState::Running as i32 => {
+                    "restart_request".to_string()
                 }
-                (x, y)
-                    if x == ModelState::CrashLoopBackOff as i32
-                        && y == ModelState::Failed as i32 =>
-                {
-                    "maximum_retries_exceeded".to_string()
-                }
-                (x, y) if x == ModelState::Unknown as i32 && y == ModelState::Running as i32 => {
-                    "state_check_recovered".to_string()
-                }
-                (x, y) if x == ModelState::Failed as i32 && y == ModelState::Pending as i32 => {
+                (x, y) if x == ModelState::Dead as i32 && y == ModelState::Created as i32 => {
                     "manual_automatic_recovery".to_string()
                 }
                 _ => format!("transition_{current_state}_{target_state}"),
@@ -1201,6 +1345,37 @@ impl StateMachine {
             _ => 0,
         }
     }
+
+    // Utility: Convert proto enum value to state string
+    fn state_enum_to_str(&self, state: i32, resource_type: ResourceType) -> String {
+        match resource_type {
+            ResourceType::Scenario => ScenarioState::try_from(state)
+                .map(|s| {
+                    s.as_str_name()
+                        .strip_prefix("SCENARIO_STATE_")
+                        .unwrap_or(s.as_str_name())
+                        .to_string()
+                })
+                .unwrap_or_else(|_| "Unknown".to_string()),
+            ResourceType::Package => PackageState::try_from(state)
+                .map(|s| {
+                    s.as_str_name()
+                        .strip_prefix("PACKAGE_STATE_")
+                        .unwrap_or(s.as_str_name())
+                        .to_string()
+                })
+                .unwrap_or_else(|_| "Unknown".to_string()),
+            ResourceType::Model => ModelState::try_from(state)
+                .map(|s| {
+                    s.as_str_name()
+                        .strip_prefix("MODEL_STATE_")
+                        .unwrap_or(s.as_str_name())
+                        .to_string()
+                })
+                .unwrap_or_else(|_| "Unknown".to_string()),
+            _ => "Unknown".to_string(),
+        }
+    }
 }
 
 /// Default implementation that creates a new StateMachine
@@ -1210,5 +1385,151 @@ impl StateMachine {
 impl Default for StateMachine {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::statemanager::{ModelState, PackageState};
+
+    #[test]
+    fn test_evaluate_package_state_from_models_empty() {
+        let state_machine = StateMachine::new();
+        let model_states = vec![];
+        let result = state_machine.evaluate_package_state_from_models(&model_states);
+        assert_eq!(result, PackageState::Idle);
+    }
+
+    #[test]
+    fn test_evaluate_package_state_all_dead() {
+        let state_machine = StateMachine::new();
+        let model_states = vec![
+            ("model1".to_string(), ModelState::Dead),
+            ("model2".to_string(), ModelState::Dead),
+        ];
+        let result = state_machine.evaluate_package_state_from_models(&model_states);
+        assert_eq!(result, PackageState::Error);
+    }
+
+    #[test]
+    fn test_evaluate_package_state_some_dead() {
+        let state_machine = StateMachine::new();
+        let model_states = vec![
+            ("model1".to_string(), ModelState::Dead),
+            ("model2".to_string(), ModelState::Running),
+        ];
+        let result = state_machine.evaluate_package_state_from_models(&model_states);
+        assert_eq!(result, PackageState::Degraded);
+    }
+
+    #[test]
+    fn test_evaluate_package_state_all_paused() {
+        let state_machine = StateMachine::new();
+        let model_states = vec![
+            ("model1".to_string(), ModelState::Paused),
+            ("model2".to_string(), ModelState::Paused),
+        ];
+        let result = state_machine.evaluate_package_state_from_models(&model_states);
+        assert_eq!(result, PackageState::Paused);
+    }
+
+    #[test]
+    fn test_evaluate_package_state_all_exited() {
+        let state_machine = StateMachine::new();
+        let model_states = vec![
+            ("model1".to_string(), ModelState::Exited),
+            ("model2".to_string(), ModelState::Exited),
+        ];
+        let result = state_machine.evaluate_package_state_from_models(&model_states);
+        assert_eq!(result, PackageState::Exited);
+    }
+
+    #[test]
+    fn test_evaluate_package_state_mixed_running() {
+        let state_machine = StateMachine::new();
+        let model_states = vec![
+            ("model1".to_string(), ModelState::Running),
+            ("model2".to_string(), ModelState::Created),
+        ];
+        let result = state_machine.evaluate_package_state_from_models(&model_states);
+        assert_eq!(result, PackageState::Running);
+    }
+
+    #[test]
+    fn test_evaluate_package_state_priority_dead_over_paused() {
+        let state_machine = StateMachine::new();
+        let model_states = vec![
+            ("model1".to_string(), ModelState::Dead),
+            ("model2".to_string(), ModelState::Paused),
+            ("model3".to_string(), ModelState::Paused),
+        ];
+        let result = state_machine.evaluate_package_state_from_models(&model_states);
+        assert_eq!(result, PackageState::Degraded);
+    }
+
+    #[test]
+    fn test_evaluate_package_state_priority_dead_over_exited() {
+        let state_machine = StateMachine::new();
+        let model_states = vec![
+            ("model1".to_string(), ModelState::Dead),
+            ("model2".to_string(), ModelState::Exited),
+            ("model3".to_string(), ModelState::Exited),
+        ];
+        let result = state_machine.evaluate_package_state_from_models(&model_states);
+        assert_eq!(result, PackageState::Degraded);
+    }
+
+    #[test]
+    fn test_parse_container_state_new_states() {
+        use common::monitoringserver::ContainerInfo;
+        use std::collections::HashMap;
+
+        let state_machine = StateMachine::new();
+
+        // Test new "initialized" state
+        let mut state_map = HashMap::new();
+        state_map.insert("Status".to_string(), "initialized".to_string());
+        let container_info = ContainerInfo {
+            id: "test-id".to_string(),
+            names: vec!["test".to_string()],
+            image: "test:latest".to_string(),
+            state: state_map,
+            config: HashMap::new(),
+            annotation: HashMap::new(),
+            stats: HashMap::new(),
+        };
+        let result = state_machine.parse_container_state(&container_info);
+        assert_eq!(result, ContainerState::Initialized);
+
+        // Test new "unknown" state
+        let mut state_map = HashMap::new();
+        state_map.insert("Status".to_string(), "unknown".to_string());
+        let container_info = ContainerInfo {
+            id: "test-id".to_string(),
+            names: vec!["test".to_string()],
+            image: "test:latest".to_string(),
+            state: state_map,
+            config: HashMap::new(),
+            annotation: HashMap::new(),
+            stats: HashMap::new(),
+        };
+        let result = state_machine.parse_container_state(&container_info);
+        assert_eq!(result, ContainerState::Unknown);
+
+        // Test unrecognized state defaults to Unknown
+        let mut state_map = HashMap::new();
+        state_map.insert("Status".to_string(), "some_unrecognized_state".to_string());
+        let container_info = ContainerInfo {
+            id: "test-id".to_string(),
+            names: vec!["test".to_string()],
+            image: "test:latest".to_string(),
+            state: state_map,
+            config: HashMap::new(),
+            annotation: HashMap::new(),
+            stats: HashMap::new(),
+        };
+        let result = state_machine.parse_container_state(&container_info);
+        assert_eq!(result, ContainerState::Unknown);
     }
 }
