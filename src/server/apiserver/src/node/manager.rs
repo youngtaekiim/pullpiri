@@ -5,6 +5,7 @@
 
 //! Node manager for cluster operations
 
+use base64::Engine;
 use common::apiserver::NodeInfo;
 use common::etcd;
 use common::nodeagent::{NodeRegistrationRequest, NodeStatus};
@@ -15,19 +16,26 @@ use prost::Message;
 pub struct NodeManager;
 
 impl NodeManager {
+    /// Create a new NodeManager instance
+    pub fn new() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(NodeManager)
+    }
+
     /// Register a new node in the cluster
     pub async fn register_node(
         &self,
         request: NodeRegistrationRequest,
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        let node_key = format!("cluster/nodes/{}", request.node_id);
+        // node_id 대신 hostname(node_name)을 키로 사용합니다
+        let node_key = format!("cluster/nodes/{}", request.hostname);
 
         // Create node info
         let node_info = NodeInfo {
             node_id: request.node_id.clone(),
             hostname: request.hostname.clone(),
             ip_address: request.ip_address.clone(),
-            role: request.role,
+            node_type: request.node_type,
+            node_role: request.node_role,
             status: NodeStatus::Pending.into(),
             resources: request.resources,
             last_heartbeat: chrono::Utc::now().timestamp(),
@@ -40,8 +48,17 @@ impl NodeManager {
         prost::Message::encode(&node_info, &mut buf)?;
 
         // Store in etcd as base64 encoded binary
-        let encoded = base64::encode(&buf);
+        let encoded = base64::engine::general_purpose::STANDARD.encode(&buf);
         etcd::put(&node_key, &encoded).await?;
+
+        // Also add to simple keys for quick lookup
+        // 1. IP 주소로 조회하는 키
+        let ip_key = format!("nodes/{}", request.ip_address);
+        etcd::put(&ip_key, &request.ip_address).await?;
+
+        // 2. 호스트 이름으로 조회하는 키
+        let hostname_key = format!("nodes/{}", request.hostname);
+        etcd::put(&hostname_key, &request.ip_address).await?;
 
         println!("Node {} registered successfully", request.node_id);
         Ok(format!("cluster-token-{}", request.node_id))
@@ -56,7 +73,7 @@ impl NodeManager {
 
         let mut nodes = Vec::new();
         for kv in kvs {
-            match base64::decode(&kv.value) {
+            match base64::engine::general_purpose::STANDARD.decode(&kv.value) {
                 Ok(buf) => match NodeInfo::decode(&buf[..]) {
                     Ok(node) => nodes.push(node),
                     Err(e) => {
@@ -74,16 +91,24 @@ impl NodeManager {
         Ok(nodes)
     }
 
+    /// Get all nodes in the cluster (alias for get_all_nodes)
+    pub async fn get_nodes(
+        &self,
+    ) -> Result<Vec<NodeInfo>, Box<dyn std::error::Error + Send + Sync>> {
+        self.get_all_nodes().await
+    }
+
     /// Get a specific node by ID
     pub async fn get_node(
         &self,
         node_id: &str,
     ) -> Result<Option<NodeInfo>, Box<dyn std::error::Error + Send + Sync>> {
+        // node_id를 직접 사용 (hostname으로 간주)
         let node_key = format!("cluster/nodes/{}", node_id);
 
         match etcd::get(&node_key).await {
             Ok(encoded) => {
-                let buf = base64::decode(&encoded)?;
+                let buf = base64::engine::general_purpose::STANDARD.decode(&encoded)?;
                 let node_info = NodeInfo::decode(&buf[..])?;
                 Ok(Some(node_info))
             }
@@ -100,10 +125,11 @@ impl NodeManager {
             node.last_heartbeat = chrono::Utc::now().timestamp();
             node.status = NodeStatus::Ready.into();
 
-            let node_key = format!("cluster/nodes/{}", node_id);
+            // node_name으로 키 생성
+            let node_key = format!("cluster/nodes/{}", node.hostname);
             let mut buf = Vec::new();
             prost::Message::encode(&node, &mut buf)?;
-            let encoded = base64::encode(&buf);
+            let encoded = base64::engine::general_purpose::STANDARD.encode(&buf);
             etcd::put(&node_key, &encoded).await?;
 
             println!("Updated heartbeat for node {}", node_id);
@@ -122,10 +148,11 @@ impl NodeManager {
             node.status = status.into();
             node.last_heartbeat = chrono::Utc::now().timestamp();
 
-            let node_key = format!("cluster/nodes/{}", node_id);
+            // node.hostname을 사용하여 키 생성 (node_id 대신)
+            let node_key = format!("cluster/nodes/{}", node.hostname);
             let mut buf = Vec::new();
             prost::Message::encode(&node, &mut buf)?;
-            let encoded = base64::encode(&buf);
+            let encoded = base64::engine::general_purpose::STANDARD.encode(&buf);
             etcd::put(&node_key, &encoded).await?;
 
             println!("Updated status for node {} to {:?}", node_id, status);
@@ -139,18 +166,24 @@ impl NodeManager {
         &self,
         node_id: &str,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let node_key = format!("cluster/nodes/{}", node_id);
-        etcd::delete(&node_key).await?;
+        // get_node를 사용하여 노드 정보를 얻고 hostname을 추출
+        if let Some(node) = self.get_node(node_id).await? {
+            let node_key = format!("cluster/nodes/{}", node.hostname);
+            etcd::delete(&node_key).await?;
 
-        println!("Removed node {} from cluster", node_id);
-        Ok(())
+            println!("Removed node {} from cluster", node_id);
+            return Ok(());
+        }
+
+        // 노드를 찾지 못한 경우 오류 반환
+        Err(format!("Node not found: {}", node_id).into())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::nodeagent::{NodeRole, ResourceInfo};
+    use common::nodeagent::{NodeRole, NodeType, ResourceInfo};
 
     #[tokio::test]
     async fn test_node_manager_operations() {
@@ -161,7 +194,8 @@ mod tests {
             node_id: "test-node-001".to_string(),
             hostname: "test-host".to_string(),
             ip_address: "192.168.1.100".to_string(),
-            role: NodeRole::Sub.into(),
+            node_type: common::nodeagent::NodeType::Vehicle.into(),
+            node_role: NodeRole::Nodeagent.into(),
             resources: Some(ResourceInfo {
                 cpu_cores: 4,
                 memory_mb: 8192,

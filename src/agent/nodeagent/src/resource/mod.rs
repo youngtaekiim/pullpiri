@@ -137,7 +137,7 @@ pub struct ContainerStats {
 #[derive(Deserialize, Debug)]
 pub struct ContainerCpuStats {
     pub cpu_usage: ContainerCpuUsage,
-    pub online_cpus: u64,
+    pub online_cpus: Option<u64>,
 }
 
 #[allow(non_snake_case, unused)]

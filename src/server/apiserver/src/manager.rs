@@ -4,13 +4,23 @@
  */
 
 //! Controls the flow of data between each module.
+use crate::node::node_lookup::{find_guest_nodes, find_node_by_hostname, get_node_ip};
+use crate::node::NodeManager;
 use common::apiserver::api_server_connection_server::ApiServerConnectionServer;
 use common::filtergateway::{Action, HandleScenarioRequest};
 use common::nodeagent::HandleYamlRequest;
+use prost::Message;
 use tonic::transport::Server;
 
 /// Launch REST API listener, gRPC server, and reload scenario data in etcd
 pub async fn initialize() {
+    // 먼저 호스트 노드를 etcd에 등록합니다.
+    if let Err(e) = register_host_node().await {
+        eprintln!("Failed to register host node: {:?}", e);
+    } else {
+        println!("Host node registered successfully");
+    }
+
     tokio::join!(
         crate::route::launch_tcp_listener(),
         start_grpc_server(),
@@ -41,6 +51,58 @@ async fn start_grpc_server() {
 /// ### Description
 /// TODO
 async fn send_download_request() {}
+
+/// settings.yaml에서 호스트 정보를 가져와 etcd에 등록합니다.
+///
+/// 이 함수는 apiserver가 시작될 때 호출되어 자신의 정보를 etcd에 등록합니다.
+/// 이렇게 하면 다른 컴포넌트가 apiserver 호스트 정보를 조회할 수 있습니다.
+///
+/// ### Returns
+///
+/// * `Result<(), Box<dyn std::error::Error + Send + Sync>>` - 성공 또는 실패 결과
+async fn register_host_node() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // settings.yaml에서 호스트 정보 가져오기
+    let config = common::setting::get_config();
+    let hostname = config.host.name.clone();
+    let ip_address = config.host.ip.clone();
+    let node_type = match config.host.r#type.as_str() {
+        "vehicle" => 2, // NodeType::Vehicle as i32
+        "cloud" => 1,   // NodeType::Cloud as i32
+        _ => 0,         // NodeType::Unspecified as i32
+    };
+    let node_role = match config.host.role.as_str() {
+        "master" => 1,    // NodeRole::Master as i32
+        "nodeagent" => 2, // NodeRole::Nodeagent as i32
+        "bluechi" => 3,   // NodeRole::Bluechi as i32
+        _ => 0,           // NodeRole::Unspecified as i32
+    };
+
+    // NodeRegistrationRequest 생성
+    let node_id = format!("{}-{}", hostname, ip_address);
+    let registration_request = common::nodeagent::NodeRegistrationRequest {
+        node_id: node_id.clone(),
+        hostname: hostname.clone(),
+        ip_address: ip_address.clone(),
+        metadata: std::collections::HashMap::new(),
+        resources: None,
+        node_type,
+        node_role,
+    };
+
+    // NodeManager를 사용하여 노드 등록
+    let node_manager = crate::node::NodeManager::new()?;
+    node_manager.register_node(registration_request).await?;
+
+    // 추가적으로 nodes/{hostname} 키에도 저장 (ActionController가 이 키를 사용)
+    let hostname_key = format!("nodes/{}", hostname);
+    common::etcd::put(&hostname_key, &ip_address).await?;
+
+    println!(
+        "Host node information registered to etcd: {} ({})",
+        hostname, ip_address
+    );
+    Ok(())
+}
 
 /// Reload all scenario data in etcd
 ///
@@ -81,14 +143,108 @@ pub async fn apply_artifact(body: &str) -> common::Result<()> {
         yaml: body.to_string(),
     };
 
-    crate::grpc::sender::nodeagent::send(handle_yaml.clone()).await?;
+    // 패키지에서 노드 정보를 추출
+    let mut target_node = None;
 
-    if let Some(guests) = &common::setting::get_config().guest {
-        if !guests.is_empty() {
-            crate::grpc::sender::nodeagent::send_guest(handle_yaml).await?;
+    // YAML 문서에서 Package 종류 찾아서 노드 정보 추출
+    let docs: Vec<&str> = body.split("---").collect();
+    for doc in docs {
+        if doc.trim().is_empty() {
+            continue;
         }
+
+        match serde_yaml::from_str::<serde_yaml::Value>(doc) {
+            Ok(value) => {
+                if let Some(kind) = value.get("kind").and_then(|k| k.as_str()) {
+                    if kind == "Package" {
+                        if let Ok(package) =
+                            serde_yaml::from_value::<common::spec::artifact::Package>(value.clone())
+                        {
+                            for model in package.get_models() {
+                                let node_name = model.get_node();
+                                if !node_name.is_empty() {
+                                    println!("Found node in package: {}", node_name);
+                                    if let Some(node_info) = find_node_by_hostname(&node_name).await
+                                    {
+                                        println!(
+                                            "Found node info for {}: IP={}",
+                                            node_name, node_info.ip_address
+                                        );
+                                        target_node = Some(node_info.ip_address);
+                                        break;
+                                    }
+                                }
+                            }
+                            if target_node.is_some() {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            Err(_) => continue, // Skip invalid YAML
+        }
+    }
+
+    // 노드를 찾지 못했으면 기본 노드 IP 사용
+    let node_ip = if let Some(ip) = target_node {
+        ip
     } else {
-        println!("Guest configuration not found, skipping guest node");
+        println!("No target nodes found in package or nodes not registered, using default node");
+        get_node_ip().await
+    };
+
+    println!("apply_artifact: Using node IP: {}", node_ip);
+
+    // Log a warning if using 0.0.0.0 - this is likely a problem
+    if node_ip == "0.0.0.0" {
+        eprintln!("Warning: Using IP 0.0.0.0 which may not be accessible from NodeAgent.");
+        eprintln!(
+            "NodeAgent transport errors are likely. Consider using a specific IP in settings.yaml"
+        );
+    }
+
+    // Try to send to the node
+    match crate::grpc::sender::nodeagent::send_to_node(handle_yaml.clone(), node_ip.clone()).await {
+        Ok(_) => println!("Successfully sent yaml to NodeAgent"),
+        Err(e) => {
+            eprintln!("Error sending yaml to NodeAgent: {:?}", e);
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("NodeAgent connection error: {:?}", e),
+            )));
+        }
+    };
+
+    // etcd에서 게스트 노드들의 정보를 가져와 yaml 전송
+    let guest_nodes = find_guest_nodes().await;
+    if guest_nodes.is_empty() {
+        println!("No guest nodes found in etcd, skipping guest node deployment");
+    } else {
+        for guest_node in guest_nodes {
+            if guest_node.ip_address != node_ip {
+                // 이미 전송한 노드와 다른 경우에만 전송
+                println!(
+                    "Attempting to send yaml to guest node {} at {}",
+                    guest_node.node_id, guest_node.ip_address
+                );
+                match crate::grpc::sender::nodeagent::send_to_node(
+                    handle_yaml.clone(),
+                    guest_node.ip_address,
+                )
+                .await
+                {
+                    Ok(_) => println!(
+                        "Successfully sent yaml to guest NodeAgent {}",
+                        guest_node.node_id
+                    ),
+                    Err(e) => println!(
+                        "Error sending yaml to guest NodeAgent {}: {:?}",
+                        guest_node.node_id, e
+                    ),
+                }
+            }
+        }
     }
 
     let req: HandleScenarioRequest = HandleScenarioRequest {

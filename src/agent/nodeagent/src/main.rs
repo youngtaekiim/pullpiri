@@ -5,6 +5,7 @@
 
 use clap::Parser;
 use common::nodeagent::HandleYamlRequest;
+use common::nodeagent::NodeRegistrationRequest;
 use std::path::PathBuf;
 mod bluechi;
 pub mod config;
@@ -34,15 +35,27 @@ async fn launch_manager(
 
             // Use IP address from config file
             let host_ip = config.get_host_ip();
-            let node_id = format!("{}-{}", hostname, host_ip);
+            let node_name = config.get_node_name();
+            // node_id를 node_name과 동일하게 설정 (IP 주소 제거)
+            let node_id = node_name.clone();
 
-            let registration_request = common::nodeagent::NodeRegistrationRequest {
+            let registration_request = NodeRegistrationRequest {
                 node_id: node_id.clone(),
                 hostname: hostname.clone(),
                 ip_address: host_ip.clone(),
-                metadata: std::collections::HashMap::new(), // Add empty metadata
-                resources: None, // Use None if NodeResources doesn't exist, or create the correct struct
-                role: 0,         // Use integer instead of string (0 = worker, 1 = master, etc.)
+                metadata: std::collections::HashMap::new(),
+                resources: None,
+                node_type: match config.nodeagent.node_type.as_str() {
+                    "cloud" => 1,   // NodeType::Cloud as i32
+                    "vehicle" => 2, // NodeType::Vehicle as i32
+                    _ => 0,         // NodeType::Unspecified as i32
+                },
+                node_role: match config.nodeagent.node_role.as_str() {
+                    "master" => 1,    // NodeRole::Master as i32
+                    "nodeagent" => 2, // NodeRole::Nodeagent as i32
+                    "bluechi" => 3,   // NodeRole::Bluechi as i32
+                    _ => 0,           // NodeRole::Unspecified as i32
+                },
             };
 
             // Register with API server
@@ -91,7 +104,9 @@ async fn initialize(tx_grpc: Sender<HandleYamlRequest>, hostname: String, config
 
     // Use IP address from config file
     let host_ip = config.get_host_ip();
-    let node_id = format!("{}-{}", hostname, host_ip);
+    let node_name = config.get_node_name();
+    // node_id를 node_name과 동일하게 설정 (IP 주소 제거)
+    let node_id = node_name.clone();
 
     let server = grpc::receiver::NodeAgentReceiver::new(
         tx_grpc.clone(),
@@ -113,6 +128,10 @@ async fn initialize(tx_grpc: Sender<HandleYamlRequest>, hostname: String, config
         .parse()
         .expect("nodeagent address parsing error");
     println!("NodeAgent listening on {}", addr);
+    println!(
+        "NodeAgent config - master_ip: {}, grpc_port: {}",
+        config.nodeagent.master_ip, config.nodeagent.grpc_port
+    );
 
     let _ = Server::builder()
         .add_service(NodeAgentConnectionServer::new(server))

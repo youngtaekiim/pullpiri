@@ -5,6 +5,7 @@
 
 //! Node registry for cluster membership management
 
+use base64::Engine;
 use common::apiserver::{ClusterTopology, TopologyType};
 use common::etcd;
 use prost::Message;
@@ -22,7 +23,7 @@ impl NodeRegistry {
 
         match etcd::get(topology_key).await {
             Ok(encoded) => {
-                let buf = base64::decode(&encoded)?;
+                let buf = base64::engine::general_purpose::STANDARD.decode(&encoded)?;
                 let topology = ClusterTopology::decode(&buf[..])?;
                 Ok(topology)
             }
@@ -50,7 +51,7 @@ impl NodeRegistry {
 
         let mut buf = Vec::new();
         prost::Message::encode(&topology, &mut buf)?;
-        let encoded = base64::encode(&buf);
+        let encoded = base64::engine::general_purpose::STANDARD.encode(&buf);
 
         etcd::put(topology_key, &encoded).await?;
 

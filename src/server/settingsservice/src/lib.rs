@@ -4,12 +4,11 @@
 //! PICCOLO Settings Service Library
 //!
 //! This library provides centralized configuration management and metrics filtering
-//! for the PICCOLO framework.
+//! for the PICCOLO framework through REST API interface only.
 
 pub mod monitoring_etcd;
 pub mod monitoring_types;
 pub mod settings_api;
-pub mod settings_cli;
 pub mod settings_config;
 pub mod settings_core;
 pub mod settings_history;

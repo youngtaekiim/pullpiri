@@ -47,12 +47,13 @@ message NodeInfo {
   string node_id = 1;
   string hostname = 2;
   string ip_address = 3;
-  nodeagent.NodeRole role = 4;
-  nodeagent.NodeStatus status = 5;
-  nodeagent.ResourceInfo resources = 6;
-  int64 last_heartbeat = 7;
-  int64 created_at = 8;
-  map<string, string> metadata = 9;
+  int32 node_type = 11;  // Changed to int32 to avoid import issues
+  int32 node_role = 12;  // Changed to int32 to avoid import issues
+  nodeagent.NodeStatus status = 6;
+  nodeagent.ResourceInfo resources = 7;
+  int64 last_heartbeat = 8;
+  int64 created_at = 9;
+  map<string, string> metadata = 10;
 }
 
 // Topology management messages
