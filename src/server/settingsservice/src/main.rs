@@ -9,7 +9,7 @@
 //! - YAML/JSON configuration management
 //! - Change history tracking and rollback
 //! - Metrics data filtering from ETCD
-//! - REST API and CLI interfaces
+//! - REST API interface
 //! - Schema validation
 
 use anyhow::Result;
@@ -20,7 +20,6 @@ use tracing::info;
 pub mod monitoring_etcd;
 pub mod monitoring_types;
 mod settings_api;
-mod settings_cli;
 mod settings_config;
 mod settings_core;
 mod settings_history;
@@ -54,10 +53,6 @@ struct Args {
     /// Log level
     #[arg(long, default_value = "info")]
     log_level: String,
-
-    /// Enable CLI mode instead of server mode
-    #[arg(long)]
-    cli: bool,
 }
 
 #[tokio::main]
@@ -71,13 +66,8 @@ async fn main() -> Result<()> {
     info!("Config file: {:?}", args.config);
     info!("ETCD endpoints: {}", args.etcd_endpoints);
 
-    if args.cli {
-        // Run in CLI mode
-        run_cli_mode(args).await
-    } else {
-        // Run in server mode
-        run_server_mode(args).await
-    }
+    // Run in server mode only
+    run_server_mode(args).await
 }
 
 async fn run_server_mode(args: Args) -> Result<()> {
@@ -123,18 +113,4 @@ async fn run_server_mode(args: Args) -> Result<()> {
     core_manager.shutdown().await?;
 
     Ok(())
-}
-
-async fn run_cli_mode(args: Args) -> Result<()> {
-    info!("Starting in CLI mode");
-
-    use settings_cli::cli::run_cli;
-
-    let etcd_endpoints: Vec<String> = args
-        .etcd_endpoints
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .collect();
-
-    run_cli(etcd_endpoints).await
 }

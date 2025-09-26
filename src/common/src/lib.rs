@@ -13,34 +13,20 @@ fn open_server(port: u16) -> String {
     format!("{}:{}", crate::setting::get_config().host.ip, port)
 }
 
-fn open_guest_server(port: u16) -> String {
-    if crate::setting::get_config().guest.is_none() {
-        // If no guest is configured, return the host server address
-        return open_server(port);
-    }
-    let guest_ip = crate::setting::get_config()
-        .guest
-        .as_ref()
-        .and_then(|guests| guests.first())
-        .map(|guest: &setting::GuestSettings| guest.ip.as_str())
-        .unwrap();
-
-    format!("{guest_ip}:{port}")
-}
+// // guest 서버 함수 수정: 이제 항상 호스트 서버 주소 반환
+// fn open_guest_server(port: u16) -> String {
+//     // 항상 호스트 서버 주소 반환
+//     open_server(port)
+// }
 
 fn connect_server(port: u16) -> String {
     format!("http://{}:{}", crate::setting::get_config().host.ip, port)
 }
 
+// guest 서버 연결 함수 수정: 이제 항상 호스트 서버 주소 반환
 fn connect_guest_server(port: u16) -> String {
-    let guest_ip = crate::setting::get_config()
-        .guest
-        .as_ref()
-        .and_then(|guests| guests.first())
-        .map(|guest: &setting::GuestSettings| guest.ip.as_str())
-        .unwrap();
-
-    format!("http://{guest_ip}:{port}")
+    // 항상 호스트 서버 주소 반환
+    connect_server(port)
 }
 
 pub mod actioncontroller {
@@ -98,21 +84,21 @@ pub mod monitoringserver {
 pub mod nodeagent {
     tonic::include_proto!("nodeagent");
 
-    pub fn open_server() -> String {
-        super::open_server(47004)
-    }
+    //     pub fn open_server() -> String {
+    //         super::open_server(47004)
+    //     }
 
-    pub fn open_guest_server() -> String {
-        super::open_guest_server(47004)
-    }
+    //     pub fn open_guest_server() -> String {
+    //         super::open_guest_server(47004)
+    //     }
 
-    pub fn connect_server() -> String {
-        super::connect_server(47004)
-    }
+    //     pub fn connect_server() -> String {
+    //         super::connect_server(47004)
+    //     }
 
-    pub fn connect_guest_server() -> String {
-        super::connect_guest_server(47004)
-    }
+    //     pub fn connect_guest_server() -> String {
+    //         super::connect_guest_server(47004)
+    //     }
 }
 
 pub mod policymanager {

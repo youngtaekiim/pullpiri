@@ -14,3 +14,4 @@ dbus = "0.9.7"
 serde = { version = "1.0.214", features = ["derive"] }
 serde_yaml = "0.9"
 common = { workspace = true }
+base64 = "0.22.1"

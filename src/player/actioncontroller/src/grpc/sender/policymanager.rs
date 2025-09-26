@@ -68,49 +68,6 @@ pub async fn check_policy(scenario_name: String) -> Result<()> {
     }
 }
 
-/// Send a workload handling request to NodeAgent
-///
-/// Makes a gRPC request to NodeAgent to perform an action on a workload
-/// (create, delete, start, stop, etc.)
-///
-/// # Arguments
-///
-/// * `workload_name` - The name of the workload to handle
-/// * `action` - The action to perform (numeric code)
-/// * `description` - Additional information about the action
-///
-/// # Returns
-///
-/// * `Ok(())` if the request was successful
-/// * `Err(...)` if the request failed
-///
-/// # Errors
-///
-/// Returns an error if:
-/// - The connection to NodeAgent is not established
-/// - The gRPC request fails
-/// - The workload handling operation fails
-pub async fn handle_yaml(workload_name: String) -> Result<bool> {
-    if workload_name.trim().is_empty() {
-        return Err("Invalid input: workload name and description cannot be empty".into());
-    }
-
-    let addr = common::nodeagent::connect_server();
-    let mut client = NodeAgentConnectionClient::connect(addr)
-        .await //.unwrap();
-        .map_err(|e| format!("Failed to connect to NodeAgent: {}", e))?;
-
-    let request = Request::new(HandleYamlRequest {
-        yaml: workload_name,
-    });
-    let response: tonic::Response<common::nodeagent::HandleYamlResponse> =
-        client.handle_yaml(request).await?;
-    let response_inner = response.into_inner();
-
-    println!("Error: {}", response_inner.desc);
-    Ok(response_inner.status)
-}
-
 // ===========================
 // UNIT TESTS
 // ===========================
@@ -138,33 +95,6 @@ mod tests {
         let scenario_name = "".to_string(); // Empty string is invalid
 
         let result = check_policy(scenario_name).await;
-        assert!(result.is_err());
-    }
-
-    #[tokio::test]
-    async fn test_handle_workload_success() {
-        let workload_name = "test-workload".to_string();
-        let action = 1;
-        let description = "example description".to_string();
-
-        let result = handle_yaml(workload_name).await;
-        if let Err(ref e) = result {
-            println!("Error in test_handle_workload_success: {:?}", e);
-        } else {
-            println!("test_handle_workload_success successful");
-        }
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_handle_workload_failure_invalid_workload() {
-        // Sending invalid workload_name and invalid action to trigger failure
-        let workload_name = "".to_string(); // Invalid empty workload
-        let action = -999; // Invalid action code
-        let description = "".to_string(); // Empty description
-
-        let result = handle_yaml(workload_name).await;
-
         assert!(result.is_err());
     }
 }

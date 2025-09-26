@@ -50,9 +50,11 @@ impl NodeAgentSender {
         &mut self,
         container_list: ContainerList,
     ) -> Result<tonic::Response<SendContainerListResponse>, Status> {
-        let client =
-            MonitoringServerConnectionClient::connect(common::monitoringserver::connect_server())
-                .await;
+        let config = crate::config::Config::get();
+        let master_ip = config.nodeagent.master_ip.clone();
+        let addr = format!("http://{}:47003", master_ip);
+
+        let client = MonitoringServerConnectionClient::connect(addr).await;
 
         match client {
             Ok(mut client) => {
@@ -68,24 +70,20 @@ impl NodeAgentSender {
         }
     }
 
-    /// Send a NodeInfo to the monitoring server via gRPC
+    /// Send node information to the monitoring server
     pub async fn send_node_info(
         &mut self,
-        node_info: NodeInfo,
-    ) -> Result<tonic::Response<SendNodeInfoResponse>, Status> {
-        let client =
-            MonitoringServerConnectionClient::connect(common::monitoringserver::connect_server())
-                .await;
+        node_info: common::monitoringserver::NodeInfo,
+    ) -> Result<tonic::Response<common::monitoringserver::SendNodeInfoResponse>, Status> {
+        let config = crate::config::Config::get();
+        let master_ip = config.nodeagent.master_ip.clone();
+        let addr = format!("http://{}:47003", master_ip);
+
+        let client = MonitoringServerConnectionClient::connect(addr).await;
 
         match client {
-            Ok(mut client) => {
-                // Send the node info
-                client.send_node_info(Request::new(node_info)).await
-            }
-            Err(e) => {
-                // Handle connection error
-                Err(Status::unknown(format!("Failed to connect: {}", e)))
-            }
+            Ok(mut client) => client.send_node_info(Request::new(node_info)).await,
+            Err(e) => Err(Status::unknown(format!("Failed to connect: {}", e))),
         }
     }
 
@@ -116,7 +114,10 @@ impl NodeAgentSender {
         &mut self,
         registration_request: NodeRegistrationRequest,
     ) -> Result<tonic::Response<NodeRegistrationResponse>, Status> {
-        let addr = common::apiserver::connect_grpc_server();
+        let config = crate::config::Config::get();
+        let master_ip = config.nodeagent.master_ip.clone();
+        let addr = format!("http://{}:47098", master_ip);
+
         let client = ApiServerConnectionClient::connect(addr).await;
 
         match client {
@@ -144,10 +145,15 @@ impl NodeAgentSender {
 
         // TODO: Implement heartbeat sending to API server if needed
         // For now, return a success response
+        // Use master_ip from config
+        let config = crate::config::Config::get();
+        let master_ip = config.nodeagent.master_ip.clone();
+        let master_endpoint = format!("http://{}:47098", master_ip);
+
         Ok(tonic::Response::new(HeartbeatResponse {
             ack: true,
             updated_config: Some(common::nodeagent::ClusterConfig {
-                master_endpoint: "http://localhost:47098".to_string(),
+                master_endpoint,
                 heartbeat_interval: 30,
                 settings: std::collections::HashMap::new(),
             }),
@@ -224,7 +230,7 @@ mod tests {
     async fn test_send_node_info_error_propagation() {
         let mut sender = NodeAgentSender::default();
 
-        let node_info = NodeInfo::default();
+        let node_info = common::monitoringserver::NodeInfo::default();
 
         let response = sender.send_node_info(node_info).await;
 
