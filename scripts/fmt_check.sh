@@ -28,6 +28,8 @@ TOOLS_MANIFEST="src/tools/Cargo.toml"
 APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
 FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
 ACTIONCONTROLLER_MANIFEST="src/player/actioncontroller/Cargo.toml"
+SETTINGS_SERVICE_MANIFEST="src/server/settingsservice/Cargo.toml"
+MONITORING_SERVER_MANIFEST="src/server/monitoringserver/Cargo.toml"
 
 # Function to run 'cargo fmt --check' on a given manifest and record results
 run_fmt() {
@@ -91,4 +93,16 @@ if [[ -f "$ACTIONCONTROLLER_MANIFEST" ]]; then
   run_fmt "$ACTIONCONTROLLER_MANIFEST" "actioncontroller"
 else
   echo "::warning ::$ACTIONCONTROLLER_MANIFEST not found, skipping..."
+fi
+
+if [[ -f "$MONITORING_SERVER_MANIFEST" ]]; then
+  run_fmt "$MONITORING_SERVER_MANIFEST" "monitoringserver"
+else
+  echo "::warning ::$MONITORING_SERVER_MANIFEST not found, skipping..."
+fi
+
+if [[ -f "$SETTINGS_SERVICE_MANIFEST" ]]; then
+  run_fmt "$SETTINGS_SERVICE_MANIFEST" "settingsservice"
+else
+  echo "::warning ::$SETTINGS_SERVICE_MANIFEST not found, skipping..."
 fi
