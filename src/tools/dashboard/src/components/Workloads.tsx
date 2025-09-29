@@ -52,24 +52,38 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
     const settingserviceApiUrl = import.meta.env.VITE_SETTING_SERVICE_API_URL;
     if (!settingserviceApiUrl) {
       console.error("VITE_SETTING_SERVICE_API_URL is not defined");
-      return;}
-    fetch(`${settingserviceApiUrl}/api/v1/metrics/nodes`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setNodesDataToUse(data);
-          setNodesFetchSuccess(true);
-          console.log("✅ Nodes API fetched:", data);
-        } else {
+      return;
+    }
+
+    // Fetch function
+    const fetchNodes = () => {
+      fetch(`${settingserviceApiUrl}/api/v1/metrics/nodes`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setNodesDataToUse(data);
+            setNodesFetchSuccess(true);
+            console.log("✅ Nodes API fetched:", data);
+          } else {
+            setNodesFetchSuccess(false);
+            setNodesDataToUse([]);
+          }
+        })
+        .catch(e => {
           setNodesFetchSuccess(false);
           setNodesDataToUse([]);
-        }
-      })
-      .catch(e => {
-        setNodesFetchSuccess(false);
-        setNodesDataToUse([]);
-        console.error("❌ Nodes API fetch failed:", e);
-      });
+          console.error("❌ Nodes API fetch failed:", e);
+        });
+    };
+
+    // Initial fetch
+    fetchNodes();
+
+    // Set up interval
+    const intervalId = setInterval(fetchNodes, 5000);
+
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   // Dialog states
@@ -179,7 +193,7 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
 */
   // Nodes data with more detailed information
   const nodesData = nodesFetchSuccess
-  ? nodesDataToUse.map((node: any) => ({
+    ? nodesDataToUse.map((node: any) => ({
       name: node.node_name,
       pods: pods.filter((pod) => pod.node === node.node_name).length,
       status: "Ready",
@@ -189,41 +203,42 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
       memoryUsage: Number(node.mem_usage.toFixed(1)),
       storageUsage: 0, // If you have storage info, fill here
     }))
-  : [
-      {
-        name: "worker-node-1",
-        pods: pods.filter((pod) => pod.node === "worker-node-1").length,
-        status: "Ready",
-        cpu: "2.4/4",
-        memory: "3.2/8",
-        cpuUsage: 60,
-        memoryUsage: 40,
-        storageUsage: 35,
-      },
-      {
-        name: "worker-node-2",
-        pods: pods.filter((pod) => pod.node === "worker-node-2").length,
-        status: "Ready",
-        cpu: "1.8/4",
-        memory: "2.1/8",
-        cpuUsage: 45,
-        memoryUsage: 26,
-        storageUsage: 50,
-      },
-      {
-        name: "worker-node-3",
-        pods: pods.filter((pod) => pod.node === "worker-node-3").length,
-        status: "Ready",
-        cpu: "0.8/4",
-        memory: "1.5/8",
-        cpuUsage: 20,
-        memoryUsage: 19,
-        storageUsage: 60,
-      },
-    ];
+    : [];
+
+  // Mock Data
+  // {
+  //       name: "worker-node-1",
+  //       pods: pods.filter((pod) => pod.node === "worker-node-1").length,
+  //       status: "Ready",
+  //       cpu: "2.4/4",
+  //       memory: "3.2/8",
+  //       cpuUsage: 60,
+  //       memoryUsage: 40,
+  //       storageUsage: 35,
+  //     },
+  //     {
+  //       name: "worker-node-2",
+  //       pods: pods.filter((pod) => pod.node === "worker-node-2").length,
+  //       status: "Ready",
+  //       cpu: "1.8/4",
+  //       memory: "2.1/8",
+  //       cpuUsage: 45,
+  //       memoryUsage: 26,
+  //       storageUsage: 50,
+  //     },
+  //     {
+  //       name: "worker-node-3",
+  //       pods: pods.filter((pod) => pod.node === "worker-node-3").length,
+  //       status: "Ready",
+  //       cpu: "0.8/4",
+  //       memory: "1.5/8",
+  //       cpuUsage: 20,
+  //       memoryUsage: 19,
+  //       storageUsage: 60,
+  //     },
 
   // Get unique node names from pods
-  const availableNodes = Array.from(new Set(pods.map((pod) => pod.node)));
+  const availableNodes = Array.from(new Set(nodesData.map((node) => node.name)));
 
   // Get current node data based on selection
   const currentNodeData =
@@ -307,54 +322,54 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
   // Resource usage data - node-specific or cluster average
   const resourceData = currentNodeData
     ? [
-        {
-          name: "CPU Usage",
-          value: currentNodeData.cpuUsage,
-          max: 100,
-          color: "#3b82f6",
-        },
-        {
-          name: "Memory Usage",
-          value: currentNodeData.memoryUsage,
-          max: 100,
-          color: "#8b5cf6",
-        },
-        {
-          name: "Storage Usage",
-          value: currentNodeData.storageUsage,
-          max: 100,
-          color: "#06b6d4",
-        },
-      ]
+      {
+        name: "CPU Usage",
+        value: currentNodeData.cpuUsage,
+        max: 100,
+        color: "#3b82f6",
+      },
+      {
+        name: "Memory Usage",
+        value: currentNodeData.memoryUsage,
+        max: 100,
+        color: "#8b5cf6",
+      },
+      {
+        name: "Storage Usage",
+        value: currentNodeData.storageUsage,
+        max: 100,
+        color: "#06b6d4",
+      },
+    ]
     : [
-        {
-          name: "CPU Usage",
-          value: Math.round(
-            nodesData.reduce((acc, node) => acc + node.cpuUsage, 0) /
-              nodesData.length
-          ),
-          max: 100,
-          color: "#3b82f6",
-        },
-        {
-          name: "Memory Usage",
-          value: Math.round(
-            nodesData.reduce((acc, node) => acc + node.memoryUsage, 0) /
-              nodesData.length
-          ),
-          max: 100,
-          color: "#8b5cf6",
-        },
-        {
-          name: "Storage Usage",
-          value: Math.round(
-            nodesData.reduce((acc, node) => acc + node.storageUsage, 0) /
-              nodesData.length
-          ),
-          max: 100,
-          color: "#06b6d4",
-        },
-      ];
+      {
+        name: "CPU Usage",
+        value: Math.round(
+          nodesData.reduce((acc, node) => acc + node.cpuUsage, 0) /
+          nodesData.length
+        ),
+        max: 100,
+        color: "#3b82f6",
+      },
+      {
+        name: "Memory Usage",
+        value: Math.round(
+          nodesData.reduce((acc, node) => acc + node.memoryUsage, 0) /
+          nodesData.length
+        ),
+        max: 100,
+        color: "#8b5cf6",
+      },
+      {
+        name: "Storage Usage",
+        value: Math.round(
+          nodesData.reduce((acc, node) => acc + node.storageUsage, 0) /
+          nodesData.length
+        ),
+        max: 100,
+        color: "#06b6d4",
+      },
+    ];
 
   // Recent events
   const recentEvents = [
@@ -455,11 +470,10 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
                 variant={selectedNode === "all" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setSelectedNode("all")}
-                className={`h-8 px-3 text-xs font-medium transition-all ${
-                  selectedNode === "all"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
+                className={`h-8 px-3 text-xs font-medium transition-all ${selectedNode === "all"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
               >
                 <Network className="w-3 h-3 mr-1" />
                 All Nodes
@@ -470,11 +484,10 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
                   variant={selectedNode === nodeName ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setSelectedNode(nodeName)}
-                  className={`h-8 px-3 text-xs font-medium transition-all ${
-                    selectedNode === nodeName
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
+                  className={`h-8 px-3 text-xs font-medium transition-all ${selectedNode === nodeName
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
                 >
                   <Server className="w-3 h-3 mr-1" />
                   {nodeName}
@@ -696,13 +709,12 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
                   className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div
-                    className={`w-2 h-2 rounded-full mt-2 ${
-                      event.status === "success"
-                        ? "bg-emerald-500"
-                        : event.status === "error"
+                    className={`w-2 h-2 rounded-full mt-2 ${event.status === "success"
+                      ? "bg-emerald-500"
+                      : event.status === "error"
                         ? "bg-red-500"
                         : "bg-yellow-500"
-                    }`}
+                      }`}
                   ></div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">
@@ -804,7 +816,7 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
               </TableHeader>
               <TableBody className="overflow-visible">
                 {filteredPods.map(
-                  (pod /*index*/ ) => ( // 2025-09-23 comment out
+                  (pod /*index*/) => ( // 2025-09-23 comment out
                     <TableRow
                       key={pod.name}
                       className="border-border/30 hover:bg-muted/30 transition-colors"
@@ -883,7 +895,7 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
       {/* Dialog Components */}
       <LogsDialog
         open={logsDialog.open}
-  onOpenChange={(open: any) =>
+        onOpenChange={(open: any) =>
           setLogsDialog({ open, podName: logsDialog.podName })
         }
         podName={logsDialog.podName}
@@ -897,7 +909,7 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
 
       <YamlEditor
         open={yamlEditor.open}
-  onOpenChange={(open: any) =>
+        onOpenChange={(open: any) =>
           setYamlEditor({ open, podName: yamlEditor.podName })
         }
         podName={yamlEditor.podName}
@@ -906,7 +918,7 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
       {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={deleteDialog.open}
-  onOpenChange={(open: any) =>
+        onOpenChange={(open: any) =>
           setDeleteDialog({ open, podName: deleteDialog.podName })
         }
       >
@@ -951,7 +963,7 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
         open={createPodDialog}
         onOpenChange={setCreatePodDialog}
         onCreatePod={handleCreatePod}
-  onSuccess={(newPod: any) => {
+        onSuccess={(newPod: any) => {
           setPods((prevPods) => [...prevPods, newPod]);
           setCreatePodDialog(false);
         }}
