@@ -990,7 +990,10 @@ async fn list_containers(
             let filtered_containers = if let Some(filter) = query.filter {
                 containers
                     .into_iter()
-                    .filter(|container| container.id.contains(&filter))
+                    .filter(|container| {
+                        container.id.contains(&filter)
+                            || container.names.iter().any(|name| name.contains(&filter))
+                    })
                     .collect()
             } else {
                 containers
