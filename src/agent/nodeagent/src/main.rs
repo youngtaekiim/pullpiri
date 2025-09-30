@@ -199,8 +199,8 @@ mod tests {
     use crate::config::Config;
     use crate::{initialize, launch_manager};
     use common::nodeagent::{HandleYamlRequest, NodeRegistrationRequest};
-    use std::path::PathBuf;
     use std::collections::HashMap;
+    use std::path::PathBuf;
     use tokio::sync::mpsc::{channel, Receiver, Sender};
     use tokio::task::LocalSet;
     use tokio::time::{sleep, Duration};
@@ -229,7 +229,7 @@ mod tests {
         assert!(true);
     }
 
-     #[tokio::test]
+    #[tokio::test]
     async fn test_registration_request_fields() {
         let config = Config::default();
         let host_ip = config.get_host_ip();
@@ -273,7 +273,8 @@ mod tests {
     }
     #[tokio::test]
     async fn test_initialize_runs_without_panic() {
-        let (tx_grpc, _rx_grpc): (Sender<HandleYamlRequest>, Receiver<HandleYamlRequest>) = channel(10);
+        let (tx_grpc, _rx_grpc): (Sender<HandleYamlRequest>, Receiver<HandleYamlRequest>) =
+            channel(10);
         let config = Config::default();
         let hostname = "testhost".to_string();
         // Should not panic or error

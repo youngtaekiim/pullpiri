@@ -152,9 +152,9 @@ impl NodeAgentConnection for NodeAgentReceiver {
 mod tests {
     use crate::grpc::receiver::{NodeAgentConnection, NodeAgentReceiver};
     use common::nodeagent::{
-        ConfigRequest, ConfigResponse, HandleYamlRequest, HandleYamlResponse, HeartbeatRequest,
-        HeartbeatResponse, NodeRegistrationRequest, NodeRegistrationResponse, StatusAck, StatusReport,
-        ClusterConfig,
+        ClusterConfig, ConfigRequest, ConfigResponse, HandleYamlRequest, HandleYamlResponse,
+        HeartbeatRequest, HeartbeatResponse, NodeRegistrationRequest, NodeRegistrationResponse,
+        StatusAck, StatusReport,
     };
     use tokio::sync::mpsc;
     use tonic::{Request, Status};
@@ -271,7 +271,11 @@ spec:
         };
         let tonic_request = Request::new(request);
 
-        let response = receiver.register_node(tonic_request).await.unwrap().into_inner();
+        let response = receiver
+            .register_node(tonic_request)
+            .await
+            .unwrap()
+            .into_inner();
         assert!(response.success);
         assert_eq!(response.message, "Node registration processed");
         assert_eq!(response.cluster_token, "node-token");
@@ -298,7 +302,11 @@ spec:
         };
         let tonic_request = Request::new(request);
 
-        let response = receiver.report_status(tonic_request).await.unwrap().into_inner();
+        let response = receiver
+            .report_status(tonic_request)
+            .await
+            .unwrap()
+            .into_inner();
         assert!(response.received);
         assert_eq!(response.message, "Status report received");
     }
@@ -320,7 +328,11 @@ spec:
         };
         let tonic_request = Request::new(request);
 
-        let response = receiver.heartbeat(tonic_request).await.unwrap().into_inner();
+        let response = receiver
+            .heartbeat(tonic_request)
+            .await
+            .unwrap()
+            .into_inner();
         assert!(response.ack);
         assert!(response.updated_config.is_some());
         let config = response.updated_config.unwrap();
@@ -347,7 +359,11 @@ spec:
         };
         let tonic_request = Request::new(request);
 
-        let response = receiver.receive_config(tonic_request).await.unwrap().into_inner();
+        let response = receiver
+            .receive_config(tonic_request)
+            .await
+            .unwrap()
+            .into_inner();
         assert!(response.applied);
         assert_eq!(response.message, "Configuration applied successfully");
     }

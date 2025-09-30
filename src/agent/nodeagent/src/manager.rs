@@ -264,12 +264,12 @@ spec:
   terminationGracePeriodSeconds: 0
 "#;
     use crate::manager::NodeAgentManager;
+    use common::monitoringserver::{ContainerInfo, ContainerList, NodeInfo};
     use common::nodeagent::HandleYamlRequest;
+    use std::collections::HashMap;
     use std::sync::Arc;
     use tokio::sync::mpsc;
     use tokio::sync::Mutex;
-    use common::monitoringserver::{ContainerInfo, ContainerList, NodeInfo};
-    use std::collections::HashMap;
     use tokio::time::{timeout, Duration};
 
     #[test]
@@ -303,14 +303,22 @@ spec:
         };
 
         // True: stats ignored, all else equal
-        assert!(super::containers_equal_except_stats(&[c1.clone()], &[c2.clone()]));
+        assert!(super::containers_equal_except_stats(
+            &[c1.clone()],
+            &[c2.clone()]
+        ));
         // False: id differs
-        assert!(!super::containers_equal_except_stats(&[c1.clone()], &[c3.clone()]));
+        assert!(!super::containers_equal_except_stats(
+            &[c1.clone()],
+            &[c3.clone()]
+        ));
         // False: length differs
-        assert!(!super::containers_equal_except_stats(&[c1.clone(), c2.clone()], &[c1.clone()]));
+        assert!(!super::containers_equal_except_stats(
+            &[c1.clone(), c2.clone()],
+            &[c1.clone()]
+        ));
     }
 
-    
     #[tokio::test]
     async fn test_new_creates_instance_with_correct_hostname() {
         let (_tx, rx) = mpsc::channel(1);

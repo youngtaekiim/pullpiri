@@ -162,17 +162,23 @@ mod tests {
         let mut config = Config::default();
         config.nodeagent.node_type = "cloud".to_string();
         config.nodeagent.node_role = "master".to_string();
-        assert_eq!(match config.nodeagent.node_type.as_str() {
-            "cloud" => 1,
-            "vehicle" => 2,
-            _ => 0,
-        }, 1);
-        assert_eq!(match config.nodeagent.node_role.as_str() {
-            "master" => 1,
-            "nodeagent" => 2,
-            "bluechi" => 3,
-            _ => 0,
-        }, 1);
+        assert_eq!(
+            match config.nodeagent.node_type.as_str() {
+                "cloud" => 1,
+                "vehicle" => 2,
+                _ => 0,
+            },
+            1
+        );
+        assert_eq!(
+            match config.nodeagent.node_role.as_str() {
+                "master" => 1,
+                "nodeagent" => 2,
+                "bluechi" => 3,
+                _ => 0,
+            },
+            1
+        );
     }
 
     #[test]

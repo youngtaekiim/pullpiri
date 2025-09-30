@@ -350,6 +350,9 @@ containers:
         // Should not panic if symlink does not exist
         let model_name = "nonexistent_symlink";
         let result = delete_symlink(model_name).await;
-        assert!(result.is_ok(), "delete_symlink should not error if symlink missing");
+        assert!(
+            result.is_ok(),
+            "delete_symlink should not error if symlink missing"
+        );
     }
 }

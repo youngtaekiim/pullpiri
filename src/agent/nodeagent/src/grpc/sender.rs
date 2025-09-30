@@ -180,8 +180,13 @@ impl NodeAgentSender {
 #[cfg(test)]
 mod tests {
     use crate::grpc::sender::NodeAgentSender;
-    use common::monitoringserver::{ContainerList, NodeInfo, SendContainerListResponse, SendNodeInfoResponse};
-    use common::nodeagent::{HeartbeatRequest, StatusReport, NodeRegistrationRequest, NodeRegistrationResponse, HeartbeatResponse, StatusAck};
+    use common::monitoringserver::{
+        ContainerList, NodeInfo, SendContainerListResponse, SendNodeInfoResponse,
+    };
+    use common::nodeagent::{
+        HeartbeatRequest, HeartbeatResponse, NodeRegistrationRequest, NodeRegistrationResponse,
+        StatusAck, StatusReport,
+    };
     use common::statemanager::{Action, Response as SMResponse};
     use tonic::{Request, Response, Status};
 
