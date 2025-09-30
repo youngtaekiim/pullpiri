@@ -25,6 +25,8 @@ TOOLS_MANIFEST="src/tools/Cargo.toml"
 APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
 FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
 ACTIONCONTROLLER_MANIFEST="src/player/actioncontroller/Cargo.toml"
+SETTINGS_SERVICE_MANIFEST="src/server/settingsservice/Cargo.toml"
+MONITORING_SERVER_MANIFEST="src/server/monitoringserver/Cargo.toml"
 
 # Function to run clippy on a component and track results
 run_clippy() {
@@ -73,6 +75,12 @@ run_clippy() {
 
 [[ -f "$ACTIONCONTROLLER_MANIFEST" ]] && run_clippy "$ACTIONCONTROLLER_MANIFEST" "actioncontroller" \
   || echo "::warning ::$ACTIONCONTROLLER_MANIFEST not found, skipping..."
+
+[[ -f "$SETTINGS_SERVICE_MANIFEST" ]] && run_clippy "$SETTINGS_SERVICE_MANIFEST" "settingsservice" \
+  || echo "::warning ::$SETTINGS_SERVICE_MANIFEST not found, skipping..."   
+
+[[ -f "$MONITORING_SERVER_MANIFEST" ]] && run_clippy "$MONITORING_SERVER_MANIFEST" "monitoringserver" \
+  || echo "::warning ::$MONITORING_SERVER_MANIFEST not found, skipping..."
 
 # Optional: exit with failure if any component had Clippy errors
 if [[ "$FAILED_TOTAL" -gt 0 ]]; then
