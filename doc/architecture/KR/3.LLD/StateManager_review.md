@@ -3,48 +3,63 @@
 ## 전체 시스템 구조
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#f8f9fa', 'primaryTextColor': '#212529', 'primaryBorderColor': '#6c757d', 'lineColor': '#495057', 'secondaryColor': '#e9ecef', 'tertiaryColor': '#ffffff'}}}%%
 graph TB
-  subgraph "Input Components"
-        NA{{NodeAgent}}
-        AS{{ApiServer,<br/> FilterGateway,<br/> ActionController,<br/> PolicyManager}}
+    %% Input Components
+    subgraph NA ["NodeAgent"]
+    end
+    subgraph AS ["ApiServer"]
+    end
+    subgraph FG ["FilterGateway"]
+    end
+    subgraph AC ["ActionController"]
+    end
+    subgraph ACR ["ActionController"]
     end
 
-    subgraph "StateManager"
-        SM[gRPC Receiver]
-        
-        subgraph "State Evaluation"
-            SE1[Scenario State<br/>Change Handler]
-            SE2[Model State<br/>Evaluator]
-            SE3[Package State<br/>Evaluator]
-        end
+    subgraph PM ["PolicyManager"]
+    end
+    %% StateManager with internal functions
+    subgraph SM_BOX ["StateManager"]
+        SM(gRPC Receiver)
+        SSH(Scenario State<br/>Handler)
+        MSE(Model State<br/>Evaluator)
+        PSE(Package State<br/>Evaluator)
     end
     
-    subgraph "Output Systems"
-        ETCD[(ETCD<br/>State Storage)]
-        AC_OUT[ActionController<br/>Reconcile Request]
-    end
+    %% Output Systems
+    ETCD[(ETCD<br/>State Storage)]
     
     %% Input flows
-    NA -->|Container Status| SM
     AS -->|Scenario State Change| SM
+    FG -->|Scenario State Change| SM
+    AC -->|Scenario State Change| SM
+    PM -->|Scenario State Change| SM
+    NA -->|Container State| SM
     
-    %% Internal processing
-    SM --> SE1
-    SM --> SE2
+    %% Internal StateManager flows
+    SM -->|Container State| MSE
+    SM -->|Scenario State Change| SSH
     
-    %% State evaluation flow
-    SE2 -->|Model State Change| SE3
-    SE3 -->|if Package State is Dead| AC_OUT
+    %% Processing flows
+    SSH -->|put<br/>New Scenario State| ETCD
+    MSE -->|put<br/>New Model State| ETCD
+    MSE -->|Model State Change| PSE
+    PSE -->|put<br/>New Package State| ETCD
+    PSE -->|if Package State is Dead<br/>Reconcile Request| ACR
+    %% 컴포넌트 스타일 정의
+    classDef componentStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
+    classDef stateManagerStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
     
-    %% Output flows
-    SE1 -->|Scenario State| ETCD
-    SE2 -->|Model State| ETCD
-    SE3 -->|Package State| ETCD
+    %% 컴포넌트에 스타일 적용
+    class NA,AS,FG,AC,ACR,PM,SM_BOX componentStyle
 ```
+
 
 ## 상세 처리 흐름
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'actorBkg': '#e1f5fe', 'actorBorder': '#01579b', 'actorTextColor': '#000', 'actorLineColor': '#01579b'}}}%%
 sequenceDiagram
     participant CT as Components<br/>(ApiServer,FilterGateway,<br/>ActionController,PolicyManager)
     participant NA as NodeAgent
@@ -69,6 +84,7 @@ sequenceDiagram
         CT->>SM: Scenario state change request
         SM->>ETCD: Scenario State PUT
     end
+
 ```
 
 ## model, package 연쇄 상태 전이 규칙
