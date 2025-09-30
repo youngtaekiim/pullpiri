@@ -33,9 +33,11 @@ interface WorkloadsProps {
   onPodClick?: (podName: string) => void;
   pods: Pod[];
   setPods: React.Dispatch<React.SetStateAction<Pod[]>>;
+  recentEvents: any[];
+  setRecentEvents: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
-export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
+export function Workloads({ onPodClick, pods, setPods, recentEvents, setRecentEvents }: WorkloadsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNode, setSelectedNode] = useState<string>("all");
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
@@ -44,12 +46,14 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
     right: number;
   } | null>(null);
 
+
   // LGSI changes:
   const [nodesDataToUse, setNodesDataToUse] = useState<any[]>([]); // Replace mock with fetched data
   const [nodesFetchSuccess, setNodesFetchSuccess] = useState(false);
 
   useEffect(() => {
     const settingserviceApiUrl = import.meta.env.VITE_SETTING_SERVICE_API_URL;
+    const _timeout = import.meta.env.VITE_SETTING_SERVICE_TIMEOUT || 5000;
     if (!settingserviceApiUrl) {
       console.error("VITE_SETTING_SERVICE_API_URL is not defined");
       return;
@@ -64,6 +68,32 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
             setNodesDataToUse(data);
             setNodesFetchSuccess(true);
             console.log("✅ Nodes API fetched:", data);
+
+            setRecentEvents(prev => {
+              const newEvent = {
+                type: "Fetched",
+                resource: "Node",
+                name: "Nodes fetch success",
+                time: new Date().toLocaleTimeString(),
+                status: "success",
+              };
+
+              // Find the most recent event for this resource
+              const latestSameResourceEvent = prev.find(
+                e => e.resource === newEvent.resource
+              );
+
+              // Only add if the latest event for this resource is not the same type, status, and name
+              if (
+                latestSameResourceEvent &&
+                latestSameResourceEvent.type === newEvent.type &&
+                latestSameResourceEvent.status === newEvent.status &&
+                latestSameResourceEvent.name === newEvent.name
+              ) {
+                return prev;
+              }
+              return [newEvent, ...prev];
+            });
           } else {
             setNodesFetchSuccess(false);
             setNodesDataToUse([]);
@@ -73,6 +103,32 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
           setNodesFetchSuccess(false);
           setNodesDataToUse([]);
           console.error("❌ Nodes API fetch failed:", e);
+
+          setRecentEvents(prev => {
+            const newEvent = {
+              type: "Fetched",
+              resource: "Node",
+              name: "Nodes fetch failed",
+              time: new Date().toLocaleTimeString(),
+              status: "error",
+            };
+
+            // Find the most recent event for this resource
+            const latestSameResourceEvent = prev.find(
+              e => e.resource === newEvent.resource
+            );
+
+            // Only add if the latest event for this resource is not the same type, status, and name
+            if (
+              latestSameResourceEvent &&
+              latestSameResourceEvent.type === newEvent.type &&
+              latestSameResourceEvent.status === newEvent.status &&
+              latestSameResourceEvent.name === newEvent.name
+            ) {
+              return prev;
+            }
+            return [newEvent, ...prev];
+          });
         });
     };
 
@@ -80,7 +136,7 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
     fetchNodes();
 
     // Set up interval
-    const intervalId = setInterval(fetchNodes, 5000);
+    const intervalId = setInterval(fetchNodes, _timeout);
 
     // Cleanup on unmount
     return () => clearInterval(intervalId);
@@ -372,29 +428,29 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
     ];
 
   // Recent events
-  const recentEvents = [
-    {
-      type: "Created",
-      resource: "Pod",
-      name: "frontend-app-7d4b8c9f8d-xyz12",
-      time: "2m ago",
-      status: "success",
-    },
-    {
-      type: "Scheduled",
-      resource: "Pod",
-      name: "backend-api-5f6a7b8c9d-def56",
-      time: "5m ago",
-      status: "success",
-    },
-    {
-      type: "Failed",
-      resource: "Pod",
-      name: "database-migration-1a2b3c4d5e-jkl90",
-      time: "30m ago",
-      status: "error",
-    },
-  ];
+  // const recentEvents = [
+  //   {
+  //     type: "Created",
+  //     resource: "Pod",
+  //     name: "frontend-app-7d4b8c9f8d-xyz12",
+  //     time: "2m ago",
+  //     status: "success",
+  //   },
+  //   {
+  //     type: "Scheduled",
+  //     resource: "Pod",
+  //     name: "backend-api-5f6a7b8c9d-def56",
+  //     time: "5m ago",
+  //     status: "success",
+  //   },
+  //   {
+  //     type: "Failed",
+  //     resource: "Pod",
+  //     name: "database-migration-1a2b3c4d5e-jkl90",
+  //     time: "30m ago",
+  //     status: "error",
+  //   },
+  // ];
 
   // Helper function to get status badge
   const getStatusBadge = (status: string) => {
@@ -703,7 +759,7 @@ export function Workloads({ onPodClick, pods, setPods }: WorkloadsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentEvents.map((event, index) => (
+              {recentEvents.slice(0, 3).map((event, index) => (
                 <div
                   key={index}
                   className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
