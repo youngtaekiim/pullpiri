@@ -8,6 +8,9 @@ WantedBy=multi-user.target default.target
 
 [Kube]
 Yaml=/etc/containers/systemd/piccolo/piccolo-server.yaml
+# settings.yaml에서 호스트 IP를 추출하여 환경 변수로 설정
+PodmanArgs=--env HOST_IP=$(grep -A 3 "host:" /etc/containers/systemd/piccolo/settings.yaml | grep "ip:" | awk '{print $2}')
 
 [Service]
 Restart=always
+ExecStartPre=/bin/bash -c 'if ! ip=$(grep -A 3 "host:" /etc/containers/systemd/piccolo/settings.yaml | grep "ip:" | awk "{print \\$2}"); then echo "Failed to extract host IP from settings.yaml"; exit 1; fi'
