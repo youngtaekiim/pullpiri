@@ -264,10 +264,60 @@ spec:
   terminationGracePeriodSeconds: 0
 "#;
     use crate::manager::NodeAgentManager;
+    use common::monitoringserver::{ContainerInfo, ContainerList, NodeInfo};
     use common::nodeagent::HandleYamlRequest;
+    use std::collections::HashMap;
     use std::sync::Arc;
     use tokio::sync::mpsc;
     use tokio::sync::Mutex;
+    use tokio::time::{timeout, Duration};
+
+    #[test]
+    fn test_containers_equal_except_stats_true_and_false() {
+        let c1 = ContainerInfo {
+            id: "id1".to_string(),
+            names: vec!["n1".to_string()],
+            image: "img".to_string(),
+            state: HashMap::new(),
+            config: HashMap::new(),
+            annotation: HashMap::new(),
+            stats: HashMap::new(),
+        };
+        let c2 = ContainerInfo {
+            id: "id1".to_string(),
+            names: vec!["n1".to_string()],
+            image: "img".to_string(),
+            state: HashMap::new(),
+            config: HashMap::new(),
+            annotation: HashMap::new(),
+            stats: HashMap::new(),
+        };
+        let c3 = ContainerInfo {
+            id: "id2".to_string(),
+            names: vec!["n2".to_string()],
+            image: "img2".to_string(),
+            state: HashMap::new(),
+            config: HashMap::new(),
+            annotation: HashMap::new(),
+            stats: HashMap::new(),
+        };
+
+        // True: stats ignored, all else equal
+        assert!(super::containers_equal_except_stats(
+            &[c1.clone()],
+            &[c2.clone()]
+        ));
+        // False: id differs
+        assert!(!super::containers_equal_except_stats(
+            &[c1.clone()],
+            &[c3.clone()]
+        ));
+        // False: length differs
+        assert!(!super::containers_equal_except_stats(
+            &[c1.clone(), c2.clone()],
+            &[c1.clone()]
+        ));
+    }
 
     #[tokio::test]
     async fn test_new_creates_instance_with_correct_hostname() {

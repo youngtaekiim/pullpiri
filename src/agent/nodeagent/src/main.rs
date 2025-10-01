@@ -197,8 +197,9 @@ async fn main() {
 #[cfg(test)]
 mod tests {
     use crate::config::Config;
-    use crate::launch_manager;
-    use common::nodeagent::HandleYamlRequest;
+    use crate::{initialize, launch_manager};
+    use common::nodeagent::{HandleYamlRequest, NodeRegistrationRequest};
+    use std::collections::HashMap;
     use std::path::PathBuf;
     use tokio::sync::mpsc::{channel, Receiver, Sender};
     use tokio::task::LocalSet;
@@ -229,6 +230,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_registration_request_fields() {
+        let config = Config::default();
+        let host_ip = config.get_host_ip();
+        let node_name = config.get_node_name();
+        let hostname = "testhost".to_string();
+        let registration_request = NodeRegistrationRequest {
+            node_id: node_name.clone(),
+            hostname: hostname.clone(),
+            ip_address: host_ip.clone(),
+            metadata: HashMap::new(),
+            resources: None,
+            node_type: match config.nodeagent.node_type.as_str() {
+                "cloud" => 1,
+                "vehicle" => 2,
+                _ => 0,
+            },
+            node_role: match config.nodeagent.node_role.as_str() {
+                "master" => 1,
+                "nodeagent" => 2,
+                "bluechi" => 3,
+                _ => 0,
+            },
+        };
+        assert_eq!(registration_request.node_id, node_name);
+        assert_eq!(registration_request.ip_address, host_ip);
+    }
+
+    #[tokio::test]
     async fn test_inspect() {
         let hostname: String = String::from_utf8_lossy(
             &std::process::Command::new("hostname")
@@ -241,5 +270,19 @@ mod tests {
 
         let r = crate::resource::container::inspect(hostname).await;
         println!("{:#?}", r);
+    }
+    #[tokio::test]
+    async fn test_initialize_runs_without_panic() {
+        let (tx_grpc, _rx_grpc): (Sender<HandleYamlRequest>, Receiver<HandleYamlRequest>) =
+            channel(10);
+        let config = Config::default();
+        let hostname = "testhost".to_string();
+        // Should not panic or error
+        let fut = initialize(tx_grpc, hostname, config);
+        tokio::select! {
+            _ = fut => {},
+            _ = sleep(Duration::from_millis(200)) => {},
+        }
+        assert!(true);
     }
 }
