@@ -1209,7 +1209,9 @@ mod tests {
     #[test]
     fn test_metric_value_variants() {
         let counter = MetricValue::Counter { value: 42 };
-        let gauge = MetricValue::Gauge { value: 3.14 };
+        let gauge = MetricValue::Gauge {
+            value: std::f64::consts::PI,
+        };
         let node_info = MetricValue::NodeInfo {
             value: create_test_node_info(),
         };
@@ -1223,7 +1225,9 @@ mod tests {
         }
 
         match gauge {
-            MetricValue::Gauge { value } => assert!((value - 3.14).abs() < f64::EPSILON),
+            MetricValue::Gauge { value } => {
+                assert!((value - std::f64::consts::PI).abs() < f64::EPSILON)
+            }
             _ => panic!("Expected Gauge variant"),
         }
 

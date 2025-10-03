@@ -761,7 +761,7 @@ mod tests {
             json!(true),
             json!(false),
             json!(42),
-            json!(3.14),
+            json!(std::f64::consts::PI),
             json!("string value"),
             json!(["array", "of", "values"]),
             json!({"nested": {"object": "value"}}),

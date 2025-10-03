@@ -808,7 +808,7 @@ mod tests {
 
         // Basic verification that manager is created
         // Can't easily test internal state without more complex mocking
-        assert!(true); // Placeholder assertion
+        // Manager should be successfully created without panicking
     }
 
     #[tokio::test]

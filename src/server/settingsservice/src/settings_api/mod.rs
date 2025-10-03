@@ -2028,7 +2028,7 @@ mod tests {
                         "unicode": "🚗🔧⚙️",
                         "numbers": {
                             "int": 42,
-                            "float": 3.14159,
+                            "float": std::f64::consts::PI,
                             "large": 9223372036854775807i64,
                             "negative": -42
                         }
