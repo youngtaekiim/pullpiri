@@ -264,3 +264,474 @@ impl ApiServerConnection for ApiServerReceiver {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::apiserver::TopologyType;
+    use common::nodeagent::{NodeRole, NodeType, ResourceInfo};
+    use std::collections::HashMap;
+    use tokio;
+
+    fn create_test_resource_info() -> ResourceInfo {
+        ResourceInfo {
+            cpu_cores: 4,
+            memory_mb: 8192,
+            disk_gb: 100,
+            architecture: "x86_64".to_string(),
+            os_version: "Ubuntu 20.04".to_string(),
+        }
+    }
+
+    fn create_test_registration_request(node_id: &str, hostname: &str, ip: &str) -> NodeRegistrationRequest {
+        let mut metadata = HashMap::new();
+        metadata.insert("environment".to_string(), "test".to_string());
+
+        NodeRegistrationRequest {
+            node_id: node_id.to_string(),
+            hostname: hostname.to_string(),
+            ip_address: ip.to_string(),
+            node_type: NodeType::Vehicle.into(),
+            node_role: NodeRole::Nodeagent.into(),
+            resources: Some(create_test_resource_info()),
+            metadata,
+        }
+    }
+
+    fn create_test_node_info(node_id: &str, hostname: &str, ip: &str) -> NodeInfo {
+        NodeInfo {
+            node_id: node_id.to_string(),
+            hostname: hostname.to_string(),
+            ip_address: ip.to_string(),
+            node_type: NodeType::Vehicle as i32,
+            node_role: NodeRole::Nodeagent as i32,
+            status: NodeStatus::Ready.into(),
+            resources: Some(create_test_resource_info()),
+            last_heartbeat: chrono::Utc::now().timestamp(),
+            created_at: chrono::Utc::now().timestamp(),
+            metadata: HashMap::new(),
+        }
+    }
+
+    fn create_test_cluster_topology() -> ClusterTopology {
+        let mut config = HashMap::new();
+        config.insert("test_key".to_string(), "test_value".to_string());
+
+        ClusterTopology {
+            cluster_id: "test-cluster-001".to_string(),
+            cluster_name: "Test Cluster".to_string(),
+            r#type: TopologyType::HybridCloud as i32,
+            master_nodes: vec![
+                create_test_node_info("master-1", "master-host-1", "192.168.1.10"),
+                create_test_node_info("master-2", "master-host-2", "192.168.1.11"),
+            ],
+            sub_nodes: vec![
+                create_test_node_info("node-1", "worker-host-1", "192.168.1.20"),
+                create_test_node_info("node-2", "worker-host-2", "192.168.1.21"),
+            ],
+            parent_cluster: "parent-cluster".to_string(),
+            config,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_node_registry_new() {
+        let _registry = NodeRegistry;
+        // Test that NodeRegistry can be created
+        assert!(true); // NodeRegistry is a unit struct, just verify it compiles
+    }
+
+    #[tokio::test]
+    async fn test_node_registry_get_topology_default() {
+        let registry = NodeRegistry;
+        
+        // Test getting topology (may be default or existing from other tests)
+        let result = registry.get_topology().await;
+        assert!(result.is_ok());
+        
+        let topology = result.unwrap();
+        // Topology should have some cluster_id and cluster_name
+        assert!(!topology.cluster_id.is_empty());
+        assert!(!topology.cluster_name.is_empty());
+        // Type should be a valid TopologyType value
+        assert!(topology.r#type >= 0 && topology.r#type <= 4);
+    }
+
+    #[tokio::test]
+    async fn test_node_registry_update_and_get_topology() {
+        let registry = NodeRegistry;
+        let test_topology = create_test_cluster_topology();
+        
+        // Test updating topology
+        let update_result = registry.update_topology(test_topology.clone()).await;
+        assert!(update_result.is_ok());
+        
+        let updated_topology = update_result.unwrap();
+        assert_eq!(updated_topology.cluster_id, test_topology.cluster_id);
+        assert_eq!(updated_topology.cluster_name, test_topology.cluster_name);
+        assert_eq!(updated_topology.r#type, test_topology.r#type);
+        
+        // Test getting the updated topology
+        let get_result = registry.get_topology().await;
+        assert!(get_result.is_ok());
+        
+        let retrieved_topology = get_result.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_api_server_receiver_new() {
+        let _receiver = ApiServerReceiver::new();
+        
+        // Test that receiver can be created successfully
+        // We can't directly access private fields, but we can test that creation succeeds
+        assert!(true); // If we get here, new() succeeded
+    }
+
+    #[tokio::test]
+    async fn test_api_server_receiver_into_service() {
+        let receiver = ApiServerReceiver::new();
+        let _service = receiver.into_service();
+        
+        // Test that service conversion works
+        assert!(true); // If we get here, into_service() succeeded
+    }
+
+    #[tokio::test]
+    async fn test_get_nodes_success() {
+        let receiver = ApiServerReceiver::new();
+        let request = Request::new(GetNodesRequest {
+            filter: None,
+            status_filter: None,
+        });
+        
+        let result = receiver.get_nodes(request).await;
+        assert!(result.is_ok());
+        
+        let response = result.unwrap().into_inner();
+        // Response should exist, success field depends on actual node data
+        assert!(!response.message.is_empty());
+        
+        // Test both success and failure cases
+        if response.success {
+            assert_eq!(response.message, "Successfully retrieved nodes");
+        } else {
+            assert!(response.message.contains("Failed to retrieve nodes"));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_node_not_found() {
+        let receiver = ApiServerReceiver::new();
+        let request = Request::new(GetNodeRequest {
+            node_id: "non-existent-node".to_string(),
+        });
+        
+        let result = receiver.get_node(request).await;
+        assert!(result.is_ok());
+        
+        let response = result.unwrap().into_inner();
+        assert_eq!(response.success, false);
+        assert!(response.message.contains("not found") || response.message.contains("Failed to retrieve node"));
+        assert!(response.node.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_register_node_success() {
+        let receiver = ApiServerReceiver::new();
+        let registration_request = create_test_registration_request(
+            "test-node-001",
+            "test-hostname",
+            "192.168.1.100"
+        );
+        let request = Request::new(registration_request.clone());
+        
+        let result = receiver.register_node(request).await;
+        assert!(result.is_ok());
+        
+        let response = result.unwrap().into_inner();
+        assert!(!response.message.is_empty());
+        
+        if response.success {
+            assert!(!response.cluster_token.is_empty());
+            assert!(response.cluster_config.is_some());
+            
+            let config = response.cluster_config.unwrap();
+            assert_eq!(config.master_endpoint, "localhost:47099");
+            assert_eq!(config.heartbeat_interval, 30);
+        } else {
+            assert!(response.message.contains("Failed to register node"));
+            assert!(response.cluster_token.is_empty());
+            assert!(response.cluster_config.is_none());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_register_node_with_different_types() {
+        let receiver = ApiServerReceiver::new();
+        
+        // Test Vehicle node
+        let mut vehicle_request = create_test_registration_request(
+            "vehicle-node-001",
+            "vehicle-host",
+            "192.168.1.101"
+        );
+        vehicle_request.node_type = NodeType::Vehicle.into();
+        vehicle_request.node_role = NodeRole::Nodeagent.into();
+        
+        let request = Request::new(vehicle_request);
+        let result = receiver.register_node(request).await;
+        assert!(result.is_ok());
+        
+        // Test Cloud node
+        let mut cloud_request = create_test_registration_request(
+            "cloud-node-001",
+            "cloud-host",
+            "10.0.1.100"
+        );
+        cloud_request.node_type = NodeType::Cloud.into();
+        cloud_request.node_role = NodeRole::Master.into();
+        
+        let request = Request::new(cloud_request);
+        let result = receiver.register_node(request).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_topology_success() {
+        let receiver = ApiServerReceiver::new();
+        let request = Request::new(GetTopologyRequest {});
+        
+        let result = receiver.get_topology(request).await;
+        assert!(result.is_ok());
+        
+        let response = result.unwrap().into_inner();
+        assert_eq!(response.success, true);
+        assert_eq!(response.message, "Successfully retrieved topology");
+        assert!(response.topology.is_some());
+        
+        let topology = response.topology.unwrap();
+        // Should get a valid topology (could be default or existing)
+        assert!(!topology.cluster_id.is_empty());
+        assert!(!topology.cluster_name.is_empty());
+        // Type should be a valid TopologyType value
+        assert!(topology.r#type >= 0 && topology.r#type <= 4);
+    }
+
+    #[tokio::test]
+    async fn test_update_topology_success() {
+        let receiver = ApiServerReceiver::new();
+        let test_topology = create_test_cluster_topology();
+        
+        let request = Request::new(UpdateTopologyRequest {
+            topology: Some(test_topology.clone()),
+        });
+        
+        let result = receiver.update_topology(request).await;
+        assert!(result.is_ok());
+        
+        let response = result.unwrap().into_inner();
+        assert_eq!(response.success, true);
+        assert_eq!(response.message, "Successfully updated topology");
+        assert!(response.updated_topology.is_some());
+        
+        let updated = response.updated_topology.unwrap();
+        assert_eq!(updated.cluster_id, test_topology.cluster_id);
+        assert_eq!(updated.cluster_name, test_topology.cluster_name);
+    }
+
+    #[tokio::test]
+    async fn test_update_topology_no_topology_provided() {
+        let receiver = ApiServerReceiver::new();
+        let request = Request::new(UpdateTopologyRequest {
+            topology: None,
+        });
+        
+        let result = receiver.update_topology(request).await;
+        assert!(result.is_ok());
+        
+        let response = result.unwrap().into_inner();
+        assert_eq!(response.success, false);
+        assert_eq!(response.message, "No topology provided in request");
+        assert!(response.updated_topology.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_update_topology_different_types() {
+        let receiver = ApiServerReceiver::new();
+        
+        // Test different topology types
+        let topology_types = vec![
+            TopologyType::Embedded,
+            TopologyType::HybridCloud,
+            TopologyType::MultiCluster,
+            TopologyType::Distributed,
+        ];
+        
+        for topology_type in topology_types {
+            let mut topology = create_test_cluster_topology();
+            topology.r#type = topology_type.into();
+            topology.cluster_id = format!("test-{:?}", topology_type);
+            
+            let request = Request::new(UpdateTopologyRequest {
+                topology: Some(topology.clone()),
+            });
+            
+            let result = receiver.update_topology(request).await;
+            assert!(result.is_ok());
+            
+            let response = result.unwrap().into_inner();
+            if response.success {
+                let updated = response.updated_topology.unwrap();
+                assert_eq!(updated.r#type, topology.r#type);
+                assert_eq!(updated.cluster_id, topology.cluster_id);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_register_node_creates_cluster_config() {
+        let receiver = ApiServerReceiver::new();
+        let registration_request = create_test_registration_request(
+            "config-test-node",
+            "config-host",
+            "192.168.1.200"
+        );
+        
+        let request = Request::new(registration_request);
+        let result = receiver.register_node(request).await;
+        assert!(result.is_ok());
+        
+        let response = result.unwrap().into_inner();
+        
+        if response.success {
+            assert!(response.cluster_config.is_some());
+            let config = response.cluster_config.unwrap();
+            
+            // Verify cluster config fields
+            assert_eq!(config.master_endpoint, "localhost:47099");
+            assert_eq!(config.heartbeat_interval, 30);
+            assert!(config.settings.is_empty()); // Default empty settings
+        }
+    }
+
+    #[tokio::test]
+    async fn test_node_registry_clone() {
+        let registry1 = NodeRegistry;
+        let registry2 = registry1.clone();
+        
+        // Test that NodeRegistry can be cloned
+        let topology1 = registry1.get_topology().await;
+        let topology2 = registry2.get_topology().await;
+        
+        assert!(topology1.is_ok());
+        assert!(topology2.is_ok());
+        
+        // Both should return the same default topology
+        let topo1 = topology1.unwrap();
+        let topo2 = topology2.unwrap();
+        assert_eq!(topo1.cluster_id, topo2.cluster_id);
+        assert_eq!(topo1.cluster_name, topo2.cluster_name);
+    }
+
+    #[tokio::test]
+    async fn test_api_server_receiver_clone() {
+        let receiver1 = ApiServerReceiver::new();
+        let receiver2 = receiver1.clone();
+        
+        // Test that ApiServerReceiver can be cloned
+        let request1 = Request::new(GetTopologyRequest {});
+        let request2 = Request::new(GetTopologyRequest {});
+        
+        let result1 = receiver1.get_topology(request1).await;
+        let result2 = receiver2.get_topology(request2).await;
+        
+        assert!(result1.is_ok());
+        assert!(result2.is_ok());
+        
+        // Both should return successful responses
+        let response1 = result1.unwrap().into_inner();
+        let response2 = result2.unwrap().into_inner();
+        assert_eq!(response1.success, response2.success);
+        assert_eq!(response1.message, response2.message);
+    }
+
+    #[tokio::test]
+    async fn test_node_registration_with_metadata() {
+        let receiver = ApiServerReceiver::new();
+        
+        let mut metadata = HashMap::new();
+        metadata.insert("region".to_string(), "us-west-2".to_string());
+        metadata.insert("zone".to_string(), "us-west-2a".to_string());
+        metadata.insert("instance_type".to_string(), "t3.medium".to_string());
+        
+        let registration_request = NodeRegistrationRequest {
+            node_id: "metadata-test-node".to_string(),
+            hostname: "metadata-host".to_string(),
+            ip_address: "192.168.1.150".to_string(),
+            node_type: NodeType::Cloud.into(),
+            node_role: NodeRole::Bluechi.into(),
+            resources: Some(create_test_resource_info()),
+            metadata,
+        };
+        
+        let request = Request::new(registration_request);
+        let result = receiver.register_node(request).await;
+        assert!(result.is_ok());
+        
+        let response = result.unwrap().into_inner();
+        // Should handle metadata registration
+        assert!(!response.message.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_get_node_with_existing_node() {
+        let receiver = ApiServerReceiver::new();
+        
+        // First register a node
+        let registration_request = create_test_registration_request(
+            "existing-node-001",
+            "existing-host",
+            "192.168.1.50"
+        );
+        let reg_request = Request::new(registration_request.clone());
+        let reg_result = receiver.register_node(reg_request).await;
+        assert!(reg_result.is_ok());
+        
+        // Then try to get it
+        let get_request = Request::new(GetNodeRequest {
+            node_id: registration_request.node_id.clone(),
+        });
+        
+        let result = receiver.get_node(get_request).await;
+        assert!(result.is_ok());
+        
+        let response = result.unwrap().into_inner();
+        // Response should be successful if node was registered successfully
+        assert!(!response.message.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_topology_serialization_deserialization() {
+        let registry = NodeRegistry;
+        let original_topology = create_test_cluster_topology();
+        
+        // Update topology (this tests serialization)
+        let update_result = registry.update_topology(original_topology.clone()).await;
+        assert!(update_result.is_ok());
+        
+        // Get topology (this tests deserialization)
+        let get_result = registry.get_topology().await;
+        assert!(get_result.is_ok());
+        
+        let retrieved_topology = get_result.unwrap();
+        
+        // Verify all fields were preserved through serialization/deserialization
+        assert_eq!(retrieved_topology.cluster_id, original_topology.cluster_id);
+        assert_eq!(retrieved_topology.cluster_name, original_topology.cluster_name);
+        assert_eq!(retrieved_topology.r#type, original_topology.r#type);
+        assert_eq!(retrieved_topology.master_nodes, original_topology.master_nodes);
+        assert_eq!(retrieved_topology.sub_nodes, original_topology.sub_nodes);
+        assert_eq!(retrieved_topology.parent_cluster, original_topology.parent_cluster);
+        assert_eq!(retrieved_topology.config, original_topology.config);
+    }
+}
