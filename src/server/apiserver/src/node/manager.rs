@@ -183,7 +183,7 @@ impl NodeManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::nodeagent::{NodeRole, NodeType, ResourceInfo, NodeStatus};
+    use common::nodeagent::{NodeRole, NodeStatus, NodeType, ResourceInfo};
     use std::collections::HashMap;
 
     fn create_test_resource_info() -> ResourceInfo {
@@ -196,7 +196,11 @@ mod tests {
         }
     }
 
-    fn create_test_registration_request(node_id: &str, hostname: &str, ip: &str) -> NodeRegistrationRequest {
+    fn create_test_registration_request(
+        node_id: &str,
+        hostname: &str,
+        ip: &str,
+    ) -> NodeRegistrationRequest {
         let mut metadata = HashMap::new();
         metadata.insert("environment".to_string(), "test".to_string());
         metadata.insert("cluster".to_string(), "development".to_string());
@@ -246,7 +250,7 @@ mod tests {
     fn test_node_manager_creation() {
         let result = NodeManager::new();
         assert!(result.is_ok());
-        
+
         let manager = result.unwrap();
         // Test that the manager can be cloned
         let _cloned_manager = manager.clone();
@@ -254,8 +258,9 @@ mod tests {
 
     #[test]
     fn test_node_registration_request_creation() {
-        let request = create_test_registration_request("test-node-001", "test-host", "192.168.1.100");
-        
+        let request =
+            create_test_registration_request("test-node-001", "test-host", "192.168.1.100");
+
         assert_eq!(request.node_id, "test-node-001");
         assert_eq!(request.hostname, "test-host");
         assert_eq!(request.ip_address, "192.168.1.100");
@@ -263,13 +268,16 @@ mod tests {
         assert_eq!(request.node_role, NodeRole::Nodeagent as i32);
         assert!(request.resources.is_some());
         assert_eq!(request.metadata.len(), 2);
-        assert_eq!(request.metadata.get("environment"), Some(&"test".to_string()));
+        assert_eq!(
+            request.metadata.get("environment"),
+            Some(&"test".to_string())
+        );
     }
 
     #[test]
     fn test_cloud_node_creation() {
         let request = create_cloud_node_request();
-        
+
         assert_eq!(request.node_type, NodeType::Cloud as i32);
         assert_eq!(request.node_role, NodeRole::Master as i32);
         assert_eq!(request.resources.as_ref().unwrap().cpu_cores, 8);
@@ -279,7 +287,7 @@ mod tests {
     #[test]
     fn test_bluechi_node_creation() {
         let request = create_bluechi_node_request();
-        
+
         assert_eq!(request.node_role, NodeRole::Master as i32);
         assert_eq!(request.ip_address, "172.16.1.50");
     }
@@ -287,7 +295,7 @@ mod tests {
     #[test]
     fn test_resource_info_creation() {
         let resources = create_test_resource_info();
-        
+
         assert_eq!(resources.cpu_cores, 4);
         assert_eq!(resources.memory_mb, 8192);
         assert_eq!(resources.disk_gb, 100);
@@ -300,7 +308,8 @@ mod tests {
         let manager = NodeManager::new().expect("Failed to create NodeManager");
 
         // Create a test registration request
-        let request = create_test_registration_request("test-node-001", "test-host", "192.168.1.100");
+        let request =
+            create_test_registration_request("test-node-001", "test-host", "192.168.1.100");
 
         // Test node registration (this will fail if etcd is not running, which is fine for test compilation)
         match manager.register_node(request).await {
@@ -334,7 +343,10 @@ mod tests {
                     assert!(token.contains(&request.node_id));
                 }
                 Err(e) => {
-                    println!("Expected etcd connection error for {}: {}", request.node_id, e);
+                    println!(
+                        "Expected etcd connection error for {}: {}",
+                        request.node_id, e
+                    );
                 }
             }
         }
@@ -371,7 +383,10 @@ mod tests {
             }
             (Err(e1), Err(e2)) => {
                 // Both should fail with same error if etcd unavailable
-                println!("Both methods failed as expected when etcd unavailable: {} / {}", e1, e2);
+                println!(
+                    "Both methods failed as expected when etcd unavailable: {} / {}",
+                    e1, e2
+                );
             }
             _ => {
                 // This shouldn't happen - both should behave identically
@@ -427,7 +442,10 @@ mod tests {
                 println!("Heartbeat updated successfully");
             }
             Err(e) => {
-                println!("Expected error if node doesn't exist or etcd unavailable: {}", e);
+                println!(
+                    "Expected error if node doesn't exist or etcd unavailable: {}",
+                    e
+                );
             }
         }
     }
@@ -451,7 +469,10 @@ mod tests {
                     println!("Status updated to {:?} successfully", status);
                 }
                 Err(e) => {
-                    println!("Expected error if node doesn't exist or etcd unavailable: {}", e);
+                    println!(
+                        "Expected error if node doesn't exist or etcd unavailable: {}",
+                        e
+                    );
                 }
             }
         }
@@ -484,7 +505,10 @@ mod tests {
             Err(e) => {
                 let error_message = e.to_string();
                 // Should either be "Node not found" or etcd connection error
-                println!("Expected error when removing nonexistent node: {}", error_message);
+                println!(
+                    "Expected error when removing nonexistent node: {}",
+                    error_message
+                );
             }
         }
     }
@@ -492,7 +516,11 @@ mod tests {
     #[tokio::test]
     async fn test_node_lifecycle() {
         let manager = NodeManager::new().expect("Failed to create NodeManager");
-        let request = create_test_registration_request("lifecycle-test-node", "lifecycle-host", "192.168.1.200");
+        let request = create_test_registration_request(
+            "lifecycle-test-node",
+            "lifecycle-host",
+            "192.168.1.200",
+        );
 
         // Test complete node lifecycle if etcd is available
         if let Ok(token) = manager.register_node(request.clone()).await {
@@ -505,11 +533,19 @@ mod tests {
                 assert_eq!(node.status, NodeStatus::Pending as i32);
 
                 // Update heartbeat
-                if manager.update_heartbeat("lifecycle-test-node").await.is_ok() {
+                if manager
+                    .update_heartbeat("lifecycle-test-node")
+                    .await
+                    .is_ok()
+                {
                     println!("3. Heartbeat updated");
 
                     // Update status
-                    if manager.update_status("lifecycle-test-node", NodeStatus::Ready).await.is_ok() {
+                    if manager
+                        .update_status("lifecycle-test-node", NodeStatus::Ready)
+                        .await
+                        .is_ok()
+                    {
                         println!("4. Status updated to Ready");
 
                         // Finally remove node
@@ -527,21 +563,25 @@ mod tests {
     #[tokio::test]
     async fn test_concurrent_operations() {
         let manager = NodeManager::new().expect("Failed to create NodeManager");
-        
+
         // Test sequential node registrations (since we don't have futures crate)
         let requests = vec![
             create_test_registration_request("concurrent-1", "host-1", "192.168.1.201"),
             create_test_registration_request("concurrent-2", "host-2", "192.168.1.202"),
             create_test_registration_request("concurrent-3", "host-3", "192.168.1.203"),
         ];
-        
+
         for (i, request) in requests.into_iter().enumerate() {
             match manager.register_node(request).await {
                 Ok(token) => {
                     println!("Sequential registration {} succeeded: {}", i + 1, token);
                 }
                 Err(e) => {
-                    println!("Sequential registration {} failed (expected if etcd unavailable): {}", i + 1, e);
+                    println!(
+                        "Sequential registration {} failed (expected if etcd unavailable): {}",
+                        i + 1,
+                        e
+                    );
                 }
             }
         }
@@ -612,11 +652,7 @@ mod tests {
     #[test]
     fn test_node_type_and_role_enum_values() {
         // Test NodeType enum variants
-        let types = vec![
-            NodeType::Unspecified,
-            NodeType::Cloud,
-            NodeType::Vehicle,
-        ];
+        let types = vec![NodeType::Unspecified, NodeType::Cloud, NodeType::Vehicle];
 
         for node_type in types {
             let type_int: i32 = node_type.into();
@@ -625,11 +661,7 @@ mod tests {
         }
 
         // Test NodeRole enum variants
-        let roles = vec![
-            NodeRole::Unspecified,
-            NodeRole::Master,
-            NodeRole::Nodeagent,
-        ];
+        let roles = vec![NodeRole::Unspecified, NodeRole::Master, NodeRole::Nodeagent];
 
         for role in roles {
             let role_int: i32 = role.into();
@@ -683,7 +715,10 @@ mod tests {
         };
 
         assert_eq!(request.metadata.len(), 5);
-        assert_eq!(request.metadata.get("datacenter"), Some(&"us-west-2".to_string()));
+        assert_eq!(
+            request.metadata.get("datacenter"),
+            Some(&"us-west-2".to_string())
+        );
         assert_eq!(request.metadata.get("rack"), Some(&"A-42".to_string()));
     }
 }

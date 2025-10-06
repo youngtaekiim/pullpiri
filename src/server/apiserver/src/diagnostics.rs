@@ -123,14 +123,17 @@ mod tests {
     #[tokio::test]
     async fn test_check_service_connectivity_edge_case_ports() {
         // Test with edge case port numbers
-        
+
         // Test with port 0 (should fail)
         let result1 = check_service_connectivity("127.0.0.1", 0).await;
         assert!(!result1, "Should fail to connect to port 0");
 
         // Test with high port number (but valid)
         let result2 = check_service_connectivity("127.0.0.1", 65534).await;
-        assert!(!result2, "Should fail to connect to non-listening high port");
+        assert!(
+            !result2,
+            "Should fail to connect to non-listening high port"
+        );
     }
 
     #[tokio::test]
@@ -156,7 +159,10 @@ mod tests {
                 // Port 47004 might be in use, test with unavailable service
                 let result = check_node_agent_connectivity("127.0.0.1").await;
                 // Just verify it doesn't panic - result depends on what's running on 47004
-                println!("NodeAgent connectivity result (port might be in use): {}", result);
+                println!(
+                    "NodeAgent connectivity result (port might be in use): {}",
+                    result
+                );
             }
         }
     }
@@ -172,7 +178,10 @@ mod tests {
     async fn test_check_node_agent_connectivity_unreachable_ip() {
         // Test NodeAgent connectivity with unreachable IP
         let result = check_node_agent_connectivity("10.254.254.254").await;
-        assert!(!result, "Should fail to connect NodeAgent at unreachable IP");
+        assert!(
+            !result,
+            "Should fail to connect NodeAgent at unreachable IP"
+        );
     }
 
     #[tokio::test]
@@ -193,8 +202,14 @@ mod tests {
         let duration = start.elapsed();
 
         assert!(!result, "Should return false for unreachable service");
-        assert!(duration >= Duration::from_secs(3), "Should wait at least 3 seconds for timeout");
-        assert!(duration < Duration::from_secs(5), "Should not wait more than 5 seconds total");
+        assert!(
+            duration >= Duration::from_secs(3),
+            "Should wait at least 3 seconds for timeout"
+        );
+        assert!(
+            duration < Duration::from_secs(5),
+            "Should not wait more than 5 seconds total"
+        );
     }
 
     #[tokio::test]
@@ -210,10 +225,13 @@ mod tests {
         ];
 
         let results = futures::future::join_all(tasks).await;
-        
+
         for result in results {
             let connectivity_result = result.unwrap();
-            assert!(connectivity_result, "All concurrent connections should succeed");
+            assert!(
+                connectivity_result,
+                "All concurrent connections should succeed"
+            );
         }
     }
 
@@ -229,9 +247,9 @@ mod tests {
     async fn test_service_connectivity_function_parameters() {
         // Test various parameter combinations to ensure robustness
         let test_cases = vec![
-            ("127.0.0.1", 1),      // Low port number
-            ("127.0.0.1", 65535),  // High port number
-            ("0.0.0.0", 8080),     // All interfaces IP
+            ("127.0.0.1", 1),          // Low port number
+            ("127.0.0.1", 65535),      // High port number
+            ("0.0.0.0", 8080),         // All interfaces IP
             ("255.255.255.255", 8080), // Broadcast IP
         ];
 

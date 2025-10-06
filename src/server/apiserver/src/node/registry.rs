@@ -156,7 +156,10 @@ mod tests {
                 // Verify the topology structure is valid
                 assert!(topology.master_nodes.is_empty() || !topology.master_nodes.is_empty());
                 assert!(topology.sub_nodes.is_empty() || !topology.sub_nodes.is_empty());
-                println!("Successfully got topology: {} ({})", topology.cluster_name, topology.cluster_id);
+                println!(
+                    "Successfully got topology: {} ({})",
+                    topology.cluster_name, topology.cluster_id
+                );
             }
             Err(e) => {
                 // Expected if etcd is not available during testing
@@ -171,12 +174,15 @@ mod tests {
 
         // This test will either get a stored topology or default
         let result = registry.get_topology().await;
-        
+
         match result {
             Ok(topology) => {
                 assert!(!topology.cluster_id.is_empty());
                 assert!(!topology.cluster_name.is_empty());
-                println!("Got topology: {} ({})", topology.cluster_name, topology.cluster_id);
+                println!(
+                    "Got topology: {} ({})",
+                    topology.cluster_name, topology.cluster_id
+                );
             }
             Err(e) => {
                 println!("Error getting topology: {}", e);
@@ -216,9 +222,12 @@ mod tests {
         );
 
         // Add some master and sub nodes
-        test_topology.master_nodes = vec![
-            create_test_node_info("master-1", "master-host-1", "10.0.0.1", NodeRole::Master)
-        ];
+        test_topology.master_nodes = vec![create_test_node_info(
+            "master-1",
+            "master-host-1",
+            "10.0.0.1",
+            NodeRole::Master,
+        )];
         test_topology.sub_nodes = vec![
             create_test_node_info("node-1", "node-host-1", "10.0.0.2", NodeRole::Nodeagent),
             create_test_node_info("node-2", "node-host-2", "10.0.0.3", NodeRole::Nodeagent),
@@ -248,7 +257,9 @@ mod tests {
         );
 
         test_topology.parent_cluster = "parent-cluster-id".to_string();
-        test_topology.config.insert("cluster_role".to_string(), "child".to_string());
+        test_topology
+            .config
+            .insert("cluster_role".to_string(), "child".to_string());
 
         match registry.update_topology(test_topology.clone()).await {
             Ok(updated_topology) => {
@@ -291,17 +302,23 @@ mod tests {
         match registry.initialize_default_topology().await {
             Ok(()) => {
                 println!("Successfully initialized default topology");
-                
+
                 // Try to get the topology to verify initialization worked
                 if let Ok(topology) = registry.get_topology().await {
                     // The topology might be default or previously set depending on etcd state
                     assert!(!topology.cluster_id.is_empty());
                     assert!(!topology.cluster_name.is_empty());
-                    println!("Retrieved topology after init: {} ({})", topology.cluster_name, topology.cluster_id);
+                    println!(
+                        "Retrieved topology after init: {} ({})",
+                        topology.cluster_name, topology.cluster_id
+                    );
                 }
             }
             Err(e) => {
-                println!("Expected error initializing topology (etcd unavailable): {}", e);
+                println!(
+                    "Expected error initializing topology (etcd unavailable): {}",
+                    e
+                );
             }
         }
     }
@@ -327,7 +344,10 @@ mod tests {
                 println!("Successfully updated empty topology");
             }
             Err(e) => {
-                println!("Expected error updating empty topology (etcd unavailable): {}", e);
+                println!(
+                    "Expected error updating empty topology (etcd unavailable): {}",
+                    e
+                );
             }
         }
     }
@@ -336,7 +356,7 @@ mod tests {
     async fn test_topology_with_large_config() {
         let registry = NodeRegistry;
         let mut large_config = HashMap::new();
-        
+
         // Create a topology with many configuration items
         for i in 0..100 {
             large_config.insert(format!("config_key_{}", i), format!("config_value_{}", i));
@@ -352,7 +372,10 @@ mod tests {
             config: large_config.clone(),
         };
 
-        match registry.update_topology(topology_with_large_config.clone()).await {
+        match registry
+            .update_topology(topology_with_large_config.clone())
+            .await
+        {
             Ok(updated_topology) => {
                 assert_eq!(updated_topology.config.len(), 100);
                 assert!(updated_topology.config.contains_key("config_key_0"));
@@ -360,7 +383,10 @@ mod tests {
                 println!("Successfully updated topology with large config");
             }
             Err(e) => {
-                println!("Expected error updating large config topology (etcd unavailable): {}", e);
+                println!(
+                    "Expected error updating large config topology (etcd unavailable): {}",
+                    e
+                );
             }
         }
     }
@@ -401,7 +427,10 @@ mod tests {
                 println!("Successfully updated topology with many nodes");
             }
             Err(e) => {
-                println!("Expected error updating many nodes topology (etcd unavailable): {}", e);
+                println!(
+                    "Expected error updating many nodes topology (etcd unavailable): {}",
+                    e
+                );
             }
         }
     }
@@ -418,12 +447,8 @@ mod tests {
         ];
 
         for topology_type in types {
-            let topology = create_test_topology(
-                "test-cluster",
-                "Test Cluster",
-                topology_type,
-            );
-            
+            let topology = create_test_topology("test-cluster", "Test Cluster", topology_type);
+
             assert_eq!(topology.r#type, topology_type as i32);
             println!("TopologyType::{:?} = {}", topology_type, topology.r#type);
         }
@@ -432,7 +457,7 @@ mod tests {
     #[test]
     fn test_cluster_topology_creation() {
         let topology = create_test_topology("test", "Test Cluster", TopologyType::Embedded);
-        
+
         assert_eq!(topology.cluster_id, "test");
         assert_eq!(topology.cluster_name, "Test Cluster");
         assert_eq!(topology.r#type, TopologyType::Embedded as i32);
@@ -445,7 +470,7 @@ mod tests {
     #[test]
     fn test_node_info_creation() {
         let node = create_test_node_info("test-1", "test-host", "192.168.1.1", NodeRole::Master);
-        
+
         assert_eq!(node.node_id, "test-1");
         assert_eq!(node.hostname, "test-host");
         assert_eq!(node.ip_address, "192.168.1.1");
@@ -472,19 +497,20 @@ mod tests {
 
                 // Simulate the decoding process
                 match base64::engine::general_purpose::STANDARD.decode(&encoded) {
-                    Ok(decoded_buf) => {
-                        match ClusterTopology::decode(&decoded_buf[..]) {
-                            Ok(decoded_topology) => {
-                                assert_eq!(decoded_topology.cluster_id, original_topology.cluster_id);
-                                assert_eq!(decoded_topology.cluster_name, original_topology.cluster_name);
-                                assert_eq!(decoded_topology.r#type, original_topology.r#type);
-                                println!("Serialization/deserialization successful");
-                            }
-                            Err(e) => {
-                                println!("Protobuf decode error: {}", e);
-                            }
+                    Ok(decoded_buf) => match ClusterTopology::decode(&decoded_buf[..]) {
+                        Ok(decoded_topology) => {
+                            assert_eq!(decoded_topology.cluster_id, original_topology.cluster_id);
+                            assert_eq!(
+                                decoded_topology.cluster_name,
+                                original_topology.cluster_name
+                            );
+                            assert_eq!(decoded_topology.r#type, original_topology.r#type);
+                            println!("Serialization/deserialization successful");
                         }
-                    }
+                        Err(e) => {
+                            println!("Protobuf decode error: {}", e);
+                        }
+                    },
                     Err(e) => {
                         println!("Base64 decode error: {}", e);
                     }
@@ -515,7 +541,8 @@ mod tests {
         }
 
         // Test update_topology error handling
-        let test_topology = create_test_topology("error-test", "Error Test", TopologyType::Embedded);
+        let test_topology =
+            create_test_topology("error-test", "Error Test", TopologyType::Embedded);
         let update_result = registry.update_topology(test_topology).await;
         match update_result {
             Ok(topology) => {
@@ -541,14 +568,14 @@ mod tests {
     #[tokio::test]
     async fn test_topology_update_and_retrieve_cycle() {
         let registry = NodeRegistry;
-        
+
         // Create a test topology
         let mut test_topology = create_test_topology(
             "cycle-test",
             "Cycle Test Cluster",
             TopologyType::MultiCluster,
         );
-        
+
         test_topology.master_nodes.push(create_test_node_info(
             "cycle-master",
             "cycle-master-host",
@@ -560,7 +587,7 @@ mod tests {
         match registry.update_topology(test_topology.clone()).await {
             Ok(_) => {
                 println!("Update succeeded, now trying to retrieve...");
-                
+
                 match registry.get_topology().await {
                     Ok(retrieved_topology) => {
                         // Note: The retrieved topology might be the one we just set or a default
@@ -581,26 +608,29 @@ mod tests {
     #[tokio::test]
     async fn test_concurrent_topology_operations() {
         let registry = NodeRegistry;
-        
+
         // Test concurrent access to topology operations
         let get_task = tokio::spawn({
             let registry = registry.clone();
             async move { registry.get_topology().await }
         });
-        
+
         let update_task = tokio::spawn({
             let registry = registry.clone();
             async move {
-                let topology = create_test_topology("concurrent-1", "Concurrent 1", TopologyType::Embedded);
+                let topology =
+                    create_test_topology("concurrent-1", "Concurrent 1", TopologyType::Embedded);
                 registry.update_topology(topology).await
             }
         });
-        
+
         let init_task = tokio::spawn({
             let registry = registry.clone();
-            async move { 
-                registry.initialize_default_topology().await.map(|_| {
-                    ClusterTopology {
+            async move {
+                registry
+                    .initialize_default_topology()
+                    .await
+                    .map(|_| ClusterTopology {
                         cluster_id: "init-result".to_string(),
                         cluster_name: "Init Result".to_string(),
                         r#type: TopologyType::Embedded as i32,
@@ -608,21 +638,18 @@ mod tests {
                         sub_nodes: vec![],
                         parent_cluster: String::new(),
                         config: HashMap::new(),
-                    }
-                })
+                    })
             }
         });
-        
+
         let tasks = vec![get_task, update_task, init_task];
-        
+
         for (i, task) in tasks.into_iter().enumerate() {
             match task.await {
-                Ok(result) => {
-                    match result {
-                        Ok(_) => println!("Concurrent task {} succeeded", i),
-                        Err(e) => println!("Concurrent task {} failed: {}", i, e),
-                    }
-                }
+                Ok(result) => match result {
+                    Ok(_) => println!("Concurrent task {} succeeded", i),
+                    Err(e) => println!("Concurrent task {} failed: {}", i, e),
+                },
                 Err(e) => {
                     println!("Concurrent task {} panicked: {}", i, e);
                 }
@@ -670,7 +697,13 @@ mod tests {
         };
 
         assert_eq!(default_topology.config.len(), 2);
-        assert_eq!(default_topology.config.get("heartbeat_interval"), Some(&"30".to_string()));
-        assert_eq!(default_topology.config.get("max_nodes"), Some(&"10".to_string()));
+        assert_eq!(
+            default_topology.config.get("heartbeat_interval"),
+            Some(&"30".to_string())
+        );
+        assert_eq!(
+            default_topology.config.get("max_nodes"),
+            Some(&"10".to_string())
+        );
     }
 }

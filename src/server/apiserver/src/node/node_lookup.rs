@@ -240,7 +240,7 @@ mod tests {
     async fn test_find_node_by_simple_key_success() {
         // This test will pass if etcd returns data, fail if etcd is unavailable
         let result = find_node_by_simple_key().await;
-        
+
         match result {
             Some(ip) => {
                 assert!(!ip.is_empty());
@@ -264,7 +264,7 @@ mod tests {
     #[tokio::test]
     async fn test_find_node_from_etcd_success() {
         let result = find_node_from_etcd().await;
-        
+
         match result {
             Some(ip) => {
                 assert!(!ip.is_empty());
@@ -286,7 +286,7 @@ mod tests {
     #[tokio::test]
     async fn test_find_node_from_manager_success() {
         let result = find_node_from_manager().await;
-        
+
         match result {
             Some(ip) => {
                 assert!(!ip.is_empty());
@@ -308,7 +308,7 @@ mod tests {
     #[tokio::test]
     async fn test_find_node_by_hostname_found() {
         let result = find_node_by_hostname("test-hostname").await;
-        
+
         match result {
             Some(node) => {
                 assert_eq!(node.hostname, "test-hostname");
@@ -323,7 +323,7 @@ mod tests {
     #[tokio::test]
     async fn test_find_node_by_hostname_not_found() {
         let result = find_node_by_hostname("nonexistent-hostname").await;
-        
+
         match result {
             Some(_) => {
                 println!("Unexpectedly found node with nonexistent hostname");
@@ -344,10 +344,10 @@ mod tests {
     async fn test_get_node_ip_fallback_to_settings() {
         // This will test the fallback mechanism when all lookup methods fail
         let ip = get_node_ip().await;
-        
+
         assert!(!ip.is_empty());
         println!("Got node IP: {}", ip);
-        
+
         // The IP should either be from a found node or from settings
         // We can't predict which, but it should not be empty
     }
@@ -363,33 +363,34 @@ mod tests {
     #[tokio::test]
     async fn test_add_node_to_simple_keys_success() {
         let test_ip = "192.168.1.100";
-        
+
         match add_node_to_simple_keys(test_ip).await {
             Ok(()) => {
                 println!("Successfully added node IP to simple keys: {}", test_ip);
             }
             Err(e) => {
-                println!("Failed to add node IP (expected if etcd unavailable): {}", e);
+                println!(
+                    "Failed to add node IP (expected if etcd unavailable): {}",
+                    e
+                );
             }
         }
     }
 
     #[tokio::test]
     async fn test_add_node_to_simple_keys_various_ips() {
-        let test_ips = vec![
-            "10.0.0.1",
-            "172.16.1.100",
-            "192.168.1.200",
-            "127.0.0.1",
-        ];
-        
+        let test_ips = vec!["10.0.0.1", "172.16.1.100", "192.168.1.200", "127.0.0.1"];
+
         for ip in test_ips {
             match add_node_to_simple_keys(ip).await {
                 Ok(()) => {
                     println!("Added IP {}", ip);
                 }
                 Err(e) => {
-                    println!("Failed to add IP {} (expected if etcd unavailable): {}", ip, e);
+                    println!(
+                        "Failed to add IP {} (expected if etcd unavailable): {}",
+                        ip, e
+                    );
                 }
             }
         }
@@ -399,12 +400,12 @@ mod tests {
     async fn test_add_node_to_simple_keys_edge_cases() {
         // Test with edge case IPs
         let edge_cases = vec![
-            "",  // Empty string
-            "0.0.0.0",  // All zeros
-            "255.255.255.255",  // All ones
-            "invalid-ip",  // Invalid format
+            "",                // Empty string
+            "0.0.0.0",         // All zeros
+            "255.255.255.255", // All ones
+            "invalid-ip",      // Invalid format
         ];
-        
+
         for ip in edge_cases {
             match add_node_to_simple_keys(ip).await {
                 Ok(()) => {
@@ -422,7 +423,7 @@ mod tests {
         // Test when no guest nodes are found
         let guest_nodes = find_guest_nodes().await;
         println!("Guest nodes found: {}", guest_nodes.len());
-        
+
         // Should return empty vector, not panic
         // Length is always >= 0 for Vec, but we verify it doesn't panic
     }
@@ -431,12 +432,13 @@ mod tests {
     async fn test_find_guest_nodes_all_masters() {
         // Test scenario where all nodes are masters
         let guest_nodes = find_guest_nodes().await;
-        
+
         // Count how many are actually guest nodes (non-masters)
-        let non_master_count = guest_nodes.iter()
+        let non_master_count = guest_nodes
+            .iter()
             .filter(|node| node.node_role != NodeRole::Master as i32)
             .count();
-            
+
         assert_eq!(guest_nodes.len(), non_master_count);
         println!("Non-master nodes: {}", non_master_count);
     }
@@ -445,12 +447,12 @@ mod tests {
     fn test_create_test_node_info() {
         let node = create_test_node_info(
             "test-node-1",
-            "test-host-1", 
+            "test-host-1",
             "192.168.1.100",
             NodeRole::Nodeagent,
-            NodeStatus::Ready
+            NodeStatus::Ready,
         );
-        
+
         assert_eq!(node.node_id, "test-node-1");
         assert_eq!(node.hostname, "test-host-1");
         assert_eq!(node.ip_address, "192.168.1.100");
@@ -466,16 +468,18 @@ mod tests {
             "encode-host",
             "10.0.0.1",
             NodeRole::Master,
-            NodeStatus::Pending
+            NodeStatus::Pending,
         );
-        
+
         let encoded = encode_node_info(&node);
         assert!(!encoded.is_empty());
-        
+
         // Test that we can decode it back
-        let decoded_bytes = base64::engine::general_purpose::STANDARD.decode(&encoded).unwrap();
+        let decoded_bytes = base64::engine::general_purpose::STANDARD
+            .decode(&encoded)
+            .unwrap();
         let decoded_node = NodeInfo::decode(&decoded_bytes[..]).unwrap();
-        
+
         assert_eq!(decoded_node.node_id, node.node_id);
         assert_eq!(decoded_node.hostname, node.hostname);
         assert_eq!(decoded_node.ip_address, node.ip_address);
@@ -484,21 +488,17 @@ mod tests {
     #[test]
     fn test_node_role_enum_values() {
         // Test different node roles
-        let roles = vec![
-            NodeRole::Unspecified,
-            NodeRole::Master,
-            NodeRole::Nodeagent,
-        ];
-        
+        let roles = vec![NodeRole::Unspecified, NodeRole::Master, NodeRole::Nodeagent];
+
         for role in roles {
             let node = create_test_node_info(
                 "role-test",
                 "role-host",
                 "10.0.0.1",
                 role,
-                NodeStatus::Ready
+                NodeStatus::Ready,
             );
-            
+
             assert_eq!(node.node_role, role as i32);
             println!("Node role: {:?} = {}", role, node.node_role);
         }
@@ -516,16 +516,16 @@ mod tests {
             NodeStatus::Maintenance,
             NodeStatus::Terminating,
         ];
-        
+
         for status in statuses {
             let node = create_test_node_info(
                 "status-test",
                 "status-host",
                 "10.0.0.1",
                 NodeRole::Nodeagent,
-                status
+                status,
             );
-            
+
             assert_eq!(node.status, status as i32);
             println!("Node status: {:?} = {}", status, node.status);
         }
@@ -535,7 +535,7 @@ mod tests {
     async fn test_error_handling_decode_failures() {
         // Test base64 decode failure simulation
         // This is handled in find_node_from_etcd when decode fails
-        
+
         // Test invalid base64 by creating a malformed string
         let invalid_base64 = "invalid-base64-!@#$%";
         match base64::engine::general_purpose::STANDARD.decode(invalid_base64) {
@@ -544,15 +544,16 @@ mod tests {
         }
     }
 
-    #[tokio::test] 
+    #[tokio::test]
     async fn test_error_handling_protobuf_decode_failures() {
         // Test protobuf decode failure
-        let valid_base64_invalid_protobuf = base64::engine::general_purpose::STANDARD
-            .encode(b"not-valid-protobuf-data");
-            
+        let valid_base64_invalid_protobuf =
+            base64::engine::general_purpose::STANDARD.encode(b"not-valid-protobuf-data");
+
         let decoded = base64::engine::general_purpose::STANDARD
-            .decode(&valid_base64_invalid_protobuf).unwrap();
-            
+            .decode(&valid_base64_invalid_protobuf)
+            .unwrap();
+
         match NodeInfo::decode(&decoded[..]) {
             Ok(_) => println!("Unexpectedly decoded invalid protobuf"),
             Err(e) => println!("Expected protobuf decode error: {}", e),
@@ -563,27 +564,27 @@ mod tests {
     async fn test_node_lookup_integration() {
         // Integration test that exercises multiple lookup methods
         println!("=== Testing all lookup methods ===");
-        
+
         // Test simple key lookup
         let simple_result = find_node_by_simple_key().await;
         println!("Simple key result: {:?}", simple_result.is_some());
-        
+
         // Test etcd lookup
         let etcd_result = find_node_from_etcd().await;
         println!("Etcd result: {:?}", etcd_result.is_some());
-        
+
         // Test manager lookup
         let manager_result = find_node_from_manager().await;
         println!("Manager result: {:?}", manager_result.is_some());
-        
+
         // Test hostname lookup
         let hostname_result = find_node_by_hostname("integration-test").await;
         println!("Hostname result: {:?}", hostname_result.is_some());
-        
+
         // Test guest nodes lookup
         let guest_nodes = find_guest_nodes().await;
         println!("Guest nodes found: {}", guest_nodes.len());
-        
+
         // Test final IP resolution
         let final_ip = get_node_ip().await;
         println!("Final IP resolved: {}", final_ip);
@@ -598,7 +599,7 @@ mod tests {
             tokio::spawn(find_node_from_etcd()),
             tokio::spawn(find_node_from_manager()),
         ];
-        
+
         for (i, task) in tasks.into_iter().enumerate() {
             match task.await {
                 Ok(result) => {
@@ -615,11 +616,29 @@ mod tests {
     async fn test_guest_node_filtering_logic() {
         // Test the specific logic that filters out master nodes
         let test_nodes = vec![
-            create_test_node_info("master-1", "master-host", "10.0.0.1", NodeRole::Master, NodeStatus::Ready),
-            create_test_node_info("agent-1", "agent-host", "10.0.0.2", NodeRole::Nodeagent, NodeStatus::Ready),
-            create_test_node_info("master-2", "master-host-2", "10.0.0.3", NodeRole::Master, NodeStatus::Ready),
+            create_test_node_info(
+                "master-1",
+                "master-host",
+                "10.0.0.1",
+                NodeRole::Master,
+                NodeStatus::Ready,
+            ),
+            create_test_node_info(
+                "agent-1",
+                "agent-host",
+                "10.0.0.2",
+                NodeRole::Nodeagent,
+                NodeStatus::Ready,
+            ),
+            create_test_node_info(
+                "master-2",
+                "master-host-2",
+                "10.0.0.3",
+                NodeRole::Master,
+                NodeStatus::Ready,
+            ),
         ];
-        
+
         // Simulate the filtering logic from find_guest_nodes
         let mut guest_nodes = Vec::new();
         for node in test_nodes {
@@ -627,7 +646,7 @@ mod tests {
                 guest_nodes.push(node);
             }
         }
-        
+
         assert_eq!(guest_nodes.len(), 1);
         assert_eq!(guest_nodes[0].node_id, "agent-1");
         assert_eq!(guest_nodes[0].node_role, NodeRole::Nodeagent as i32);
