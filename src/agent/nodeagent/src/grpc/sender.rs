@@ -4,9 +4,7 @@
  */
 
 use common::apiserver::api_server_connection_client::ApiServerConnectionClient;
-use common::monitoringserver::{
-    ContainerList, SendContainerListResponse,
-};
+use common::monitoringserver::{ContainerList, SendContainerListResponse};
 use common::nodeagent::{
     HeartbeatRequest, HeartbeatResponse, NodeRegistrationRequest, NodeRegistrationResponse,
     StatusAck, StatusReport,
