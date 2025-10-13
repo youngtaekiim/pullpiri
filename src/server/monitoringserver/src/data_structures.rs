@@ -59,6 +59,12 @@ pub struct DataStore {
     pub container_node_mapping: HashMap<String, String>, // ADD THIS LINE
 }
 
+impl Default for DataStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DataStore {
     pub fn new() -> Self {
         Self {
