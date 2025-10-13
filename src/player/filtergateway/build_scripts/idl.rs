@@ -10,14 +10,14 @@ impl IdlParser {
     /// Parse IDL file
     pub fn parse_idl_file(file_path: &Path) -> Result<DdsData, Box<dyn std::error::Error>> {
         let content = fs::read_to_string(file_path)?;
-        let mut lines = content.lines();
+        let lines = content.lines();
 
         // Struct name extraction
         let mut struct_name = String::new();
         let mut fields = std::collections::HashMap::new();
 
         // Find struct definition
-        while let Some(line) = lines.next() {
+        for line in lines {
             let line = line.trim();
 
             // Look for struct definition
@@ -86,7 +86,7 @@ pub fn collect_idl_files(dir: &Path) -> Result<Vec<PathBuf>, Box<dyn std::error:
             let entry = entry?;
             let path = entry.path();
 
-            if path.is_file() && path.extension().map_or(false, |ext| ext == "idl") {
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "idl") {
                 println!("Found IDL file: {:?}", path);
                 idl_files.push(path);
             }
@@ -127,7 +127,7 @@ pub fn get_idl_files(dir: &Path) -> Result<Vec<(String, String)>, Box<dyn std::e
         let path = entry.path();
         println!("  - {:?} (is_file: {})", path, path.is_file());
 
-        if path.is_file() && path.extension().map_or(false, |ext| ext == "idl") {
+        if path.is_file() && path.extension().is_some_and(|ext| ext == "idl") {
             if let Some(stem) = path.file_stem() {
                 let type_name = stem.to_string_lossy().to_string();
                 let file_path = path.to_string_lossy().to_string();

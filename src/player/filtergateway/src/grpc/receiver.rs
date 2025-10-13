@@ -65,13 +65,13 @@ impl FilterGatewayReceiver {
         let scenario = serde_yaml::from_str::<Scenario>(&scenario_yaml_str)?;
 
         let param = ScenarioParameter {
-            action: action,
-            scenario: scenario,
+            action,
+            scenario,
         };
 
         self.tx.send(param).await.map_err(|e| {
             eprintln!("Failed to send scenario: {}", e);
-            Error::new(std::io::ErrorKind::Other, "Failed to send scenario")
+            Error::other("Failed to send scenario")
         })?;
 
         let elapsed = start.elapsed();

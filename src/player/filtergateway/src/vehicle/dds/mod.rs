@@ -251,6 +251,7 @@ impl DdsManager {
 // Include generated DDS types at runtime
 #[allow(unused)]
 pub mod dds_types {
+    #![allow(non_snake_case)]
     #[allow(unused_variables, unused_imports)]
     include! {
         concat!(env!("OUT_DIR"), "/dds_types.rs")

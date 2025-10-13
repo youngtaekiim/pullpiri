@@ -65,7 +65,7 @@ pub fn generate_type_registry(
         "use crate::vehicle::dds::listener::GenericTopicListener;"
     )?;
     writeln!(registry_file, "use crate::vehicle::dds::DdsData;")?;
-    writeln!(registry_file, "")?;
+    writeln!(registry_file)?;
 
     // 타입별 리스너 생성 함수
     writeln!(registry_file, "pub fn create_typed_listener(type_name: &str, topic_name: String, tx: Sender<DdsData>, domain_id: i32) -> Option<Box<dyn DdsTopicListener>> {{")?;

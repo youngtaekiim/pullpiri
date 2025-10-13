@@ -11,6 +11,12 @@ use common::actioncontroller::action_controller_connection_client::ActionControl
 #[derive(Clone)]
 pub struct FilterGatewaySender {}
 
+impl Default for FilterGatewaySender {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FilterGatewaySender {
     /// Create a new FilterGatewaySender
     ///

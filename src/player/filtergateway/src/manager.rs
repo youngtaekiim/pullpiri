@@ -49,7 +49,6 @@ impl FilterGatewayManager {
     /// # Returns
     ///
     /// A new FilterGatewayManager instance
-
     pub async fn new(rx_grpc: mpsc::Receiver<ScenarioParameter>) -> Self {
         let (tx_dds, rx_dds) = mpsc::channel::<DdsData>(10);
         let mut vehicle_manager = VehicleManager::new(tx_dds);

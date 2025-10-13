@@ -75,7 +75,7 @@ pub fn load_dds_settings() -> Result<(PathBuf, i32, Option<String>), Box<dyn std
                         "Converting relative path '{}' to absolute within build directory",
                         dir
                     );
-                    format!("{}", out_dir)
+                    out_dir.to_string()
                 })
             }
         });
