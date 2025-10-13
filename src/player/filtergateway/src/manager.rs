@@ -18,13 +18,14 @@ use tokio::sync::{mpsc, Mutex};
 /// - Processing incoming scenario requests
 ///
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct ScenarioParameter {
     /// Name of the scenario
     pub action: i32,
     /// Vehicle message information
     pub scenario: Scenario,
 }
-
+#[allow(dead_code)]
 pub struct FilterGatewayManager {
     /// Receiver for scenario information from gRPC
     pub rx_grpc: Arc<Mutex<mpsc::Receiver<ScenarioParameter>>>,
@@ -37,7 +38,7 @@ pub struct FilterGatewayManager {
     /// Vehicle manager for handling vehicle data
     pub vehicle_manager: Arc<Mutex<VehicleManager>>,
 }
-
+#[allow(dead_code)]
 impl FilterGatewayManager {
     /// Creates a new FilterGatewayManager instance
     ///

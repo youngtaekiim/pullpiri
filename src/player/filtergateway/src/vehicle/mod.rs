@@ -7,11 +7,12 @@ use tokio::sync::mpsc::Sender;
 /// Vehicle data management module
 ///
 /// Manages vehicle data through DDS communication
+#[allow(dead_code)]
 pub struct VehicleManager {
     /// DDS Manager instance
     dds_manager: dds::DdsManager,
 }
-
+#[allow(dead_code)]
 impl VehicleManager {
     /// Creates a new VehicleManager
     ///

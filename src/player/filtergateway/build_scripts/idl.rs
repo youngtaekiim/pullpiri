@@ -142,6 +142,7 @@ pub fn get_idl_files(dir: &Path) -> Result<Vec<(String, String)>, Box<dyn std::e
 }
 
 /// IDL 파일을 로드하여 DdsData 구조체로 반환
+#[allow(dead_code)]
 pub fn load_idl_file(path: &Path) -> Result<DdsData, Box<dyn std::error::Error>> {
     IdlParser::parse_idl_file(path)
 }

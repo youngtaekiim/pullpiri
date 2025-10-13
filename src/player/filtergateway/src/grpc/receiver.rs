@@ -1,12 +1,12 @@
-use core::sync;
+// use core::sync;
 use std::io::Error;
 
 use crate::manager::ScenarioParameter;
-use crate::vehicle::dds::DdsData;
+// use crate::vehicle::dds::DdsData;
 
-use common::spec::artifact::{Artifact, Scenario};
+use common::spec::artifact::{Scenario};
 use common::Result;
-use tokio::sync::mpsc::{self, error::SendError};
+use tokio::sync::mpsc::{self};
 use tonic::{Request, Response, Status};
 
 // Import the generated protobuf code from filtergateway.proto
@@ -16,10 +16,11 @@ use common::filtergateway::{
 };
 
 /// FilterGateway gRPC service handler
+#[allow(dead_code)]
 pub struct FilterGatewayReceiver {
     tx: mpsc::Sender<ScenarioParameter>,
 }
-
+#[allow(dead_code)]
 impl FilterGatewayReceiver {
     /// Create a new FilterGatewayReceiver
     ///

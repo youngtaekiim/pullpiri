@@ -3,6 +3,7 @@ use common::Result;
 use std::collections::HashMap;
 
 #[async_trait]
+#[allow(dead_code)]
 pub trait DdsTopicListener: Send + Sync {
     fn is_running(&self) -> bool;
     async fn start(&mut self) -> Result<()>;
@@ -12,38 +13,39 @@ pub trait DdsTopicListener: Send + Sync {
 }
 
 use dust_dds::{
-    domain::domain_participant::DomainParticipant,
-    domain::domain_participant_factory::{DomainId, DomainParticipantFactory},
+    // domain::domain_participant::DomainParticipant,
+    domain::domain_participant_factory::{DomainParticipantFactory},
     infrastructure::{
         qos::QosKind,
-        qos_policy::{DataRepresentationQosPolicy, XCDR2_DATA_REPRESENTATION},
-        status::{StatusKind, NO_STATUS},
-        time::Duration,
+        // qos_policy::{DataRepresentationQosPolicy, XCDR2_DATA_REPRESENTATION},
+        status::{NO_STATUS},
+        // time::Duration,
     },
-    subscription::data_reader::DataReader,
+    // subscription::data_reader::DataReader,
     subscription::sample_info::{ANY_INSTANCE_STATE, ANY_SAMPLE_STATE, ANY_VIEW_STATE},
-    subscription::subscriber::Subscriber,
-    topic_definition::type_support::{DdsDeserialize, DdsType, TypeSupport},
+    // subscription::subscriber::Subscriber,
+    topic_definition::type_support::{DdsDeserialize, TypeSupport},
 };
 
 use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 use tokio::time;
 
-use anyhow::{anyhow, Result as AnyhowResult};
-use serde_json::{json, Map, Value};
+use anyhow::{anyhow};
+use serde_json::{Value};
 
 use async_trait::async_trait;
-use clap::Parser;
+// use clap::Parser;
 use common;
 use log::{debug, error, info, warn};
-use once_cell::sync::Lazy;
+// use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 /// DDS topic listener
 ///
 /// Listens to a specific DDS topic and forwards data to the filter system.
+#[allow(dead_code)]
 pub struct TopicListener {
     /// Name of the topic
     pub topic_name: String,
@@ -161,6 +163,7 @@ impl DdsTopicListener for TopicListener {
 
 impl TopicListener {
     /// Main listener loop for processing DDS data
+    #[allow(dead_code)]
     async fn listener_loop(
         topic_name: String,
         data_type_name: String,
@@ -176,7 +179,8 @@ impl TopicListener {
             .map_err(|e| anyhow!("Failed to create domain participant: {:?}", e))?;
 
         // 구독자 생성
-        let subscriber = participant
+        // commenting below subscriber never used in this block
+        let _subscriber = participant
             .create_subscriber(QosKind::Default, None, NO_STATUS)
             .map_err(|e| anyhow!("Failed to create subscriber: {:?}", e))?;
 
@@ -214,6 +218,7 @@ impl TopicListener {
 /// 타입별 DDS 토픽 리스너 베이스 구현
 ///
 /// TypeSupport 특성으로 다양한 DDS 데이터 타입 처리
+#[allow(dead_code)]
 pub struct GenericTopicListener<
     T: TypeSupport
         + Default
@@ -270,6 +275,7 @@ impl<
     }
 
     /// 타입별 리스너 루프
+    #[allow(dead_code)]
     async fn typed_listener_loop(
         topic_name: String,
         data_type_name: String,

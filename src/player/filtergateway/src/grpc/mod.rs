@@ -9,6 +9,7 @@ pub mod sender;
 /// # Returns
 ///
 /// * `common::Result<()>` - Result of initialization
+#[allow(dead_code)]
 pub async fn init() -> common::Result<()> {
     // TODO: Implementation
     Ok(())
