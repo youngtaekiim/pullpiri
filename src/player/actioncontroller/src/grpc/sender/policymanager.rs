@@ -1,11 +1,7 @@
-use common::nodeagent::{
-    node_agent_connection_client::NodeAgentConnectionClient, HandleYamlRequest,
-};
 use common::policymanager::{
     policy_manager_connection_client::PolicyManagerConnectionClient, CheckPolicyRequest,
 };
 use common::Result;
-use tonic::Request;
 
 /// Check if a scenario is allowed by policy
 ///
@@ -27,6 +23,7 @@ use tonic::Request;
 /// - The connection to PolicyManager is not established
 /// - The gRPC request fails (e.g., PolicyManager returns a gRPC Status error)
 /// - The policy check fails (application-level failure indicated by gRPC Status)
+#[allow(dead_code)]
 pub async fn check_policy(scenario_name: String) -> Result<()> {
     // Change return type
     if scenario_name.trim().is_empty() {
