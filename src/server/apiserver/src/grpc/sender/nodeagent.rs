@@ -66,7 +66,7 @@ pub async fn send_to_node(
         }
     }
 }
-
+#[allow(dead_code)]
 pub async fn send(action: HandleYamlRequest) -> Result<Response<HandleYamlResponse>, Status> {
     // Use the node lookup module to get the node IP
     let node_ip = crate::node::get_node_ip().await;
@@ -76,6 +76,7 @@ pub async fn send(action: HandleYamlRequest) -> Result<Response<HandleYamlRespon
 }
 
 // etcd에서 게스트 노드 정보를 가져오도록 수정
+#[allow(dead_code)]
 pub async fn send_guest(
     action: HandleYamlRequest,
 ) -> Result<Vec<Response<HandleYamlResponse>>, Status> {

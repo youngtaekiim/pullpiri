@@ -8,7 +8,7 @@ use base64::Engine;
 use common::apiserver::api_server_connection_server::ApiServerConnection;
 use common::apiserver::{
     ClusterTopology, GetNodeRequest, GetNodeResponse, GetNodesRequest, GetNodesResponse,
-    GetTopologyRequest, GetTopologyResponse, NodeInfo, TopologyType, UpdateTopologyRequest,
+    GetTopologyRequest, GetTopologyResponse, TopologyType, UpdateTopologyRequest,
     UpdateTopologyResponse,
 };
 use common::etcd;
@@ -68,6 +68,12 @@ pub struct ApiServerReceiver {
     registry: NodeRegistry,
 }
 
+impl Default for ApiServerReceiver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+#[allow(dead_code)]
 impl ApiServerReceiver {
     pub fn new() -> Self {
         Self {
@@ -77,6 +83,7 @@ impl ApiServerReceiver {
     }
 
     /// Convert to gRPC service
+    #[allow(unused_variables)]
     pub fn into_service(
         self,
     ) -> common::apiserver::api_server_connection_server::ApiServerConnectionServer<Self> {

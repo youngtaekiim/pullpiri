@@ -5,11 +5,9 @@
 
 //! Controls the flow of data between each module.
 use crate::node::node_lookup::{find_guest_nodes, find_node_by_hostname, get_node_ip};
-use crate::node::NodeManager;
 use common::apiserver::api_server_connection_server::ApiServerConnectionServer;
 use common::filtergateway::{Action, HandleScenarioRequest};
 use common::nodeagent::HandleYamlRequest;
-use prost::Message;
 use tonic::transport::Server;
 
 /// Launch REST API listener, gRPC server, and reload scenario data in etcd
@@ -50,6 +48,7 @@ async fn start_grpc_server() {
 /// TBD
 /// ### Description
 /// TODO
+#[allow(dead_code)]
 async fn send_download_request() {}
 
 /// settings.yaml에서 호스트 정보를 가져와 etcd에 등록합니다.
@@ -209,10 +208,10 @@ pub async fn apply_artifact(body: &str) -> common::Result<()> {
         Ok(_) => println!("Successfully sent yaml to NodeAgent"),
         Err(e) => {
             eprintln!("Error sending yaml to NodeAgent: {:?}", e);
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("NodeAgent connection error: {:?}", e),
-            )));
+            return Err(Box::new(std::io::Error::other(format!(
+                "NodeAgent connection error: {:?}",
+                e
+            ))));
         }
     };
 
@@ -249,7 +248,7 @@ pub async fn apply_artifact(body: &str) -> common::Result<()> {
 
     let req: HandleScenarioRequest = HandleScenarioRequest {
         action: Action::Apply.into(),
-        scenario: scenario,
+        scenario,
     };
     crate::grpc::sender::filtergateway::send(req).await?;
     Ok(())
@@ -386,7 +385,7 @@ spec:
 apiVersion: v1
 kind: Scenario
 metadata:
-  name: 
+  name:
 
 spec:
   condition:
@@ -547,7 +546,7 @@ spec:
     - name: helloworld
       image: helloworld
   terminationGracePeriodSeconds: 0
-    
+
 "#;
 
     /// Invalid YAML only UnKnown
@@ -560,7 +559,7 @@ spec:
   condition:
   action: update
   target: helloworld
-  
+
 "#;
 
     /// Invalid YAML Empty
@@ -569,7 +568,7 @@ spec:
 
     /// Valid YAML WITH KNOWN/UNKNOWN ARTIFACT
     const VALID_ARTIFACT_YAML_KNOWN_UNKNOWN: &str = r#"
-    
+
 apiVersion: v1
 kind: known_Unknown
 metadata:

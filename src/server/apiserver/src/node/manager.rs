@@ -14,7 +14,7 @@ use prost::Message;
 /// Node manager for handling cluster node operations
 #[derive(Clone)]
 pub struct NodeManager;
-
+#[allow(dead_code)]
 impl NodeManager {
     /// Create a new NodeManager instance
     pub fn new() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {

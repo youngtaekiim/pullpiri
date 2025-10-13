@@ -42,11 +42,7 @@ pub async fn launch_tcp_listener() {
 /// Additional StatusCode may be added depending on the error.
 pub fn status(result: common::Result<()>) -> Response {
     if let Err(msg) = result {
-        (
-            StatusCode::METHOD_NOT_ALLOWED,
-            Json(String::from(msg.to_string())),
-        )
-            .into_response()
+        (StatusCode::METHOD_NOT_ALLOWED, Json(msg.to_string())).into_response()
     } else {
         (StatusCode::OK, Json(String::from("Ok"))).into_response()
     }

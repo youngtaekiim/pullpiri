@@ -17,7 +17,7 @@ pub async fn find_node_by_simple_key() -> Option<String> {
     match etcd::get_all_with_prefix("nodes/").await {
         Ok(kvs) => {
             println!("Found {} simplified node keys", kvs.len());
-            if let Some(kv) = kvs.iter().next() {
+            if let Some(kv) = kvs.first() {
                 println!("Node key: {}", kv.key);
                 let ip_address = kv.key.trim_start_matches("nodes/");
                 println!("Found node IP directly from key: {}", ip_address);
@@ -86,7 +86,7 @@ pub async fn find_node_from_manager() -> Option<String> {
                     "Node manager found: {} ({}), status: {}",
                     node.node_id, node.ip_address, node.status
                 );
-                return Some(node.ip_address.clone());
+                Some(node.ip_address.clone())
             } else {
                 println!("Node manager found no nodes");
                 None
@@ -154,6 +154,7 @@ pub async fn get_node_ip() -> String {
 }
 
 /// Add a node IP to the simplified keys for quick lookup
+#[allow(dead_code)]
 pub async fn add_node_to_simple_keys(ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
     let key = format!("nodes/{}", ip_address);
     etcd::put(&key, ip_address).await?;

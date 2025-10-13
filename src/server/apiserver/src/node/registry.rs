@@ -12,8 +12,9 @@ use prost::Message;
 
 /// Node registry for managing cluster topology
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct NodeRegistry;
-
+#[allow(dead_code)]
 impl NodeRegistry {
     /// Get the current cluster topology
     pub async fn get_topology(
