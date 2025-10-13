@@ -4,7 +4,7 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use crate::build_scripts::idl::{IdlParser};
+use crate::build_scripts::idl::IdlParser;
 use crate::build_scripts::types::idl_to_rust_type;
 
 /// Function to generate struct file

@@ -15,11 +15,11 @@ pub trait DdsTopicListener: Send + Sync {
 #[allow(unused_variables, unused_imports)]
 use dust_dds::{
     domain::domain_participant::DomainParticipant,
-    domain::domain_participant_factory::{DomainParticipantFactory},
+    domain::domain_participant_factory::DomainParticipantFactory,
     infrastructure::{
         qos::QosKind,
         qos_policy::{DataRepresentationQosPolicy, XCDR2_DATA_REPRESENTATION},
-        status::{NO_STATUS},
+        status::NO_STATUS,
         time::Duration,
     },
     subscription::data_reader::DataReader,
@@ -32,8 +32,8 @@ use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 use tokio::time;
 
-use anyhow::{anyhow};
-use serde_json::{Value};
+use anyhow::anyhow;
+use serde_json::Value;
 
 use async_trait::async_trait;
 // use clap::Parser;

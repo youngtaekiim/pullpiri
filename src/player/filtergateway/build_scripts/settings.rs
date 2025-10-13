@@ -22,7 +22,6 @@ pub fn load_dds_settings() -> Result<(PathBuf, i32, Option<String>), Box<dyn std
         .map(|p| p.join("src/settings.yaml"))
         .ok_or("Failed to resolve project root for settings.yaml")?;
 
-
     if !settings_path.exists() {
         println!("No settings file found, using defaults");
         return Ok((default_idl_dir, default_domain_id, default_out_dir));

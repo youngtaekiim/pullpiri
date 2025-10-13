@@ -4,7 +4,7 @@ use std::io::Error;
 use crate::manager::ScenarioParameter;
 // use crate::vehicle::dds::DdsData;
 
-use common::spec::artifact::{Scenario};
+use common::spec::artifact::Scenario;
 use common::Result;
 use tokio::sync::mpsc::{self};
 use tonic::{Request, Response, Status};
@@ -64,10 +64,7 @@ impl FilterGatewayReceiver {
         // Parse the scenario YAML string into a Scenario struct
         let scenario = serde_yaml::from_str::<Scenario>(&scenario_yaml_str)?;
 
-        let param = ScenarioParameter {
-            action,
-            scenario,
-        };
+        let param = ScenarioParameter { action, scenario };
 
         self.tx.send(param).await.map_err(|e| {
             eprintln!("Failed to send scenario: {}", e);
