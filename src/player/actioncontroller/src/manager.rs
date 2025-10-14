@@ -5,7 +5,7 @@ use crate::{grpc::sender::pharos::request_network_pod, runtime::bluechi};
 use base64::Engine;
 use common::{
     actioncontroller::PodStatus as Status,
-    spec::artifact::{Network, Node, Package, Scenario},
+    spec::artifact::{Package, Scenario},
     statemanager::{ResourceType, StateChange},
     Result,
 };
@@ -27,7 +27,7 @@ pub struct ActionControllerManager {
     state_sender: StateManagerSender,
     // Add other fields as needed
 }
-
+#[allow(dead_code)]
 impl ActionControllerManager {
     /// Creates a new ActionControllerManager instance
     ///
@@ -62,6 +62,7 @@ impl ActionControllerManager {
     async fn get_node_role_from_etcd(&self, node_name: &str) -> Result<String> {
         // 1. 먼저 nodes/{hostname} 키에서 노드 IP 조회
         let node_info_key = format!("nodes/{}", node_name);
+        #[allow(unused_variables)]
         let node_ip = match common::etcd::get(&node_info_key).await {
             Ok(ip) => ip,
             Err(e) => {
@@ -178,16 +179,10 @@ impl ActionControllerManager {
 
         // To Do.. network, node yaml extract from etcd.
         let etcd_network_key = format!("Network/{}", scenario_name);
-        let network_str = match common::etcd::get(&etcd_network_key).await {
-            Ok(value) => Some(value),
-            Err(_) => None,
-        };
+        let network_str = (common::etcd::get(&etcd_network_key).await).ok();
 
         let etcd_node_key = format!("Node/{}", scenario_name);
-        let node_str = match common::etcd::get(&etcd_node_key).await {
-            Ok(value) => Some(value),
-            Err(_) => None,
-        };
+        let node_str = (common::etcd::get(&etcd_node_key).await).ok();
 
         // 각 모델의 노드 정보를 etcd에서 확인
         let mut node_roles = std::collections::HashMap::new();
@@ -247,7 +242,7 @@ impl ActionControllerManager {
             match action.as_str() {
                 "launch" => {
                     self.reload_all_node(&model_name, &model_node).await?;
-                    self.start_workload(&model_name, &model_node, &node_type)
+                    self.start_workload(&model_name, &model_node, node_type)
                         .await
                         .map_err(|e| format!("Failed to start workload '{}': {}", model_name, e))?;
 
@@ -266,18 +261,18 @@ impl ActionControllerManager {
                 }
                 "terminate" => {
                     self.reload_all_node(&model_name, &model_node).await?;
-                    self.stop_workload(&model_name, &model_node, &node_type)
+                    self.stop_workload(&model_name, &model_node, node_type)
                         .await
                         .map_err(|e| format!("Failed to stop workload '{}': {}", model_name, e))?;
                 }
                 "update" | "rollback" => {
                     self.reload_all_node(&model_name, &model_node).await?;
-                    self.stop_workload(&model_name, &model_node, &node_type)
+                    self.stop_workload(&model_name, &model_node, node_type)
                         .await
                         .map_err(|e| format!("Failed to stop workload '{}': {}", model_name, e))?;
 
                     self.reload_all_node(&model_name, &model_node).await?;
-                    self.start_workload(&model_name, &model_node, &node_type)
+                    self.start_workload(&model_name, &model_node, node_type)
                         .await
                         .map_err(|e| format!("Failed to start workload '{}': {}", model_name, e))?;
                 }
@@ -414,7 +409,7 @@ impl ActionControllerManager {
             };
 
             if desired == Status::Running {
-                self.start_workload(&model_name, &model_node, &node_type)
+                self.start_workload(&model_name, &model_node, node_type)
                     .await?;
             }
         }
@@ -439,6 +434,7 @@ impl ActionControllerManager {
     /// - The scenario does not exist
     /// - The workload already exists
     /// - The runtime operation fails
+    #[allow(unused)]
     pub async fn create_workload(&self, scenario_name: String) -> Result<()> {
         // TODO: Implementation
         Ok(())
@@ -461,6 +457,7 @@ impl ActionControllerManager {
     /// - The scenario does not exist
     /// - The workload does not exist
     /// - The runtime operation fails
+    #[allow(unused_variables)]
     pub async fn delete_workload(&self, scenario_name: String) -> Result<()> {
         // TODO: Implementation
         Ok(())
@@ -483,6 +480,7 @@ impl ActionControllerManager {
     /// - The scenario does not exist
     /// - The workload does not exist
     /// - The runtime operation fails
+    #[allow(unused_variables)]
     pub async fn restart_workload(&self, scenario_name: String) -> Result<()> {
         // TODO: Implementation
         Ok(())
@@ -506,6 +504,7 @@ impl ActionControllerManager {
     /// - The workload does not exist
     /// - The workload is not in a pausable state
     /// - The runtime operation fails
+    #[allow(unused_variables)]
     pub async fn pause_workload(&self, scenario_name: String) -> Result<()> {
         // TODO: Implementation
         Ok(())
@@ -540,7 +539,7 @@ impl ActionControllerManager {
                 let cmd = bluechi::BluechiCmd {
                     command: bluechi::Command::UnitStart,
                 };
-                bluechi::handle_bluechi_cmd(&model_name, &node_name, cmd).await?;
+                bluechi::handle_bluechi_cmd(model_name, node_name, cmd).await?;
             }
             "nodeagent" => {
                 // let runtime = crate::runtime::nodeagent::NodeAgentRuntime::new();
@@ -586,7 +585,7 @@ impl ActionControllerManager {
                 let cmd = bluechi::BluechiCmd {
                     command: bluechi::Command::UnitStop,
                 };
-                bluechi::handle_bluechi_cmd(&model_name, &node_name, cmd).await?;
+                bluechi::handle_bluechi_cmd(model_name, node_name, cmd).await?;
             }
             "nodeagent" => {
                 // let runtime = crate::runtime::nodeagent::NodeAgentRuntime::new();

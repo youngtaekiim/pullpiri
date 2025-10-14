@@ -24,7 +24,8 @@ fn connect_server(port: u16) -> String {
 }
 
 // guest 서버 연결 함수 수정: 이제 항상 호스트 서버 주소 반환
-fn connect_guest_server(port: u16) -> String {
+//using rust build in _ to below code , as it was never used anywhere to prevent warnings
+fn _connect_guest_server(port: u16) -> String {
     // 항상 호스트 서버 주소 반환
     connect_server(port)
 }

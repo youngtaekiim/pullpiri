@@ -18,7 +18,7 @@ use filtergateway::ScenarioParameter;
 use filtergateway::{initialize, launch_manager};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
-#[cfg(not(tarpaulin_include))]
+#[cfg(not(feature = "tarpaulin_include"))]
 #[tokio::main]
 async fn main() {
     // Initialize tracing subscriber for logging

@@ -5,9 +5,10 @@ use common::spec::artifact::Scenario;
 use common::statemanager::{ResourceType, StateChange};
 use common::Result;
 // use dust_dds::infrastructure::wait_set::Condition;
-use std::sync::Arc;
-use tokio::sync::{mpsc, Mutex};
+// use std::sync::Arc;
+// use tokio::sync::{mpsc, Mutex};
 
+#[allow(dead_code)]
 /// Filter for evaluating scenario conditions
 pub struct Filter {
     /// Name of the scenario
@@ -22,6 +23,7 @@ pub struct Filter {
     state_sender: StateManagerSender,
 }
 
+#[allow(dead_code)]
 impl Filter {
     /// Create a new Filter
     ///

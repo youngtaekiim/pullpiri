@@ -7,11 +7,9 @@ use common::actioncontroller::{
     action_controller_connection_server::{
         ActionControllerConnection, ActionControllerConnectionServer,
     },
-    CompleteNetworkSettingRequest, CompleteNetworkSettingResponse, NetworkStatus,
-    PodStatus as ActionStatus, ReconcileRequest, ReconcileResponse, TriggerActionRequest,
-    TriggerActionResponse,
+    CompleteNetworkSettingRequest, CompleteNetworkSettingResponse, PodStatus as ActionStatus,
+    ReconcileRequest, ReconcileResponse, TriggerActionRequest, TriggerActionResponse,
 };
-use common::statemanager::{ResourceType, StateChange};
 
 /// Receiver for handling incoming gRPC requests for ActionController
 ///
@@ -19,6 +17,7 @@ use common::statemanager::{ResourceType, StateChange};
 /// the protobuf specification. Handles incoming requests from:
 /// - FilterGateway (trigger_action)
 /// - StateManager (reconcile)
+#[allow(dead_code)]
 pub struct ActionControllerReceiver {
     /// Reference to the ActionController manager
     manager: Arc<crate::manager::ActionControllerManager>,

@@ -4,9 +4,7 @@
  */
 
 use common::apiserver::api_server_connection_client::ApiServerConnectionClient;
-use common::monitoringserver::{
-    ContainerList, NodeInfo, SendContainerListResponse, SendNodeInfoResponse,
-};
+use common::monitoringserver::{ContainerList, SendContainerListResponse};
 use common::nodeagent::{
     HeartbeatRequest, HeartbeatResponse, NodeRegistrationRequest, NodeRegistrationResponse,
     StatusAck, StatusReport,
@@ -37,10 +35,10 @@ impl NodeAgentSender {
             }
             Err(e) => {
                 // Handle connection error
-                return Err(Status::unknown(format!(
+                Err(Status::unknown(format!(
                     "Failed to connect statemanager: {}",
                     e
-                )));
+                )))
             }
         }
     }

@@ -117,7 +117,8 @@ async fn initialize(tx_grpc: Sender<HandleYamlRequest>, hostname: String, config
 
     // Use hostname from config if available
     let config_hostname = config.get_hostname();
-    let hostname_to_check = if config_hostname.is_empty() || config_hostname == "$(hostname)" {
+    //adding _ to prevent warnings as it was never used anywhere to prevent warnings
+    let _hostname_to_check = if config_hostname.is_empty() || config_hostname == "$(hostname)" {
         hostname.clone()
     } else {
         config_hostname
@@ -151,7 +152,7 @@ struct Args {
     config: PathBuf,
 }
 
-#[cfg(not(tarpaulin_include))]
+#[cfg(not(feature = "tarpaulin_include"))]
 #[tokio::main]
 async fn main() {
     // Parse command line arguments

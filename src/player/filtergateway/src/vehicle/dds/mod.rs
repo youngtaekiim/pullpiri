@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use common::Result;
-use log::{debug, error, info, warn};
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
@@ -34,6 +34,7 @@ pub struct DdsManager {
     domain_id: i32,
 }
 
+#[allow(dead_code)]
 impl DdsManager {
     /// Create new DDS manager
     pub fn new(tx: Sender<DdsData>) -> Self {
@@ -250,6 +251,7 @@ impl DdsManager {
 // Include generated DDS types at runtime
 #[allow(unused)]
 pub mod dds_types {
+    #![allow(non_snake_case)]
     #[allow(unused_variables, unused_imports)]
     include! {
         concat!(env!("OUT_DIR"), "/dds_types.rs")
