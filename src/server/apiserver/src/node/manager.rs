@@ -41,18 +41,17 @@ impl NodeManager {
             metadata: request.metadata,
         };
 
+        // 1. cluster/nodes/{hostname}: 노드 정보(json string)
+        let node_json = serde_json::to_string(&node_info)?;
+        etcd::put(&node_key, &node_json).await?;
 
-    // 1. cluster/nodes/{hostname}: 노드 정보(json string)
-    let node_json = serde_json::to_string(&node_info)?;
-    etcd::put(&node_key, &node_json).await?;
+        // 2. nodes/{ip_address}: hostname(plain string)
+        let ip_key = format!("nodes/{}", request.ip_address);
+        etcd::put(&ip_key, &request.hostname).await?;
 
-    // 2. nodes/{ip_address}: hostname(plain string)
-    let ip_key = format!("nodes/{}", request.ip_address);
-    etcd::put(&ip_key, &request.hostname).await?;
-
-    // 3. nodes/{hostname}: ip 주소(plain string)
-    let hostname_key = format!("nodes/{}", request.hostname);
-    etcd::put(&hostname_key, &request.ip_address).await?;
+        // 3. nodes/{hostname}: ip 주소(plain string)
+        let hostname_key = format!("nodes/{}", request.hostname);
+        etcd::put(&hostname_key, &request.ip_address).await?;
 
         println!("Node {} registered successfully", request.node_id);
         Ok(format!("cluster-token-{}", request.node_id))
