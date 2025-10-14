@@ -52,7 +52,7 @@ impl NodeRegistry {
 
         // 인코딩을 제거하고 json string으로 변환
         let topology_json = serde_json::to_string(&topology)?;
-        
+
         etcd::put(topology_key, &topology_json).await?;
 
         println!("Updated cluster topology: {}", topology.cluster_name);
@@ -170,7 +170,8 @@ impl ApiServerConnection for ApiServerReceiver {
 
                 // 두 가지 키로 저장
                 // 1. IP 주소로 빠른 조회용 (json 문자열로 변경)
-                let _ = common::etcd::put(&format!("nodes/{}", req.ip_address), &req.hostname).await;
+                let _ =
+                    common::etcd::put(&format!("nodes/{}", req.ip_address), &req.hostname).await;
                 println!("Hostname stored at IP key: nodes/{}", req.ip_address);
 
                 // 2. 호스트 이름으로 빠른 조회용 (ActionController용)
@@ -266,6 +267,7 @@ impl ApiServerConnection for ApiServerReceiver {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use common::apiserver::NodeInfo;
     use common::apiserver::TopologyType;
     use common::nodeagent::{NodeRole, NodeType, ResourceInfo};
     use std::collections::HashMap;

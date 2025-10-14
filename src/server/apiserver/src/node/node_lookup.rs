@@ -86,7 +86,7 @@ pub async fn find_node_from_manager() -> Option<String> {
                     "Node manager found: {} ({}), status: {}",
                     node.node_id, node.ip_address, node.status
                 );
-                return Some(node.ip_address.clone());
+                Some(node.ip_address.clone())
             } else {
                 println!("Node manager found no nodes");
                 None
