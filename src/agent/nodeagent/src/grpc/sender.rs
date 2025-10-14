@@ -92,8 +92,11 @@ impl NodeAgentSender {
         &mut self,
         container_list: ContainerList,
     ) -> Result<tonic::Response<SendContainerListResponse>, Status> {
-        let client =
-            StateManagerConnectionClient::connect(common::statemanager::connect_server()).await;
+        let config = crate::config::Config::get();
+        let master_ip = config.nodeagent.master_ip.clone();
+        let addr = format!("http://{}:47006", master_ip);
+
+        let client = StateManagerConnectionClient::connect(addr).await;
 
         match client {
             Ok(mut client) => {
