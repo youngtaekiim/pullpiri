@@ -267,6 +267,7 @@ impl ApiServerConnection for ApiServerReceiver {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use common::apiserver::NodeInfo;
     use common::apiserver::TopologyType;
     use common::nodeagent::{NodeRole, NodeType, ResourceInfo};
     use std::collections::HashMap;
