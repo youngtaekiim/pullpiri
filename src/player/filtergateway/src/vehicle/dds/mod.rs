@@ -213,9 +213,7 @@ impl DdsManager {
         let settings_path = settings_path.into().unwrap_or_else(|| {
             env::var("PICCOLO_SETTINGS_PATH")
                 .map(PathBuf::from)
-                .unwrap_or_else(|_| {
-                    PathBuf::from("/home/edo/2025/projects/pullpiri/src/settings.yaml")
-                })
+                .unwrap_or_else(|_| PathBuf::from("/etc/piccolo/settings.yaml"))
         });
 
         info!("Reading settings from {:?}", settings_path);
