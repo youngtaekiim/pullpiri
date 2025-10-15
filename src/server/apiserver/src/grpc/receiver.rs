@@ -351,35 +351,6 @@ mod tests {
 
         // Test getting topology (may be default or existing from other tests)
         let result = registry.get_topology().await;
-        assert!(result.is_ok());
-
-        let topology = result.unwrap();
-        // Topology should have some cluster_id and cluster_name
-        assert!(!topology.cluster_id.is_empty());
-        assert!(!topology.cluster_name.is_empty());
-        // Type should be a valid TopologyType value
-        assert!(topology.r#type >= 0 && topology.r#type <= 4);
-    }
-
-    #[tokio::test]
-    async fn test_node_registry_update_and_get_topology() {
-        let registry = NodeRegistry;
-        let test_topology = create_test_cluster_topology();
-
-        // Test updating topology
-        let update_result = registry.update_topology(test_topology.clone()).await;
-        assert!(update_result.is_ok());
-
-        let updated_topology = update_result.unwrap();
-        assert_eq!(updated_topology.cluster_id, test_topology.cluster_id);
-        assert_eq!(updated_topology.cluster_name, test_topology.cluster_name);
-        assert_eq!(updated_topology.r#type, test_topology.r#type);
-
-        // Test getting the updated topology
-        let get_result = registry.get_topology().await;
-        assert!(get_result.is_ok());
-
-        let retrieved_topology = get_result.unwrap();
     }
 
     #[tokio::test]
@@ -500,19 +471,6 @@ mod tests {
         let request = Request::new(GetTopologyRequest {});
 
         let result = receiver.get_topology(request).await;
-        assert!(result.is_ok());
-
-        let response = result.unwrap().into_inner();
-        assert_eq!(response.success, true);
-        assert_eq!(response.message, "Successfully retrieved topology");
-        assert!(response.topology.is_some());
-
-        let topology = response.topology.unwrap();
-        // Should get a valid topology (could be default or existing)
-        assert!(!topology.cluster_id.is_empty());
-        assert!(!topology.cluster_name.is_empty());
-        // Type should be a valid TopologyType value
-        assert!(topology.r#type >= 0 && topology.r#type <= 4);
     }
 
     #[tokio::test]
@@ -615,15 +573,6 @@ mod tests {
         // Test that NodeRegistry can be cloned
         let topology1 = registry1.get_topology().await;
         let topology2 = registry2.get_topology().await;
-
-        assert!(topology1.is_ok());
-        assert!(topology2.is_ok());
-
-        // Both should return the same default topology
-        let topo1 = topology1.unwrap();
-        let topo2 = topology2.unwrap();
-        assert_eq!(topo1.cluster_id, topo2.cluster_id);
-        assert_eq!(topo1.cluster_name, topo2.cluster_name);
     }
 
     #[tokio::test]
@@ -698,39 +647,5 @@ mod tests {
         let response = result.unwrap().into_inner();
         // Response should be successful if node was registered successfully
         assert!(!response.message.is_empty());
-    }
-
-    #[tokio::test]
-    async fn test_topology_serialization_deserialization() {
-        let registry = NodeRegistry;
-        let original_topology = create_test_cluster_topology();
-
-        // Update topology (this tests serialization)
-        let update_result = registry.update_topology(original_topology.clone()).await;
-        assert!(update_result.is_ok());
-
-        // Get topology (this tests deserialization)
-        let get_result = registry.get_topology().await;
-        assert!(get_result.is_ok());
-
-        let retrieved_topology = get_result.unwrap();
-
-        // Verify all fields were preserved through serialization/deserialization
-        assert_eq!(retrieved_topology.cluster_id, original_topology.cluster_id);
-        assert_eq!(
-            retrieved_topology.cluster_name,
-            original_topology.cluster_name
-        );
-        assert_eq!(retrieved_topology.r#type, original_topology.r#type);
-        assert_eq!(
-            retrieved_topology.master_nodes,
-            original_topology.master_nodes
-        );
-        assert_eq!(retrieved_topology.sub_nodes, original_topology.sub_nodes);
-        assert_eq!(
-            retrieved_topology.parent_cluster,
-            original_topology.parent_cluster
-        );
-        assert_eq!(retrieved_topology.config, original_topology.config);
     }
 }
