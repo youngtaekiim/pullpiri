@@ -117,6 +117,7 @@ impl EtcdClient {
 
 /// Storage interface trait for dependency injection and testing
 #[async_trait]
+#[allow(dead_code)]
 pub trait Storage: Send + Sync {
     async fn get(&mut self, key: &str) -> Result<Option<String>, StorageError>;
     async fn put(&mut self, key: &str, value: &str) -> Result<(), StorageError>;
@@ -155,7 +156,7 @@ impl Storage for EtcdClient {
 
 /// Key prefixes for different data types
 pub struct KeyPrefixes;
-
+#[allow(dead_code)]
 impl KeyPrefixes {
     pub const CONFIG: &'static str = "/piccolo/settings/configs/";
     pub const HISTORY: &'static str = "/piccolo/settings/history/";
@@ -172,7 +173,7 @@ pub fn config_key(path: &str) -> String {
 pub fn history_key(config_path: &str, version: u64) -> String {
     format!("{}{}/v{}", KeyPrefixes::HISTORY, config_path, version)
 }
-
+#[allow(dead_code)]
 pub fn metrics_key(resource_type: &str, resource_id: &str) -> String {
     format!("{}{}/{}", KeyPrefixes::METRICS, resource_type, resource_id)
 }

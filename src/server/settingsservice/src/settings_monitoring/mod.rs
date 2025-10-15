@@ -132,7 +132,7 @@ pub struct MonitoringManager {
     cache: RwLock<HashMap<String, CacheEntry<Vec<Metric>>>>,
     cache_ttl: Duration,
 }
-
+#[allow(dead_code)]
 impl MonitoringManager {
     pub fn new(storage: Box<dyn Storage>, cache_ttl_seconds: u64) -> Self {
         Self {

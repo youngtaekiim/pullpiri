@@ -38,6 +38,7 @@ pub struct ApiState {
 
 /// Query parameters for metrics API
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct MetricsQuery {
     pub component: Option<String>,
     pub metric_type: Option<String>,
@@ -97,6 +98,7 @@ pub struct ErrorResponse {
 
 /// Request body for container creation
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct CreateContainerRequest {
     pub name: String,
     pub image: String,
@@ -905,12 +907,13 @@ async fn fetch_all_boards_from_monitoring_server() -> Result<Vec<BoardInfo>, Str
 }
 
 // Container integration functions
+#[allow(dead_code)]
 async fn fetch_all_containers_from_monitoring_server() -> Result<Vec<ContainerInfo>, String> {
     crate::monitoring_etcd::get_all_containers()
         .await
         .map_err(|e| format!("ETCD error: {}", e))
 }
-
+#[allow(dead_code)]
 async fn fetch_container_from_monitoring_server(id: &str) -> Result<Option<ContainerInfo>, String> {
     match crate::monitoring_etcd::get_container_info(id).await {
         Ok(container) => Ok(Some(container)),
@@ -1071,7 +1074,7 @@ async fn get_containers_by_node(
         ))),
     }
 }
-
+#[allow(dead_code)]
 async fn resolve_hostname_for_node(node_name: &str) -> Option<String> {
     match crate::monitoring_etcd::get_node_info(node_name).await {
         Ok(node_info) => Some(node_info.node_name.clone()),

@@ -6,7 +6,7 @@
 //! StateManager gRPC client for sending state change messages from PolicyManager.
 
 use common::statemanager::{
-    connect_server, state_manager_connection_client::StateManagerConnectionClient, ResourceType,
+    connect_server, state_manager_connection_client::StateManagerConnectionClient,
     StateChange, StateChangeResponse,
 };
 use tonic::{Request, Status};

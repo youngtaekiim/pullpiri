@@ -173,7 +173,8 @@ impl ApiServerConnection for ApiServerReceiver {
                 };
 
                 // 인코딩을 제거하고 json string으로 저장
-                let node_json = serde_json::to_string(&node_info).unwrap();
+                // below variable never used , hence the _ to prevent warnings
+                let _node_json = serde_json::to_string(&node_info).unwrap();
 
                 // 두 가지 키로 저장
                 // 1. IP 주소로 빠른 조회용 (json 문자열로 변경)

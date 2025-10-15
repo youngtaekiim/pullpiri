@@ -53,7 +53,7 @@ pub enum DiffOperation {
 pub struct HistoryManager {
     storage: Box<dyn Storage>,
 }
-
+#[allow(dead_code)]
 impl HistoryManager {
     pub fn new(storage: Box<dyn Storage>) -> Self {
         Self { storage }

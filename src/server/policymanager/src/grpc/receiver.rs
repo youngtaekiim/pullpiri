@@ -8,12 +8,12 @@ use common::policymanager::policy_manager_connection_server::PolicyManagerConnec
 use common::policymanager::{CheckPolicyRequest, CheckPolicyResponse};
 use common::statemanager::{ResourceType, StateChange};
 use tonic::Response;
-
+#[allow(dead_code)]
 pub struct PolicyManagerGrpcServer {
     /// StateManager sender for scenario state changes
     state_sender: StateManagerSender,
 }
-
+#[allow(dead_code)]
 impl PolicyManagerGrpcServer {
     /// Creates a new PolicyManagerGrpcServer instance
     pub fn new() -> Self {
