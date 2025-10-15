@@ -153,7 +153,6 @@ pub async fn withdraw(body: &str) -> common::Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     // -- Test Artifacts --
 
