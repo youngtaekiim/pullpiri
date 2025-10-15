@@ -5,16 +5,13 @@
 
 use crate::settings_history::{ChangeAction, HistoryManager};
 use crate::settings_storage::{config_key, schema_key, Storage};
-use crate::settings_utils::error::{SettingsError, ValidationError};
-use crate::settings_utils::yaml;
-use async_trait::async_trait;
+use crate::settings_utils::error::SettingsError;
 use chrono::{DateTime, Utc};
-use jsonschema::{JSONSchema, ValidationError as JsonSchemaError};
+use jsonschema::JSONSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use tracing::{debug, error, info, warn};
-use uuid::Uuid;
+use tracing::{debug, info, warn};
 
 /// Configuration metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -72,6 +69,12 @@ pub enum ValidationSeverity {
 /// Schema validator for configuration validation
 pub struct SchemaValidator {
     schemas: HashMap<String, JSONSchema>,
+}
+
+impl Default for SchemaValidator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SchemaValidator {
@@ -265,11 +268,7 @@ impl ConfigManager {
         info!("Deleting config: {}", config_path);
 
         // Load existing config before deletion for history
-        let old_config = if let Ok(config) = self.load_config(config_path).await {
-            Some(config)
-        } else {
-            None
-        };
+        let old_config = (self.load_config(config_path).await).ok();
 
         let key = config_key(config_path);
         if !self.storage.delete(&key).await? {

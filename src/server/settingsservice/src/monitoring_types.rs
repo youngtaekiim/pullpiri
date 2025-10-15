@@ -82,23 +82,23 @@ impl From<common::monitoringserver::NodeInfo> for NodeInfo {
     }
 }
 
-impl Into<common::monitoringserver::NodeInfo> for NodeInfo {
-    fn into(self) -> common::monitoringserver::NodeInfo {
+impl From<NodeInfo> for common::monitoringserver::NodeInfo {
+    fn from(val: NodeInfo) -> Self {
         common::monitoringserver::NodeInfo {
-            node_name: self.node_name,
-            cpu_usage: self.cpu_usage,
-            cpu_count: self.cpu_count,
-            gpu_count: self.gpu_count,
-            used_memory: self.used_memory,
-            total_memory: self.total_memory,
-            mem_usage: self.mem_usage,
-            rx_bytes: self.rx_bytes,
-            tx_bytes: self.tx_bytes,
-            read_bytes: self.read_bytes,
-            write_bytes: self.write_bytes,
-            os: self.os,
-            arch: self.arch,
-            ip: self.ip,
+            node_name: val.node_name,
+            cpu_usage: val.cpu_usage,
+            cpu_count: val.cpu_count,
+            gpu_count: val.gpu_count,
+            used_memory: val.used_memory,
+            total_memory: val.total_memory,
+            mem_usage: val.mem_usage,
+            rx_bytes: val.rx_bytes,
+            tx_bytes: val.tx_bytes,
+            read_bytes: val.read_bytes,
+            write_bytes: val.write_bytes,
+            os: val.os,
+            arch: val.arch,
+            ip: val.ip,
         }
     }
 }

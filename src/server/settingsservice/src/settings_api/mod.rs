@@ -10,13 +10,12 @@ use crate::settings_monitoring::{
     BoardListResponse, FilterSummary, Metric, MetricsFilter, MonitoringManager, NodeListResponse,
     SocListResponse,
 };
-use crate::settings_storage::filter_key;
 use crate::settings_utils::error::SettingsError;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
-    routing::{delete, get, post, put},
+    routing::{delete, get, post},
     Router,
 };
 use chrono::Utc;
@@ -25,7 +24,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Instant;
 use tokio::sync::RwLock;
 use tower_http::cors::CorsLayer;
 use tracing::{debug, error, info};
@@ -543,7 +541,7 @@ async fn rollback_to_version(
         .rollback_to_version(
             &path,
             version,
-            &mut *config_manager,
+            &mut config_manager,
             &request.author,
             request.comment,
         )

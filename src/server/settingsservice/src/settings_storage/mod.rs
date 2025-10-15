@@ -3,12 +3,11 @@
 
 //! ETCD storage client module
 
-use crate::settings_utils::error::{SettingsError, StorageError};
+use crate::settings_utils::error::StorageError;
 use async_trait::async_trait;
-use etcd_client::{Client, ConnectOptions, DeleteOptions, GetOptions, PutOptions};
+use etcd_client::{Client, ConnectOptions, GetOptions};
 use serde_json::Value;
-use std::collections::HashMap;
-use tracing::{debug, error, warn};
+use tracing::debug;
 
 /// ETCD client wrapper for Settings Service
 pub struct EtcdClient {

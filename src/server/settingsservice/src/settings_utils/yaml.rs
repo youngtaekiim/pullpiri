@@ -57,6 +57,7 @@ pub fn get_path<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
 }
 
 /// Set a value at the specified path
+#[allow(dead_code)]
 pub fn set_path(value: &mut Value, path: &str, new_value: Value) -> Result<(), SettingsError> {
     let parts: Vec<&str> = path.split('.').collect();
     if parts.is_empty() {
