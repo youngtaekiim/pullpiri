@@ -413,7 +413,7 @@ mod tests {
         assert!(result.is_ok());
 
         let response = result.unwrap().into_inner();
-        assert_eq!(response.success, false);
+        assert!(!response.success);
         assert!(
             response.message.contains("not found")
                 || response.message.contains("Failed to retrieve node")
@@ -494,7 +494,7 @@ mod tests {
         assert!(result.is_ok());
 
         let response = result.unwrap().into_inner();
-        assert_eq!(response.success, true);
+        assert!(response.success);
         assert_eq!(response.message, "Successfully updated topology");
         assert!(response.updated_topology.is_some());
 
@@ -512,7 +512,7 @@ mod tests {
         assert!(result.is_ok());
 
         let response = result.unwrap().into_inner();
-        assert_eq!(response.success, false);
+        assert!(!response.success);
         assert_eq!(response.message, "No topology provided in request");
         assert!(response.updated_topology.is_none());
     }

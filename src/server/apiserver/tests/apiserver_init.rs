@@ -1,5 +1,5 @@
 use apiserver::manager;
-use tokio::time::{timeout, Duration};
+use tokio::time::Duration;
 
 #[tokio::test(flavor = "current_thread")]
 async fn test_manager_initialize() {

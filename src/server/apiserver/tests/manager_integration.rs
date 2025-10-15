@@ -1,6 +1,4 @@
-use apiserver::manager::{apply_artifact, initialize, withdraw_artifact};
-use common::filtergateway::{Action, HandleScenarioRequest};
-use tokio;
+use apiserver::manager::{apply_artifact, initialize};
 
 /// Correct valid YAML artifact (Scenario + Package + Model)
 const VALID_ARTIFACT_YAML: &str = r#"

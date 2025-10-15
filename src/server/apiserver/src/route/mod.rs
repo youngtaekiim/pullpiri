@@ -58,12 +58,8 @@ mod tests {
         routing::{delete, get, post},
         Router,
     };
-    use std::{error::Error as StdError, net::SocketAddr};
-    use tokio::{
-        net::{TcpListener, TcpStream},
-        task,
-        time::{sleep, Duration},
-    };
+    use std::error::Error as StdError;
+    
     use tower::ServiceExt;
     use tower_http::cors::{Any, CorsLayer};
 
@@ -75,7 +71,7 @@ mod tests {
         assert_eq!(ok_response.status(), StatusCode::OK);
 
         // Negative case: Error response
-        let err = Box::new(std::io::Error::new(std::io::ErrorKind::Other, "test error"))
+        let err = Box::new(std::io::Error::other("test error"))
             as Box<dyn StdError + Send + Sync>;
         let err_response = status(Err(err));
         assert_eq!(err_response.status(), StatusCode::METHOD_NOT_ALLOWED);
