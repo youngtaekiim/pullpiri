@@ -70,7 +70,7 @@ impl CoreManager {
         let history_manager = Arc::new(RwLock::new(HistoryManager::new(Box::new(storage_history))));
         let monitoring_manager = Arc::new(RwLock::new(MonitoringManager::new(
             Box::new(storage_monitoring),
-            60, // 60 seconds cache TTL
+            1, // 1 seconds cache TTL
         )));
 
         // Initialize API server
