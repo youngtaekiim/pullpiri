@@ -9,7 +9,6 @@ use crate::settings_utils::error::SettingsError;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
 use tracing::{debug, info, warn};
 
 /// History entry for configuration changes
@@ -54,7 +53,7 @@ pub enum DiffOperation {
 pub struct HistoryManager {
     storage: Box<dyn Storage>,
 }
-
+#[allow(dead_code)]
 impl HistoryManager {
     pub fn new(storage: Box<dyn Storage>) -> Self {
         Self { storage }

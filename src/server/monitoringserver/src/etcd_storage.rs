@@ -179,7 +179,7 @@ pub async fn get_all_boards() -> common::Result<Vec<BoardInfo>> {
 
 /// Get all containers from etcd
 pub async fn get_all_containers() -> common::Result<Vec<ContainerInfo>> {
-    let prefix = format!("/piccolo/metrics/containers/");
+    let prefix = "/piccolo/metrics/containers/".to_string();
     let kv_pairs = common::etcd::get_all_with_prefix(&prefix).await?;
 
     let mut containers = Vec::new();

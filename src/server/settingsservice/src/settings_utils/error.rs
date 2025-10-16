@@ -7,6 +7,7 @@ use thiserror::Error;
 
 /// Main error types for the Settings Service
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum SettingsError {
     #[error("Configuration error: {0}")]
     Config(String),
@@ -35,6 +36,7 @@ pub enum SettingsError {
 
 /// Storage-specific errors
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum StorageError {
     #[error("ETCD connection failed: {0}")]
     ConnectionFailed(String),
@@ -57,6 +59,7 @@ pub enum StorageError {
 
 /// API-specific errors
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum ApiError {
     #[error("Not found: {0}")]
     NotFound(String),
@@ -76,6 +79,7 @@ pub enum ApiError {
 
 /// Validation-specific errors
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum ValidationError {
     #[error("Schema validation failed: {0}")]
     SchemaError(String),
@@ -86,5 +90,5 @@ pub enum ValidationError {
     #[error("Invalid value: {0}")]
     InvalidValue(String),
 }
-
+#[allow(dead_code)]
 pub type Result<T> = std::result::Result<T, SettingsError>;

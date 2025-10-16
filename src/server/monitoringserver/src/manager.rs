@@ -4,9 +4,8 @@
 //! a gRPC sender for communicating with the nodeagent or other services.
 //! It is designed to be thread-safe and run in an async context.
 use crate::data_structures::{BoardInfo, DataStore, SocInfo};
-use common::monitoringserver::{ContainerInfo, ContainerList, NodeInfo}; // Use protobuf types
+use common::monitoringserver::{ContainerList, NodeInfo}; // Use protobuf types
 use common::Result;
-use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
@@ -341,7 +340,7 @@ impl MonitoringServerManager {
                 board_info
                     .socs
                     .iter()
-                    .map(|s| s.soc_id.split('.').last().unwrap_or(""))
+                    .map(|s| s.soc_id.split('.').next_back().unwrap_or(""))
                     .collect::<Vec<_>>()
                     .join(", ")
             );

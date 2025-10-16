@@ -144,7 +144,7 @@ async fn initialize_grpc_server(
 
     println!("=== StateManager gRPC Server Stopped ===");
 }
-
+#[allow(dead_code)]
 async fn initialize_timpani_server() {
     println!("=== Timpani gRPC Server Starting ===");
 

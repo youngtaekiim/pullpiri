@@ -16,6 +16,7 @@ use tracing::{debug, error, info};
 
 /// System status information
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct SystemStatus {
     pub version: String,
     pub uptime: std::time::Duration,
@@ -24,6 +25,7 @@ pub struct SystemStatus {
 
 /// Component status
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum ComponentStatus {
     Healthy,
     Degraded(String),
@@ -31,6 +33,7 @@ pub enum ComponentStatus {
 }
 
 /// Core manager coordinates all service components
+#[allow(dead_code)]
 pub struct CoreManager {
     config_manager: Arc<RwLock<ConfigManager>>,
     history_manager: Arc<RwLock<HistoryManager>>,
@@ -38,7 +41,7 @@ pub struct CoreManager {
     api_server: Option<ApiServer>,
     start_time: std::time::Instant,
 }
-
+#[allow(dead_code)]
 impl CoreManager {
     /// Create a new core manager
     pub async fn new(
@@ -283,7 +286,7 @@ impl CoreManager {
         ComponentStatus::Healthy // For now, assume healthy if we can access it
     }
 
-    /// Check monitoring manager status  
+    /// Check monitoring manager status
     async fn check_monitoring_manager_status(&self) -> ComponentStatus {
         // Check cache stats as a health indicator
         let cache_stats = self.monitoring_manager.read().await.get_cache_stats();

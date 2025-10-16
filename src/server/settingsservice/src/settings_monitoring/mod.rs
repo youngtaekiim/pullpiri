@@ -132,7 +132,7 @@ pub struct MonitoringManager {
     cache: RwLock<HashMap<String, CacheEntry<Vec<Metric>>>>,
     cache_ttl: Duration,
 }
-
+#[allow(dead_code)]
 impl MonitoringManager {
     pub fn new(storage: Box<dyn Storage>, cache_ttl_seconds: u64) -> Self {
         Self {
@@ -845,13 +845,11 @@ impl MonitoringManager {
             // Pattern like "*abc*" - check if text contains the middle part
             let middle = &pattern[1..pattern.len() - 1];
             text.contains(middle)
-        } else if pattern.starts_with('*') {
+        } else if let Some(suffix) = pattern.strip_prefix('*') {
             // Pattern like "*abc" - check if text ends with the suffix
-            let suffix = &pattern[1..];
             text.ends_with(suffix)
-        } else if pattern.ends_with('*') {
+        } else if let Some(prefix) = pattern.strip_suffix('*') {
             // Pattern like "abc*" - check if text starts with the prefix
-            let prefix = &pattern[..pattern.len() - 1];
             text.starts_with(prefix)
         } else {
             // No wildcards - exact match
@@ -892,27 +890,27 @@ impl MonitoringManager {
         container
             .config
             .get("Hostname")
-            .map_or(false, |h| h == node_name)
+            .is_some_and(|h| h == node_name)
             || container
                 .state
                 .get("Hostname")
-                .map_or(false, |h| h == node_name)
+                .is_some_and(|h| h == node_name)
             || container
                 .annotation
                 .get("hostname")
-                .map_or(false, |h| h == node_name)
+                .is_some_and(|h| h == node_name)
             || container
                 .annotation
                 .get("node_name")
-                .map_or(false, |h| h == node_name)
+                .is_some_and(|h| h == node_name)
             || container
                 .state
                 .get("node_name")
-                .map_or(false, |h| h == node_name)
+                .is_some_and(|h| h == node_name)
             || container
                 .config
                 .get("node_name")
-                .map_or(false, |h| h == node_name)
+                .is_some_and(|h| h == node_name)
     }
 
     /// Get pod metrics for a specific node (enhanced to include hostname)

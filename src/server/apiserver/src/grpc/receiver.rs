@@ -67,6 +67,12 @@ pub struct ApiServerReceiver {
     registry: NodeRegistry,
 }
 
+impl Default for ApiServerReceiver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+#[allow(dead_code)]
 impl ApiServerReceiver {
     pub fn new() -> Self {
         Self {
@@ -76,6 +82,7 @@ impl ApiServerReceiver {
     }
 
     /// Convert to gRPC service
+    #[allow(unused_variables)]
     pub fn into_service(
         self,
     ) -> common::apiserver::api_server_connection_server::ApiServerConnectionServer<Self> {
@@ -166,7 +173,8 @@ impl ApiServerConnection for ApiServerReceiver {
                 };
 
                 // 인코딩을 제거하고 json string으로 저장
-                let node_json = serde_json::to_string(&node_info).unwrap();
+                // below variable never used , hence the _ to prevent warnings
+                let _node_json = serde_json::to_string(&node_info).unwrap();
 
                 // 두 가지 키로 저장
                 // 1. IP 주소로 빠른 조회용 (json 문자열로 변경)
@@ -405,7 +413,7 @@ mod tests {
         assert!(result.is_ok());
 
         let response = result.unwrap().into_inner();
-        assert_eq!(response.success, false);
+        assert!(!response.success);
         assert!(
             response.message.contains("not found")
                 || response.message.contains("Failed to retrieve node")
@@ -486,7 +494,7 @@ mod tests {
         assert!(result.is_ok());
 
         let response = result.unwrap().into_inner();
-        assert_eq!(response.success, true);
+        assert!(response.success);
         assert_eq!(response.message, "Successfully updated topology");
         assert!(response.updated_topology.is_some());
 
@@ -504,7 +512,7 @@ mod tests {
         assert!(result.is_ok());
 
         let response = result.unwrap().into_inner();
-        assert_eq!(response.success, false);
+        assert!(!response.success);
         assert_eq!(response.message, "No topology provided in request");
         assert!(response.updated_topology.is_none());
     }
