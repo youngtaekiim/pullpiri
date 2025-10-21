@@ -872,9 +872,9 @@ export function Workloads({ onPodClick, pods, setPods, recentEvents, setRecentEv
               </TableHeader>
               <TableBody className="overflow-visible">
                 {filteredPods.map(
-                  (pod /*index*/) => ( // 2025-09-23 comment out
+                  (pod, idx) => (
                     <TableRow
-                      key={pod.name}
+                       key={`${pod.name}-${pod.ip || idx}`}
                       className="border-border/30 hover:bg-muted/30 transition-colors"
                     >
                       <TableCell className="font-medium text-foreground max-w-xs">
