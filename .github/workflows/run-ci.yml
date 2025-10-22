@@ -34,10 +34,10 @@ jobs:
           cd src/agent/nodeagent
           cargo build --release --target x86_64-unknown-linux-musl
           cd ../../../
-          mkdir -p dist/binaries
-          cp src/agent/target/x86_64-unknown-linux-musl/release/nodeagent dist/binaries/nodeagent-linux-amd64
-          ls -la dist/binaries/
-          file dist/binaries/nodeagent-linux-amd64
+          mkdir -p dist/binaries/amd/
+          cp src/agent/target/x86_64-unknown-linux-musl/release/nodeagent dist/binaries/amd/nodeagent-linux-amd64
+          ls -la dist/binaries/amd/
+          file dist/binaries/amd/nodeagent-linux-amd64
 
       # Step 17: Upload nodeagent binary
       - name: Upload nodeagent binary
@@ -45,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nodeagent-binary-amd64
-          path: dist/binaries/nodeagent-linux-amd64
+          path: dist/binaries/amd/nodeagent-linux-amd64
 
   build_linux_arm64:
     runs-on: ubuntu-22.04-arm
@@ -75,14 +75,14 @@ jobs:
           cd src/agent/nodeagent
           cargo build --release --target aarch64-unknown-linux-musl
           cd ../../../
-          mkdir -p dist/binaries
-          cp src/agent/target/aarch64-unknown-linux-musl/release/nodeagent dist/binaries/nodeagent-linux-arm64
-          ls -la dist/binaries/
-          file dist/binaries/nodeagent-linux-arm64
+          mkdir -p dist/binaries/arm/
+          cp src/agent/target/aarch64-unknown-linux-musl/release/nodeagent dist/binaries/arm/nodeagent-linux-arm64
+          ls -la dist/binaries/arm/
+          file dist/binaries/arm/nodeagent-linux-arm64
       # Step 6: Upload ARM64 nodeagent binary
       - name: Upload nodeagent binary (ARM64)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nodeagent-binary-arm64
-          path: dist/binaries/nodeagent-linux-arm64
+          path: dist/binaries/arm/nodeagent-linux-arm64

@@ -41,14 +41,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: nodeagent-binary-amd64
-          path: dist/binaries/nodeagent-linux-amd64
+          path: dist/binaries/amd
 
       # Download nodeagent binary - arm64
       - name: Download nodeagent binary
         uses: actions/download-artifact@v4
         with:
           name: nodeagent-binary-arm64
-          path: dist/binaries/nodeagent-linux-arm64
+          path: dist/binaries/arm
 
       # Upload all reports as GitHub Release assets
 
@@ -78,7 +78,7 @@ jobs:
         id: upload_nodeagent_amd64
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/binaries/nodeagent-linux-amd64
+          file: dist/binaries/amd/nodeagent-linux-amd64
           asset_name: nodeagent-linux-amd64
           tag: ${{ github.ref }}
 
@@ -88,7 +88,7 @@ jobs:
         id: upload_nodeagent_arm64
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/binaries/nodeagent-linux-arm64
+          file: dist/binaries/arm/nodeagent-linux-arm64
           asset_name: nodeagent-linux-arm64
           tag: ${{ github.ref }}
 
