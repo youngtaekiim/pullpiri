@@ -269,8 +269,8 @@ jobs:
           cd src/agent/nodeagent
           cargo build --release --target aarch64-unknown-linux-musl
           cd ../../../
-          cp src/agent/target/aarch64-unknown-linux-musl/release/nodeagent dist/binaries/nodeagent-linux-arm64
           mkdir -p dist/binaries
+          cp src/agent/target/aarch64-unknown-linux-musl/release/nodeagent dist/binaries/nodeagent-linux-arm64
           ls -la dist/binaries/
           file dist/binaries/nodeagent-linux-arm64
       # Step 6: Upload ARM64 nodeagent binary
