@@ -241,3 +241,35 @@ jobs:
       #     token: ${{ env.CODECOV_TOKEN }}
       #     slug: ${{ github.repository }}
       #     files: dist/coverage/lcov.info
+  build_linux_arm64:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install Rust toolchain
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      # Step 3: Add musl target for static linking
+      - name: Add musl target
+        run: rustup target add aarch64-unknown-linux-musl
+
+      # Step 4: Build nodeagent binary for ARM64 release
+      - name: Build nodeagent binary (ARM64 static)
+        run: |
+          echo "Building nodeagent (static) from src/agent/nodeagent directory for ARM64..."
+          cd src/agent/nodeagent
+          cargo build --release --target aarch64-unknown-linux-musl
+          cd ../../../
+          cp src/agent/target/aarch64-unknown-linux-musl/release/nodeagent dist/binaries/nodeagent-linux-arm64
+          ls -la dist/binaries/
+          file dist/binaries/nodeagent-linux-arm64
+      # Step 5: Upload ARM64 nodeagent binary
+      - name: Upload nodeagent binary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nodeagent-binary
+          path: dist/binaries/nodeagent-linux-arm64
