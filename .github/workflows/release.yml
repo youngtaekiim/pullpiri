@@ -36,12 +36,19 @@ jobs:
         with:
           submodules: "recursive"
 
-      # Download nodeagent binary
+      # Download nodeagent binary - amd64
       - name: Download nodeagent binary
         uses: actions/download-artifact@v4
         with:
-          name: nodeagent-binary
-          path: dist/binaries/
+          name: nodeagent-binary-amd64
+          path: dist/binaries/nodeagent-linux-amd64
+
+      # Download nodeagent binary - arm64
+      - name: Download nodeagent binary
+        uses: actions/download-artifact@v4
+        with:
+          name: nodeagent-binary-arm64
+          path: dist/binaries/nodeagent-linux-arm64
 
       # Upload all reports as GitHub Release assets
 
