@@ -1,7 +1,7 @@
 //! Board command implementation
 
-use crate::{SettingsClient, Result};
-use crate::commands::{print_json, print_success, print_error, print_info};
+use crate::commands::{print_error, print_info, print_json, print_success};
+use crate::{Result, SettingsClient};
 use clap::Subcommand;
 use colored::Colorize;
 
@@ -162,7 +162,10 @@ async fn get_board_raw(client: &SettingsClient, board_id: &str) -> Result<()> {
             print_success("Raw board data retrieved successfully");
         }
         Err(e) => {
-            print_error(&format!("Failed to fetch raw board data for {}: {}", board_id, e));
+            print_error(&format!(
+                "Failed to fetch raw board data for {}: {}",
+                board_id, e
+            ));
             return Err(e);
         }
     }

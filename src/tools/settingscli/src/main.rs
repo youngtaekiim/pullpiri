@@ -5,8 +5,8 @@
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
-use settingscli::{SettingsClient, Result};
 use settingscli::commands::{board, metrics, node, soc};
+use settingscli::{Result, SettingsClient};
 
 #[derive(Parser)]
 #[command(name = "settingscli")]
@@ -61,7 +61,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     if cli.verbose {
-        println!("{} Connecting to SettingsService at: {}", "ℹ".blue().bold(), cli.url);
+        println!(
+            "{} Connecting to SettingsService at: {}",
+            "ℹ".blue().bold(),
+            cli.url
+        );
     }
 
     // Create client
@@ -103,12 +107,15 @@ async fn health_check(client: &SettingsClient) -> Result<()> {
 
     match client.health_check().await {
         Ok(true) => {
-            println!("{} SettingsService is healthy and reachable", "✓".green().bold());
+            println!(
+                "{} SettingsService is healthy and reachable",
+                "✓".green().bold()
+            );
         }
         Ok(false) => {
             println!("{} SettingsService is not reachable", "✗".red().bold());
             return Err(settingscli::error::CliError::Custom(
-                "Health check failed".to_string()
+                "Health check failed".to_string(),
             ));
         }
         Err(e) => {

@@ -55,11 +55,7 @@ impl SettingsClient {
     /// * `body` - Request body as JSON
     pub async fn post(&self, endpoint: &str, body: &Value) -> Result<Value> {
         let url = format!("{}{}", self.base_url, endpoint);
-        let response = self.client
-            .post(&url)
-            .json(body)
-            .send()
-            .await?;
+        let response = self.client.post(&url).json(body).send().await?;
 
         if !response.status().is_success() {
             return Err(CliError::Custom(format!(
@@ -79,11 +75,7 @@ impl SettingsClient {
     /// * `body` - Request body as JSON
     pub async fn put(&self, endpoint: &str, body: &Value) -> Result<Value> {
         let url = format!("{}{}", self.base_url, endpoint);
-        let response = self.client
-            .put(&url)
-            .json(body)
-            .send()
-            .await?;
+        let response = self.client.put(&url).json(body).send().await?;
 
         if !response.status().is_success() {
             return Err(CliError::Custom(format!(

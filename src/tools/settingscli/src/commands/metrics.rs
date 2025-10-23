@@ -1,7 +1,7 @@
 //! Metrics command implementation
 
-use crate::{SettingsClient, Result};
-use crate::commands::{print_json, print_success, print_error};
+use crate::commands::{print_error, print_json, print_success};
+use crate::{Result, SettingsClient};
 use clap::Subcommand;
 use colored::Colorize;
 
@@ -54,14 +54,24 @@ async fn get_metrics(client: &SettingsClient) -> Result<()> {
                         println!("\nNodes ({}):", nodes.len());
                         for (i, node) in nodes.iter().enumerate() {
                             if let Some(node_name) = node.get("node_name") {
-                                println!("  {}. {}", i + 1, node_name.as_str().unwrap_or("Unknown"));
+                                println!(
+                                    "  {}. {}",
+                                    i + 1,
+                                    node_name.as_str().unwrap_or("Unknown")
+                                );
 
                                 if let Some(cpu_usage) = node.get("cpu_usage") {
-                                    println!("     CPU Usage: {:.2}%", cpu_usage.as_f64().unwrap_or(0.0));
+                                    println!(
+                                        "     CPU Usage: {:.2}%",
+                                        cpu_usage.as_f64().unwrap_or(0.0)
+                                    );
                                 }
 
                                 if let Some(mem_usage) = node.get("mem_usage") {
-                                    println!("     Memory Usage: {:.2}%", mem_usage.as_f64().unwrap_or(0.0));
+                                    println!(
+                                        "     Memory Usage: {:.2}%",
+                                        mem_usage.as_f64().unwrap_or(0.0)
+                                    );
                                 }
 
                                 if let Some(ip) = node.get("ip") {

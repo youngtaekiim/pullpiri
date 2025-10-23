@@ -1,7 +1,7 @@
 //! Node command implementation
 
-use crate::{SettingsClient, Result};
-use crate::commands::{print_json, print_success, print_error, print_info};
+use crate::commands::{print_error, print_info, print_json, print_success};
+use crate::{Result, SettingsClient};
 use clap::Subcommand;
 use colored::Colorize;
 
@@ -148,7 +148,8 @@ async fn get_node(client: &SettingsClient, node_id: &str) -> Result<()> {
             }
 
             if let Some(total_memory) = node.get("total_memory") {
-                let total_gb = total_memory.as_u64().unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
+                let total_gb =
+                    total_memory.as_u64().unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
                 println!("  Total Memory: {:.2} GB", total_gb);
             }
 
@@ -212,7 +213,10 @@ async fn get_node_raw(client: &SettingsClient, node_id: &str) -> Result<()> {
             print_success("Raw node data retrieved successfully");
         }
         Err(e) => {
-            print_error(&format!("Failed to fetch raw node data for {}: {}", node_id, e));
+            print_error(&format!(
+                "Failed to fetch raw node data for {}: {}",
+                node_id, e
+            ));
             return Err(e);
         }
     }

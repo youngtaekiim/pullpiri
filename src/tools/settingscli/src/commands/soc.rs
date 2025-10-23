@@ -1,7 +1,7 @@
 //! SoC command implementation
 
-use crate::{SettingsClient, Result};
-use crate::commands::{print_json, print_success, print_error, print_info};
+use crate::commands::{print_error, print_info, print_json, print_success};
+use crate::{Result, SettingsClient};
 use clap::Subcommand;
 use colored::Colorize;
 
@@ -60,11 +60,17 @@ async fn list_socs(client: &SettingsClient) -> Result<()> {
 
                         // Show aggregated resource info
                         if let Some(total_cpu_usage) = soc.get("total_cpu_usage") {
-                            println!("   Total CPU Usage: {:.2}%", total_cpu_usage.as_f64().unwrap_or(0.0));
+                            println!(
+                                "   Total CPU Usage: {:.2}%",
+                                total_cpu_usage.as_f64().unwrap_or(0.0)
+                            );
                         }
 
                         if let Some(total_mem_usage) = soc.get("total_mem_usage") {
-                            println!("   Total Memory Usage: {:.2}%", total_mem_usage.as_f64().unwrap_or(0.0));
+                            println!(
+                                "   Total Memory Usage: {:.2}%",
+                                total_mem_usage.as_f64().unwrap_or(0.0)
+                            );
                         }
 
                         if let Some(nodes) = soc.get("nodes").and_then(|n| n.as_array()) {
@@ -114,28 +120,42 @@ async fn get_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
             // Aggregated resource information
             println!("\nAggregated Resources:");
             if let Some(total_cpu_usage) = soc.get("total_cpu_usage") {
-                println!("  Total CPU Usage: {:.2}%", total_cpu_usage.as_f64().unwrap_or(0.0));
+                println!(
+                    "  Total CPU Usage: {:.2}%",
+                    total_cpu_usage.as_f64().unwrap_or(0.0)
+                );
             }
 
             if let Some(total_cpu_count) = soc.get("total_cpu_count") {
-                println!("  Total CPU Count: {}", total_cpu_count.as_u64().unwrap_or(0));
+                println!(
+                    "  Total CPU Count: {}",
+                    total_cpu_count.as_u64().unwrap_or(0)
+                );
             }
 
             if let Some(total_gpu_count) = soc.get("total_gpu_count") {
-                println!("  Total GPU Count: {}", total_gpu_count.as_u64().unwrap_or(0));
+                println!(
+                    "  Total GPU Count: {}",
+                    total_gpu_count.as_u64().unwrap_or(0)
+                );
             }
 
             if let Some(total_mem_usage) = soc.get("total_mem_usage") {
-                println!("  Total Memory Usage: {:.2}%", total_mem_usage.as_f64().unwrap_or(0.0));
+                println!(
+                    "  Total Memory Usage: {:.2}%",
+                    total_mem_usage.as_f64().unwrap_or(0.0)
+                );
             }
 
             if let Some(total_used_memory) = soc.get("total_used_memory") {
-                let used_gb = total_used_memory.as_u64().unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
+                let used_gb =
+                    total_used_memory.as_u64().unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
                 println!("  Total Used Memory: {:.2} GB", used_gb);
             }
 
             if let Some(total_memory) = soc.get("total_memory") {
-                let total_gb = total_memory.as_u64().unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
+                let total_gb =
+                    total_memory.as_u64().unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
                 println!("  Total Memory: {:.2} GB", total_gb);
             }
 
@@ -152,11 +172,17 @@ async fn get_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
             // Disk information
             println!("\nTotal Disk Usage:");
             if let Some(total_read_bytes) = soc.get("total_read_bytes") {
-                println!("  Total Read Bytes: {}", total_read_bytes.as_u64().unwrap_or(0));
+                println!(
+                    "  Total Read Bytes: {}",
+                    total_read_bytes.as_u64().unwrap_or(0)
+                );
             }
 
             if let Some(total_write_bytes) = soc.get("total_write_bytes") {
-                println!("  Total Write Bytes: {}", total_write_bytes.as_u64().unwrap_or(0));
+                println!(
+                    "  Total Write Bytes: {}",
+                    total_write_bytes.as_u64().unwrap_or(0)
+                );
             }
 
             // Nodes information
@@ -175,7 +201,10 @@ async fn get_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
                         }
 
                         if let Some(mem_usage) = node.get("mem_usage") {
-                            println!("     Memory Usage: {:.2}%", mem_usage.as_f64().unwrap_or(0.0));
+                            println!(
+                                "     Memory Usage: {:.2}%",
+                                mem_usage.as_f64().unwrap_or(0.0)
+                            );
                         }
                     }
                 }
@@ -184,7 +213,10 @@ async fn get_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
             // Last updated information
             if let Some(last_updated) = soc.get("last_updated") {
                 if let Some(secs) = last_updated.get("secs_since_epoch") {
-                    println!("\nLast Updated: {} seconds since epoch", secs.as_u64().unwrap_or(0));
+                    println!(
+                        "\nLast Updated: {} seconds since epoch",
+                        secs.as_u64().unwrap_or(0)
+                    );
                 }
             }
 
@@ -228,7 +260,10 @@ async fn get_soc_raw(client: &SettingsClient, soc_id: &str) -> Result<()> {
             print_success("Raw SoC data retrieved successfully");
         }
         Err(e) => {
-            print_error(&format!("Failed to fetch raw SoC data for {}: {}", soc_id, e));
+            print_error(&format!(
+                "Failed to fetch raw SoC data for {}: {}",
+                soc_id, e
+            ));
             return Err(e);
         }
     }
