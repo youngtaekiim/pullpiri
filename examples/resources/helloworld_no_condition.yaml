@@ -17,7 +17,7 @@ spec:
     - type: plain
   models:
     - name: helloworld
-      node: lg-OptiPlex-3070
+      node: HPC
       resources:
         volume:
         network:
