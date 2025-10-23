@@ -45,15 +45,17 @@ async fn list_boards(client: &SettingsClient) -> Result<()> {
             println!("\n{}", "Boards".bold());
             println!("{}", "=".repeat(50));
 
-            if let Some(boards_array) = boards.as_array() {
+            // Look for "boards" array in the response
+            if let Some(boards_array) = boards.get("boards").and_then(|b| b.as_array()) {
                 if boards_array.is_empty() {
                     println!("No boards found.");
                 } else {
                     for (i, board) in boards_array.iter().enumerate() {
                         println!("{}. Board:", i + 1);
-                        if let Some(id) = board.get("id") {
+                        if let Some(id) = board.get("board_id") {
                             println!("   ID: {}", id.as_str().unwrap_or("Unknown"));
                         }
+                        // Name and status may not exist in your schema, so print if present
                         if let Some(name) = board.get("name") {
                             println!("   Name: {}", name.as_str().unwrap_or("Unknown"));
                         }
@@ -63,12 +65,14 @@ async fn list_boards(client: &SettingsClient) -> Result<()> {
                         println!();
                     }
                 }
-            } else if let Some(id) = boards.get("id") {
+            } else if let Some(id) = boards.get("board_id") {
                 // Single board response
                 println!("Board ID: {}", id.as_str().unwrap_or("Unknown"));
                 if let Some(name) = boards.get("name") {
                     println!("Name: {}", name.as_str().unwrap_or("Unknown"));
                 }
+            } else {
+                println!("No boards found.");
             }
 
             print_success("Boards list retrieved successfully");
@@ -107,7 +111,7 @@ async fn get_board(client: &SettingsClient, board_id: &str) -> Result<()> {
             if let Some(nodes) = board.get("nodes").and_then(|n| n.as_array()) {
                 println!("\nNodes ({}):", nodes.len());
                 for (i, node) in nodes.iter().enumerate() {
-                    if let Some(node_name) = node.get("name") {
+                    if let Some(node_name) = node.get("node_name") {
                         println!("  {}. {}", i + 1, node_name.as_str().unwrap_or("Unknown"));
                     }
                 }
@@ -116,7 +120,7 @@ async fn get_board(client: &SettingsClient, board_id: &str) -> Result<()> {
             if let Some(socs) = board.get("socs").and_then(|s| s.as_array()) {
                 println!("\nSoCs ({}):", socs.len());
                 for (i, soc) in socs.iter().enumerate() {
-                    if let Some(soc_id) = soc.get("id") {
+                    if let Some(soc_id) = soc.get("soc_id") {
                         println!("  {}. {}", i + 1, soc_id.as_str().unwrap_or("Unknown"));
                     }
                 }

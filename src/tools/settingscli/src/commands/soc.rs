@@ -45,7 +45,8 @@ async fn list_socs(client: &SettingsClient) -> Result<()> {
             println!("\n{}", "SoCs".bold());
             println!("{}", "=".repeat(50));
 
-            if let Some(socs_array) = socs.as_array() {
+            // Look for "socs" array in the response
+            if let Some(socs_array) = socs.get("socs").and_then(|s| s.as_array()) {
                 if socs_array.is_empty() {
                     println!("No SoCs found.");
                 } else {

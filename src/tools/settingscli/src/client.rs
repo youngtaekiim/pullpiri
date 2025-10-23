@@ -120,4 +120,66 @@ impl SettingsClient {
             }
         }
     }
+
+    /// Apply YAML artifact (POST with text/plain content)
+    ///
+    /// # Arguments
+    /// * `endpoint` - API endpoint (e.g., "/api/v1/yaml")
+    /// * `yaml_content` - YAML content as string
+    pub async fn post_yaml(&self, endpoint: &str, yaml_content: &str) -> Result<Value> {
+        let url = format!("{}{}", self.base_url, endpoint);
+        let response = self
+            .client
+            .post(&url)
+            .header("Content-Type", "text/plain")
+            .body(yaml_content.to_owned())
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(CliError::Custom(format!(
+                "Request failed with status: {} - {}",
+                status, error_text
+            )));
+        }
+
+        let json: Value = response.json().await?;
+        Ok(json)
+    }
+
+    /// Withdraw YAML artifact (DELETE with text/plain content)
+    ///
+    /// # Arguments
+    /// * `endpoint` - API endpoint (e.g., "/api/v1/yaml")
+    /// * `yaml_content` - YAML content as string
+    pub async fn delete_yaml(&self, endpoint: &str, yaml_content: &str) -> Result<Value> {
+        let url = format!("{}{}", self.base_url, endpoint);
+        let response = self
+            .client
+            .delete(&url)
+            .header("Content-Type", "text/plain")
+            .body(yaml_content.to_owned())
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(CliError::Custom(format!(
+                "Request failed with status: {} - {}",
+                status, error_text
+            )));
+        }
+
+        let json: Value = response.json().await?;
+        Ok(json)
+    }
 }

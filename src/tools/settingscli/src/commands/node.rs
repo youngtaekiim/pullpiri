@@ -45,23 +45,27 @@ async fn list_nodes(client: &SettingsClient) -> Result<()> {
             println!("\n{}", "Nodes".bold());
             println!("{}", "=".repeat(50));
 
-            if let Some(nodes_array) = nodes.as_array() {
+            // Look for "nodes" array in the response
+            if let Some(nodes_array) = nodes.get("nodes").and_then(|n| n.as_array()) {
                 if nodes_array.is_empty() {
                     println!("No nodes found.");
                 } else {
                     for (i, node) in nodes_array.iter().enumerate() {
                         println!("{}. Node:", i + 1);
-                        if let Some(id) = node.get("id") {
-                            println!("   ID: {}", id.as_str().unwrap_or("Unknown"));
-                        }
                         if let Some(name) = node.get("node_name") {
                             println!("   Name: {}", name.as_str().unwrap_or("Unknown"));
                         }
                         if let Some(ip) = node.get("ip") {
                             println!("   IP: {}", ip.as_str().unwrap_or("Unknown"));
                         }
-                        if let Some(status) = node.get("status") {
-                            println!("   Status: {}", status.as_str().unwrap_or("Unknown"));
+                        if let Some(arch) = node.get("arch") {
+                            println!("   Architecture: {}", arch.as_str().unwrap_or("Unknown"));
+                        }
+                        if let Some(os) = node.get("os") {
+                            println!("   OS: {}", os.as_str().unwrap_or("Unknown"));
+                        }
+                        if let Some(cpu_count) = node.get("cpu_count") {
+                            println!("   CPU Count: {}", cpu_count.as_u64().unwrap_or(0));
                         }
                         if let Some(cpu_usage) = node.get("cpu_usage") {
                             println!("   CPU Usage: {:.2}%", cpu_usage.as_f64().unwrap_or(0.0));
@@ -72,15 +76,14 @@ async fn list_nodes(client: &SettingsClient) -> Result<()> {
                         println!();
                     }
                 }
-            } else if let Some(id) = nodes.get("id") {
+            } else if let Some(name) = nodes.get("node_name") {
                 // Single node response
-                println!("Node ID: {}", id.as_str().unwrap_or("Unknown"));
-                if let Some(name) = nodes.get("node_name") {
-                    println!("Name: {}", name.as_str().unwrap_or("Unknown"));
-                }
+                println!("Node Name: {}", name.as_str().unwrap_or("Unknown"));
                 if let Some(ip) = nodes.get("ip") {
                     println!("IP: {}", ip.as_str().unwrap_or("Unknown"));
                 }
+            } else {
+                println!("No nodes found.");
             }
 
             print_success("Nodes list retrieved successfully");

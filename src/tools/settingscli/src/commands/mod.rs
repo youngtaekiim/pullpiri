@@ -1,9 +1,11 @@
 //! Command implementations for SettingsCLI
 
 pub mod board;
+pub mod container;
 pub mod metrics;
 pub mod node;
 pub mod soc;
+pub mod yaml;
 
 use crate::Result;
 use colored::Colorize;

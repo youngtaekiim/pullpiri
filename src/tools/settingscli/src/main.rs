@@ -5,7 +5,7 @@
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
-use settingscli::commands::{board, metrics, node, soc};
+use settingscli::commands::{board, container, metrics, node, soc, yaml};
 use settingscli::{Result, SettingsClient};
 
 #[derive(Parser)]
@@ -52,6 +52,16 @@ enum Commands {
         #[command(subcommand)]
         action: soc::SocAction,
     },
+    /// Container-related operations
+    Container {
+        #[command(subcommand)]
+        action: container::ContainerAction,
+    },
+    /// YAML artifact management
+    Yaml {
+        #[command(subcommand)]
+        action: yaml::YamlAction,
+    },
     /// Test connection to SettingsService
     Health,
 }
@@ -83,6 +93,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         Commands::Board { action } => board::handle(&client, action).await,
         Commands::Node { action } => node::handle(&client, action).await,
         Commands::Soc { action } => soc::handle(&client, action).await,
+        Commands::Container { action } => container::handle(&client, action).await,
+        Commands::Yaml { action } => yaml::handle(&client, action).await,
         Commands::Health => health_check(&client).await,
     };
 
