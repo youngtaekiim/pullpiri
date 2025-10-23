@@ -15,7 +15,7 @@ fi
 MASTER_IP=""
 NODE_IP=""
 NODE_NAME=$(hostname)  # Always use system hostname
-NODE_ROLE="nodeagent"  # Default node role (master, nodeagent, bluechi)
+NODE_ROLE="bluechi"  # Default node role (master, nodeagent, bluechi)
 NODE_TYPE="vehicle"  # Default node type (vehicle, cloud)
 
 # Process command line arguments
@@ -163,7 +163,8 @@ install_required_packages() {
 # MASTER_IP and NODE_IP are set from command line arguments
 GRPC_PORT="47004"
 #DOWNLOAD_URL="https://github.com/piccolo-framework/piccolo/releases/download/latest"
-DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/main/examples/binarys"
+DOWNLOAD_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/latest/download"
+#DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/main/examples/binarys"
 CHECKSUM_URL="${DOWNLOAD_URL}"  # Define CHECKSUM_URL
 INSTALL_DIR="/opt/piccolo"
 CONFIG_DIR="/etc/piccolo"
@@ -188,7 +189,7 @@ if [ "$ARCH" = "x86_64" ]; then
 elif [ "$ARCH" = "aarch64" ]; then
     BINARY_SUFFIX="linux-arm64"
 elif [[ "$ARCH" == "arm"* ]]; then
-    BINARY_SUFFIX="linux-arm"
+    BINARY_SUFFIX="linux-arm64"
 else
     BINARY_SUFFIX="$ARCH"
 fi
