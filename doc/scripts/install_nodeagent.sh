@@ -12,8 +12,8 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Initialize variables
-MASTER_IP=""
-NODE_IP=""
+MASTER_IP="172.31.26.216"
+NODE_IP="172.31.26.216"
 NODE_NAME=$(hostname)  # Always use system hostname
 NODE_ROLE="bluechi"  # Default node role (master, nodeagent, bluechi)
 NODE_TYPE="vehicle"  # Default node type (vehicle, cloud)

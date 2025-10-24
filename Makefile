@@ -73,6 +73,7 @@ install:
 uninstall:
 	-systemctl stop piccolo-player
 	-systemctl stop piccolo-server
+	-systemctl stop nodeagent
 	systemctl daemon-reload
 	-rm -rf /etc/piccolo/yaml
 	-rm -rf /etc/containers/systemd/*

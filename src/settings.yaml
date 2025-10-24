@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 yaml_storage: /etc/piccolo/yaml
-piccolo_cloud: http://0.0.0.0:41234
+piccolo_cloud: http://172.31.26.216:41234
 host:
-  name: HPC
-  ip: 0.0.0.0
+  name: aws-ec2
+  ip: 172.31.26.216
   type: vehicle
   role: master
 dds:
