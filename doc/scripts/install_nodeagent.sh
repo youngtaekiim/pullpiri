@@ -163,8 +163,8 @@ install_required_packages() {
 # MASTER_IP and NODE_IP are set from command line arguments
 GRPC_PORT="47004"
 #DOWNLOAD_URL="https://github.com/piccolo-framework/piccolo/releases/download/latest"
-DOWNLOAD_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/latest/download"
-#DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/main/examples/binarys"
+DOWNLOAD_URL="https://github.com/youngtaekiim/pullpiri/releases/latest/download"
+#DOWNLOAD_URL="https://raw.githubusercontent.com/youngtaekiim/pullpiri/main/examples/binarys"
 CHECKSUM_URL="${DOWNLOAD_URL}"  # Define CHECKSUM_URL
 INSTALL_DIR="/opt/piccolo"
 CONFIG_DIR="/etc/piccolo"
