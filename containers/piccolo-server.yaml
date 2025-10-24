@@ -13,7 +13,7 @@ spec:
   hostPid: true
   containers:
   - name: etcd
-    image: gcr.io/etcd-development/etcd:v3.5.11
+    image: gcr.io/etcd-development/etcd:v3.5.24
     command: ["/usr/local/bin/etcd"]
     args: 
     - "--data-dir=/etcd-data"
