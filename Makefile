@@ -87,3 +87,8 @@ uninstall:
 .PHONY: tools
 tools:
 	cargo build --manifest-path=src/tools/Cargo.toml --release
+	@echo ""
+	@echo "=== Data Inspection ==="
+	@echo "make build-inspector          - Build RocksDB Inspector tool"
+	@echo "make inspect-rocksdb          - Inspect all RocksDB data"
+	@echo "make verify-helloworld-data   - Verify helloworld test data"

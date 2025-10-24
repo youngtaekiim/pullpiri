@@ -12,16 +12,6 @@ spec:
   hostNetwork: true
   hostPid: true
   containers:
-  - name: etcd
-    image: gcr.io/etcd-development/etcd:v3.5.11
-    command: ["/usr/local/bin/etcd"]
-    args: 
-    - "--data-dir=/etcd-data"
-    - "--listen-client-urls=http://127.0.0.1:2379,http://$(HOST_IP):2379"
-    - "--advertise-client-urls=http://$(HOST_IP):2379"
-    volumeMounts:
-    - name: etcd-data
-      mountPath: /etcd-data
   - name: apiserver
     image: localhost/pullpiri:latest
     command: ["/piccolo/apiserver"]
@@ -30,12 +20,20 @@ spec:
       mountPath: /etc/piccolo/yaml
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
+    - name: shared-rocksdb
+      mountPath: /tmp/pullpiri_shared_rocksdb
   - name: policymanager
     image: localhost/pullpiri:latest
     command: ["/piccolo/policymanager"]
+    volumeMounts:
+    - name: shared-rocksdb
+      mountPath: /tmp/pullpiri_shared_rocksdb
   - name: monitoringserver
     image: localhost/pullpiri:latest
     command: ["/piccolo/monitoringserver"]
+    volumeMounts:
+    - name: shared-rocksdb
+      mountPath: /tmp/pullpiri_shared_rocksdb
   - name: settingsservice
     image: localhost/pullpiri:latest
     command: ["/piccolo/settingsservice", "--bind-address=0.0.0.0", "--bind-port=8080", "--log-level=info"]
@@ -44,13 +42,15 @@ spec:
       mountPath: /etc/piccolo/yaml
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
+    - name: shared-rocksdb
+      mountPath: /tmp/pullpiri_shared_rocksdb
   volumes:
   - name: piccolo-yaml
     hostPath:
       path: /etc/piccolo/yaml
-  - name: etcd-data
-    hostPath:
-      path: /etc/containers/systemd/piccolo/etcd-data
   - name: config-path
     hostPath:
       path: /etc/containers/systemd/piccolo/settings.yaml
+  - name: shared-rocksdb
+    hostPath:
+      path: /tmp/pullpiri_shared_rocksdb

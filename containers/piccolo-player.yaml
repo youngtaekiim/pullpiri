@@ -15,6 +15,9 @@ spec:
   - name: filtergateway
     image: localhost/pullpiri:latest
     command: ["/piccolo/filtergateway"]
+    volumeMounts:
+    - name: shared-rocksdb
+      mountPath: /tmp/pullpiri_shared_rocksdb
   - name: actioncontroller
     image: localhost/pullpiri:latest
     command: ["/piccolo/actioncontroller"]
@@ -27,6 +30,8 @@ spec:
       mountPath: /etc/containers/systemd
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
+    - name: shared-rocksdb
+      mountPath: /tmp/pullpiri_shared_rocksdb
   - name: statemanager
     image: localhost/pullpiri:latest
     command: ["/piccolo/statemanager"]
@@ -39,6 +44,8 @@ spec:
       mountPath: /etc/containers/systemd
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
+    - name: shared-rocksdb
+      mountPath: /tmp/pullpiri_shared_rocksdb
   volumes:
   - name: piccolo-yaml
     hostPath:
@@ -52,3 +59,6 @@ spec:
   - name: config-path
     hostPath:
       path: /etc/containers/systemd/piccolo/settings.yaml
+  - name: shared-rocksdb
+    hostPath:
+      path: /tmp/pullpiri_shared_rocksdb

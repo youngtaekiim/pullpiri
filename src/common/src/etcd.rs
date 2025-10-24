@@ -3,9 +3,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use etcd_client::{Client, DeleteOptions, Error, GetOptions, SortOrder, SortTarget};
+use etcd_client::Error;
+
+// 긴급 교체: RocksDB 초기화 (한 번만 실행)
+lazy_static::lazy_static! {
+    static ref ROCKSDB_INIT: std::sync::Once = std::sync::Once::new();
+}
+
+fn ensure_rocksdb_init() {
+    ROCKSDB_INIT.call_once(|| {
+        if let Err(e) = crate::rocksdb::init_db("/tmp/pullpiri_shared_rocksdb") {
+            eprintln!("Failed to initialize RocksDB: {}", e);
+        }
+        else{
+            println!("RocksDB initialized successfully.");
+        }
+    });
+}
 
 pub fn open_server() -> String {
+    ensure_rocksdb_init();
+    
     let config = crate::setting::get_config();
     if config.host.ip.is_empty() {
         panic!("Host IP is missing in the configuration.");
@@ -20,41 +38,7 @@ pub fn open_server() -> String {
     format!("{}:2379", config.host.ip) // Default port is hardcoded
 }
 
-async fn get_client() -> Result<Client, Error> {
-    const MAX_RETRIES: u32 = 10;
-    const RETRY_DELAY_MS: u64 = 1000;
-
-    let mut attempt = 0;
-    let mut last_error = None;
-
-    while attempt < MAX_RETRIES {
-        match Client::connect([open_server()], None).await {
-            Ok(client) => {
-                return Ok(client);
-            }
-            Err(err) => {
-                println!(
-                    "Failed to get etcd client (attempt {}/{}): {:?}",
-                    attempt + 1,
-                    MAX_RETRIES,
-                    err
-                );
-                last_error = Some(err);
-                attempt += 1;
-
-                if attempt < MAX_RETRIES {
-                    // Wait before the next retry
-                    tokio::time::sleep(tokio::time::Duration::from_millis(RETRY_DELAY_MS)).await;
-                }
-            }
-        }
-    }
-
-    // If we've exhausted all retries, return the last error
-    Err(last_error.unwrap_or_else(|| {
-        std::io::Error::other("Failed to get etcd client after multiple attempts").into()
-    }))
-}
+// get_client function removed as it's not used in RocksDB implementation
 
 pub struct KV {
     pub key: String,
@@ -62,99 +46,72 @@ pub struct KV {
 }
 
 pub async fn put(key: &str, value: &str) -> Result<(), Error> {
-    // Validate key length
-    if key.len() > 1024 {
-        return Err(Error::InvalidArgs(
-            "Key exceeds maximum allowed length of 1024 characters".to_string(),
-        ));
+    ensure_rocksdb_init();
+    
+    // RocksDB로 교체
+    match crate::rocksdb::put(key, value).await {
+        Ok(()) => {
+            println!("[ETCD->RocksDB] Successfully stored key: {}", key);
+            Ok(())
+        },
+        Err(e) => Err(Error::InvalidArgs(e.to_string())),
     }
-
-    // Validate key for invalid special characters
-    if key.contains(['<', '>', '?', '{', '}']) {
-        return Err(Error::InvalidArgs(
-            "Key contains invalid special characters".to_string(),
-        ));
-    }
-
-    let mut client = get_client().await?;
-    client.put(key, value, None).await?;
-    Ok(())
 }
 
 pub async fn get(key: &str) -> Result<String, Error> {
-    // Validate key length
-    if key.is_empty() {
-        return Err(Error::InvalidArgs("Key cannot be empty".to_string()));
-    }
-
-    if key.len() > 1024 {
-        return Err(Error::InvalidArgs(
-            "Key exceeds maximum allowed length of 1024 characters".to_string(),
-        ));
-    }
-
-    // Validate key for invalid special characters
-    if key.contains(['<', '>', '?', '{', '}']) {
-        return Err(Error::InvalidArgs(
-            "Key contains invalid special characters".to_string(),
-        ));
-    }
-
-    let mut client = get_client().await?;
-    let resp = client.get(key, None).await?;
-
-    if let Some(kv) = resp.kvs().first() {
-        Ok(kv.value_str()?.to_string())
-    } else {
-        Err(etcd_client::Error::InvalidArgs("Key not found".to_string()))
+    ensure_rocksdb_init();
+    
+    // RocksDB로 교체
+    match crate::rocksdb::get(key).await {
+        Ok(value) => {
+            println!("[ETCD->RocksDB] Successfully retrieved key: {} (value length: {})", key, value.len());
+            Ok(value)
+        },
+        Err(e) => Err(Error::InvalidArgs(e.to_string())),
     }
 }
 
 pub async fn get_all_with_prefix(key: &str) -> Result<Vec<KV>, Error> {
-    let mut client = get_client().await?;
-    let option = Some(
-        GetOptions::new()
-            .with_prefix()
-            .with_sort(SortTarget::Create, SortOrder::Ascend),
-    );
-    let resp = client.get(key, option).await?;
-
-    Ok(resp
-        .kvs()
-        .iter()
-        .map(|kv| KV {
-            key: kv.key_str().unwrap_or_default().to_string(),
-            value: kv.value_str().unwrap_or_default().to_string(),
-        })
-        .collect())
+    ensure_rocksdb_init();
+    
+    // RocksDB로 교체
+    match crate::rocksdb::get_all_with_prefix(key).await {
+        Ok(kvs) => {
+            let result: Vec<KV> = kvs.into_iter().map(|kv| KV {
+                key: kv.key,
+                value: kv.value,
+            }).collect();
+            println!("[ETCD->RocksDB] Successfully retrieved {} keys with prefix: {}", result.len(), key);
+            Ok(result)
+        },
+        Err(e) => Err(Error::InvalidArgs(e.to_string())),
+    }
 }
 
 pub async fn delete(key: &str) -> Result<(), Error> {
-    let mut client = get_client().await?;
-    // Validate key length
-    if key.len() > 1024 {
-        return Err(Error::InvalidArgs(
-            "Key exceeds maximum allowed length of 1024 characters".to_string(),
-        ));
+    ensure_rocksdb_init();
+    
+    // RocksDB로 교체
+    match crate::rocksdb::delete(key).await {
+        Ok(()) => {
+            println!("[ETCD->RocksDB] Successfully deleted key: {}", key);
+            Ok(())
+        },
+        Err(e) => Err(Error::InvalidArgs(e.to_string())),
     }
-
-    // Validate key for invalid special characters
-    if key.contains(['<', '>', '?', '{', '}']) {
-        return Err(Error::InvalidArgs(
-            "Key contains invalid special characters".to_string(),
-        ));
-    }
-
-    // Perform the delete operation with error wrapping
-    client.delete(key, None).await?;
-    Ok(())
 }
 
 pub async fn delete_all_with_prefix(key: &str) -> Result<(), Error> {
-    let mut client = get_client().await?;
-    let option = Some(DeleteOptions::new().with_prefix());
-    client.delete(key, option).await?;
-    Ok(())
+    ensure_rocksdb_init();
+    
+    // RocksDB로 교체
+    match crate::rocksdb::delete_all_with_prefix(key).await {
+        Ok(()) => {
+            println!("[ETCD->RocksDB] Successfully deleted all keys with prefix: {}", key);
+            Ok(())
+        },
+        Err(e) => Err(Error::InvalidArgs(e.to_string())),
+    }
 }
 
 //Unit Test Cases
@@ -822,3 +779,4 @@ mod tests {
         );
     }
 }
+
