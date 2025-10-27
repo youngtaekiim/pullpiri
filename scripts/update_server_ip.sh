@@ -20,7 +20,6 @@ fi
 sed -i "s/\\\$(HOST_IP)/${HOST_IP}/g" $SERVER_YAML
 
 echo "Successfully replaced \$(HOST_IP) with $HOST_IP in $SERVER_YAML"
-exit 0
 
 #
 # Get version info and update container image version and nodeagent in release note

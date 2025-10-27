@@ -247,17 +247,19 @@ fi
 chmod +x ${INSTALL_DIR}/${BINARY_NAME}
 
 # Download system check script
-echo "Downloading system check script..."
-SCRIPT_DOWNLOAD_SUCCESS=false
-if command -v curl &> /dev/null; then
-    if curl -L "${DOWNLOAD_URL}/node_ready_check.sh" -o /usr/local/bin/node_ready_check.sh --fail; then
-        SCRIPT_DOWNLOAD_SUCCESS=true
-    fi
-elif command -v wget &> /dev/null; then
-    if wget "${DOWNLOAD_URL}/node_ready_check.sh" -O /usr/local/bin/node_ready_check.sh; then
-        SCRIPT_DOWNLOAD_SUCCESS=true
-    fi
-fi
+#echo "Downloading system check script..."
+#SCRIPT_DOWNLOAD_SUCCESS=false
+#if command -v curl &> /dev/null; then
+#    if curl -L "${DOWNLOAD_URL}/node_ready_check.sh" -o /usr/local/bin/node_ready_check.sh --fail; then
+#        SCRIPT_DOWNLOAD_SUCCESS=true
+#    fi
+#elif command -v wget &> /dev/null; then
+#    if wget "${DOWNLOAD_URL}/node_ready_check.sh" -O /usr/local/bin/node_ready_check.sh; then
+#        SCRIPT_DOWNLOAD_SUCCESS=true
+#    fi
+#fi
+cp ./node_ready_check.sh /usr/local/bin/node_ready_check.sh
+SCRIPT_DOWNLOAD_SUCCESS=true
 
 # Verify download and create default if needed
 if [ "$SCRIPT_DOWNLOAD_SUCCESS" = false ] || [ ! -f /usr/local/bin/node_ready_check.sh ]; then
