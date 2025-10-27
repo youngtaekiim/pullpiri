@@ -1135,19 +1135,23 @@ async fn withdraw_yaml_artifact(
 async fn send_artifact_to_api_server(yaml_content: &str, method: &str) -> Result<String, String> {
     use reqwest::Client;
 
+    debug!("send_artifact_to_api_server - Get Client");
     let client = Client::new();
     //let api_server_url = "http://localhost:47099/api/artifact";
+    debug!("send_artifact_to_api_server - Create URL");
     let api_server_url = format!(
         "http://{}/api/artifact",
         common::apiserver::open_rest_server()
     );
 
+    debug!("send_artifact_to_api_server - Create Request");
     let request = match method {
         "POST" => client.post(api_server_url),
         "DELETE" => client.delete(api_server_url),
         _ => return Err("Unsupported HTTP method".to_string()),
     };
 
+    debug!("send_artifact_to_api_server - Send Request");
     let response = request
         .header("Content-Type", "text/plain")
         .body(yaml_content.to_string())
@@ -1155,6 +1159,7 @@ async fn send_artifact_to_api_server(yaml_content: &str, method: &str) -> Result
         .await
         .map_err(|e| format!("HTTP request failed: {}", e))?;
 
+    debug!("send_artifact_to_api_server - Process Response");
     if response.status().is_success() {
         let response_text = response
             .text()
