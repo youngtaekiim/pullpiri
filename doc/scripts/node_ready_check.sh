@@ -166,7 +166,8 @@ log "Checking network connectivity..."
 
 # Check if master node IP is set
 MASTER_IP=${MASTER_NODE_IP:-"127.0.0.1"}
-GRPC_PORT=${GRPC_PORT:-50051}
+#GRPC_PORT=${GRPC_PORT:-50051}
+GRPC_PORT=47098
 
 log "Using master node IP: $MASTER_IP (from environment or default)"
 log "Using gRPC port: $GRPC_PORT (from environment or default)"
