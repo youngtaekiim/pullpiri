@@ -10,6 +10,11 @@ pub mod rocksdb;
 pub mod setting;
 pub mod spec;
 
+// gRPC protobuf module for RocksDB service
+pub mod rocksdbservice {
+    tonic::include_proto!("rocksdbservice");
+}
+
 fn open_server(port: u16) -> String {
     format!("{}:{}", crate::setting::get_config().host.ip, port)
 }

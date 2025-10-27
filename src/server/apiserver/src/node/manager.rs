@@ -66,10 +66,10 @@ impl NodeManager {
 
         let mut nodes = Vec::new();
         for kv in kvs {
-            match serde_json::from_str::<NodeInfo>(&kv.value) {
+            match serde_json::from_str::<NodeInfo>(&kv.1) {
                 Ok(node) => nodes.push(node),
                 Err(e) => {
-                    eprintln!("Failed to parse node json for key {}: {}", kv.key, e);
+                    eprintln!("Failed to parse node json for key {}: {}", kv.0, e);
                     continue;
                 }
             }

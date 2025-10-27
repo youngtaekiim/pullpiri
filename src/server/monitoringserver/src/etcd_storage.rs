@@ -59,11 +59,11 @@ async fn get_all_info<T: DeserializeOwned>(resource_type: &str) -> common::Resul
 
     let mut items = Vec::new();
     for kv in kv_pairs {
-        match serde_json::from_str::<T>(&kv.value) {
+        match serde_json::from_str::<T>(&kv.1) {
             Ok(item) => items.push(item),
             Err(e) => eprintln!(
                 "[ETCD] Failed to deserialize {} {}: {}",
-                resource_type, kv.key, e
+                resource_type, kv.0, e
             ),
         }
     }
@@ -184,7 +184,7 @@ pub async fn get_all_containers() -> common::Result<Vec<ContainerInfo>> {
 
     let mut containers = Vec::new();
     for kv in kv_pairs {
-        match serde_json::from_str::<serde_json::Value>(&kv.value) {
+        match serde_json::from_str::<serde_json::Value>(&kv.1) {
             Ok(json_value) => {
                 let container_info = ContainerInfo {
                     id: json_value["id"].as_str().unwrap_or_default().to_string(),
@@ -222,7 +222,7 @@ pub async fn get_all_containers() -> common::Result<Vec<ContainerInfo>> {
                 };
                 containers.push(container_info);
             }
-            Err(e) => eprintln!("[ETCD] Failed to deserialize container {}: {}", kv.key, e),
+            Err(e) => eprintln!("[ETCD] Failed to deserialize container {}: {}", kv.0, e),
         }
     }
 

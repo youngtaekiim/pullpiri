@@ -18,6 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "proto/statemanager.proto",
                 "proto/pharos_service.proto",
                 "proto/external/timpani/schedinfo.proto",
+                "proto/rocksdbservice.proto", // Add RocksDB service proto
             ],
             &["proto"],
         )?;

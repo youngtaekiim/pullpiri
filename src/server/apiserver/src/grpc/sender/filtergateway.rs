@@ -24,9 +24,8 @@ pub async fn send(
     use std::time::Instant;
     let start = Instant::now();
 
-    let mut client = FilterGatewayConnectionClient::connect(connect_server())
-        .await
-        .unwrap();
+    let mut client = FilterGatewayConnectionClient::connect(connect_server()).await
+        .map_err(|e| Status::unavailable(format!("Failed to connect to FilterGateway: {}", e)))?;
     let response = client.handle_scenario(Request::new(scenario)).await;
 
     let elapsed = start.elapsed();

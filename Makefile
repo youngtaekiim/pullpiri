@@ -26,6 +26,13 @@ clean:
 image:
 	podman build -t localhost/pullpiri:latest -f containers/Dockerfile .
 
+.PHONY: rocksdb-image
+rocksdb-image:
+	podman build -t localhost/pullpiri-rocksdb:latest -f src/server/rocksdbservice/Dockerfile .
+
+.PHONY: all-images
+all-images: image rocksdb-image
+
 # command for DEVELOPMENT ONLY
 .PHONY: builder
 builder:
@@ -56,11 +63,20 @@ devimage:
 #	-mkdir -p /etc/containers/systemd/piccolo/etcd-data/
 #	-podman-compose -f examples/nginx/docker-compose.yaml up -d
 
+.PHONY: setup-rocksdb
+setup-rocksdb:
+	-mkdir -p /tmp/pullpiri_rocksdb
+	-chown 1001:1001 /tmp/pullpiri_rocksdb
+
+.PHONY: setup-shared-rocksdb
+setup-shared-rocksdb:
+	-mkdir -p /tmp/pullpiri_shared_rocksdb
+	-chown 1001:1001 /tmp/pullpiri_shared_rocksdb
+
 .PHONY: install
-install:
+install: setup-shared-rocksdb
 	-mkdir -p /etc/piccolo/yaml
 	-mkdir -p /etc/containers/systemd/piccolo/
-	-mkdir -p /etc/containers/systemd/piccolo/etcd-data/
 	-cp -r ./src/settings.yaml /etc/containers/systemd/piccolo/
 	-cp -r ./containers/piccolo-*.* /etc/containers/systemd/piccolo/
 	-cp -r ./scripts/update_server_ip.sh /etc/containers/systemd/piccolo/
@@ -92,3 +108,13 @@ tools:
 	@echo "make build-inspector          - Build RocksDB Inspector tool"
 	@echo "make inspect-rocksdb          - Inspect all RocksDB data"
 	@echo "make verify-helloworld-data   - Verify helloworld test data"
+
+.PHONY: test-rocksdb-service
+test-rocksdb-service:
+	@echo "Testing gRPC RocksDB Service..."
+	@echo "Service should be running on localhost:50051"
+	@echo "Use grpcurl to test the service:"
+	@echo "  grpcurl -plaintext localhost:50051 rocksdbservice.RocksDbService/Health"
+	@echo ""
+	@echo "Building and running a simple test..."
+	@cd src/server/rocksdbservice && cargo run -- --help
