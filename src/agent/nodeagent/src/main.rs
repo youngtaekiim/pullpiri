@@ -178,14 +178,18 @@ async fn main() {
     // Set global config for other parts of the application
     config::Config::set_global(app_config.clone());
 
-    let hostname: String = String::from_utf8_lossy(
-        &std::process::Command::new("hostname")
-            .output()
-            .expect("Failed to get hostname")
-            .stdout,
-    )
-    .trim()
-    .to_string();
+    let mut hostname = app_config.get_hostname();
+    if hostname.is_empty() || hostname == "$(hostname)" {
+        // fallback
+        hostname = String::from_utf8_lossy(
+            &std::process::Command::new("hostname")
+                .output()
+                .expect("Failed to get hostname")
+                .stdout,
+        )
+        .trim()
+        .to_string();
+    }
     println!("Starting NodeAgent on host: {}", hostname);
 
     let (tx_grpc, rx_grpc) = channel::<HandleYamlRequest>(100);

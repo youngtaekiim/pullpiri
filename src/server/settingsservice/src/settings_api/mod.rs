@@ -1137,7 +1137,10 @@ async fn send_artifact_to_api_server(yaml_content: &str, method: &str) -> Result
 
     let client = Client::new();
     //let api_server_url = "http://localhost:47099/api/artifact";
-    let api_server_url = format!("http://{}/api/artifact", common::apiserver::open_rest_server());
+    let api_server_url = format!(
+        "http://{}/api/artifact",
+        common::apiserver::open_rest_server()
+    );
 
     let request = match method {
         "POST" => client.post(api_server_url),

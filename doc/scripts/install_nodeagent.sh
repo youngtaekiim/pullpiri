@@ -163,8 +163,10 @@ install_required_packages() {
 # MASTER_IP and NODE_IP are set from command line arguments
 GRPC_PORT="47004"
 #DOWNLOAD_URL="https://github.com/piccolo-framework/piccolo/releases/download/latest"
-DOWNLOAD_URL="https://github.com/youngtaekiim/pullpiri/releases/latest/download"
-#DOWNLOAD_URL="https://raw.githubusercontent.com/youngtaekiim/pullpiri/main/examples/binarys"
+#DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/main/examples/binarys"
+VERSION_TXT="./version.txt"
+VERSION=$(cat "$VERSION_TXT")
+DOWNLOAD_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/download/${VERSION}"
 CHECKSUM_URL="${DOWNLOAD_URL}"  # Define CHECKSUM_URL
 INSTALL_DIR="/opt/piccolo"
 CONFIG_DIR="/etc/piccolo"
@@ -247,11 +249,11 @@ chmod +x ${INSTALL_DIR}/${BINARY_NAME}
 echo "Downloading system check script..."
 SCRIPT_DOWNLOAD_SUCCESS=false
 if command -v curl &> /dev/null; then
-    if curl -L "${DOWNLOAD_URL}/scripts/node_ready_check.sh" -o /usr/local/bin/node_ready_check.sh --fail; then
+    if curl -L "${DOWNLOAD_URL}/node_ready_check.sh" -o /usr/local/bin/node_ready_check.sh --fail; then
         SCRIPT_DOWNLOAD_SUCCESS=true
     fi
 elif command -v wget &> /dev/null; then
-    if wget "${DOWNLOAD_URL}/scripts/node_ready_check.sh" -O /usr/local/bin/node_ready_check.sh; then
+    if wget "${DOWNLOAD_URL}/node_ready_check.sh" -O /usr/local/bin/node_ready_check.sh; then
         SCRIPT_DOWNLOAD_SUCCESS=true
     fi
 fi
