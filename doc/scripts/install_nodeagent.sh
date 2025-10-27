@@ -12,8 +12,8 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Initialize variables
-MASTER_IP="172.31.26.216"
-NODE_IP="172.31.26.216"
+MASTER_IP="192.168.10.22"
+NODE_IP="192.168.10.22"
 NODE_NAME=$(hostname)  # Always use system hostname
 NODE_ROLE="bluechi"  # Default node role (master, nodeagent, bluechi)
 NODE_TYPE="vehicle"  # Default node type (vehicle, cloud)
@@ -161,7 +161,8 @@ install_required_packages() {
 
 # Parameter settings already processed from command line
 # MASTER_IP and NODE_IP are set from command line arguments
-GRPC_PORT="47004"
+NODEAGENT_PORT="47004"
+APISERVER_PORT="47098"
 #DOWNLOAD_URL="https://github.com/piccolo-framework/piccolo/releases/download/latest"
 #DOWNLOAD_URL="https://raw.githubusercontent.com/eclipse-pullpiri/pullpiri/main/examples/binarys"
 VERSION_TXT="./version.txt"
@@ -296,7 +297,7 @@ nodeagent:
   node_role: "${NODE_ROLE}"
   master_ip: "${MASTER_IP}"
   node_ip: "${NODE_IP}"
-  grpc_port: ${GRPC_PORT}
+  grpc_port: ${NODEAGENT_PORT}
   log_level: "info"
   metrics:
     collection_interval: 5
@@ -313,7 +314,7 @@ echo "Checking firewall configuration..."
 if command -v firewall-cmd &> /dev/null && firewall-cmd --state &> /dev/null; then
     echo "firewalld is running. Allowing required ports."
     # Allow gRPC and other necessary ports
-    if firewall-cmd --permanent --add-port=${GRPC_PORT}/tcp; then
+    if firewall-cmd --permanent --add-port=${NODEAGENT_PORT}/tcp; then
         firewall-cmd --reload
         echo "Firewall configuration has been updated."
     else
@@ -322,7 +323,7 @@ if command -v firewall-cmd &> /dev/null && firewall-cmd --state &> /dev/null; th
     fi
 elif command -v ufw &> /dev/null && ufw status &> /dev/null; then
     echo "ufw is running. Allowing required ports."
-    if ufw allow ${GRPC_PORT}/tcp; then
+    if ufw allow ${NODEAGENT_PORT}/tcp; then
         echo "Firewall configuration has been updated."
     else
         echo "Warning: Failed to update firewall rules. You may need to add ports manually."
@@ -349,7 +350,7 @@ RestartSec=10
 Environment=RUST_LOG=info
 Environment=MASTER_NODE_IP=${MASTER_IP}
 Environment=NODE_IP=${NODE_IP}
-Environment=GRPC_PORT=${GRPC_PORT}
+Environment=GRPC_PORT=${NODEAGENT_PORT}
 
 # Security hardening settings
 ProtectSystem=full
@@ -377,10 +378,10 @@ if ping -c 3 -W 2 ${MASTER_IP} &> /dev/null; then
     echo "Master node is reachable: ${MASTER_IP}"
     
     # Check gRPC port
-    if command -v nc &> /dev/null && nc -z -w 5 ${MASTER_IP} ${GRPC_PORT} &> /dev/null; then
-        echo "Master node gRPC port is accessible: ${MASTER_IP}:${GRPC_PORT}"
+    if command -v nc &> /dev/null && nc -z -w 5 ${MASTER_IP} ${APISERVER_PORT} &> /dev/null; then
+        echo "Master node gRPC port is accessible: ${MASTER_IP}:${APISERVER_PORT}"
     else
-        echo "Warning: Unable to connect to master node gRPC port: ${MASTER_IP}:${GRPC_PORT}"
+        echo "Warning: Unable to connect to master node gRPC port: ${MASTER_IP}:${APISERVER_PORT}"
         echo "Service will be registered but may wait until connection is available."
         WARNING_COUNT=$((WARNING_COUNT+1))
     fi
@@ -426,7 +427,7 @@ fi
 echo "Installation Summary:"
 echo "- Installation directory: ${INSTALL_DIR}"
 echo "- Configuration file: ${CONFIG_DIR}/nodeagent.yaml"
-echo "- Master node: ${MASTER_IP}:${GRPC_PORT}"
+echo "- Master node: ${MASTER_IP}:${APISERVER_PORT}"
 echo "- Node IP: ${NODE_IP}"
 echo "- Node type: ${NODE_TYPE}"
 echo "- Status: $ERROR_COUNT errors, $WARNING_COUNT warnings"
