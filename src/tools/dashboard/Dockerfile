@@ -1,30 +1,27 @@
-FROM node:22-alpine
+FROM --platform=linux/arm64 node:22.12.0-alpine
 
-RUN apk add --no-cache nginx
+# Set environment variables for writable directories
+ENV VITE_CACHE_DIR=/tmp/.vite
+ENV NODE_ENV=development
 
-# Working directory
 WORKDIR /app
 
-# Copy only the package meta first to utilize the cache.
-COPY package.json package-lock.json* ./
-RUN npm install --no-audit --no-fund \
- && mkdir -p /tmp/nginx/logs /tmp/nginx/tmp /tmp/nginx/run \
- && cp -r node_modules /tmp/node_modules \
- && rm -rf node_modules \
- && ln -s /tmp/node_modules node_modules
+# Copy package files and install dependencies
+COPY package*.json ./
 
-# Copy the remaining source (node_modules will be excluded with .dockerignore)
+RUN npm install
+RUN npm ci --legacy-peer-deps && \
+    mkdir -p /app/node_modules/.vite-temp && \
+    chmod -R 777 /app/node_modules
+
+# Copy application code
 COPY . .
 
-# Copy nginx configuration (using files in source)
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY proxy.conf /etc/nginx/conf.d/proxy.conf
+# Ensure tmp directory exists and is writable
+RUN mkdir -p /tmp/.vite && chmod -R 777 /tmp
 
-# Copy entrypoint and execute permissions
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh \
-    && chmod -R 777 /app/node_modules
+# Create volume for node_modules to ensure it's writable
+VOLUME ["/app/node_modules"]
 
-ENV DASHBOARD_ENV=local
-EXPOSE 5173 8082
-ENTRYPOINT ["/entrypoint.sh"]
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--force"]
