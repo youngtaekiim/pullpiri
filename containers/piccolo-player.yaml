@@ -13,7 +13,7 @@ spec:
   hostPid: true
   containers:
   - name: filtergateway
-    image: ghcr.io/eclipse-pullpiri/pullpiri:latest
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/filtergateway"]
     volumeMounts:
     - name: piccolo-yaml
@@ -21,7 +21,7 @@ spec:
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
   - name: actioncontroller
-    image: ghcr.io/eclipse-pullpiri/pullpiri:latest
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/actioncontroller"]
     volumeMounts:
     - name: piccolo-yaml
@@ -33,7 +33,7 @@ spec:
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
   - name: statemanager
-    image: ghcr.io/eclipse-pullpiri/pullpiri:latest
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/statemanager"]
     volumeMounts:
     - name: piccolo-yaml

@@ -62,6 +62,7 @@ install:
 	-mkdir -p /etc/containers/systemd/piccolo/
 	-mkdir -p /etc/containers/systemd/piccolo/etcd-data/
 	-cp -r ./src/settings.yaml /etc/containers/systemd/piccolo/
+	-cp -r ./doc/scripts/version.txt /etc/containers/systemd/piccolo/
 	-cp -r ./containers/piccolo-*.* /etc/containers/systemd/piccolo/
 	-cp -r ./scripts/update_server_ip.sh /etc/containers/systemd/piccolo/
 	
@@ -73,6 +74,7 @@ install:
 uninstall:
 	-systemctl stop piccolo-player
 	-systemctl stop piccolo-server
+	-systemctl stop nodeagent
 	systemctl daemon-reload
 	-rm -rf /etc/piccolo/yaml
 	-rm -rf /etc/containers/systemd/*
