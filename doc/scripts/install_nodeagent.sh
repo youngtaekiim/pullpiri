@@ -12,8 +12,8 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Initialize variables
-MASTER_IP="192.168.10.22"
-NODE_IP="192.168.10.22"
+MASTER_IP="10.0.0.30" # Board IP, Bluechi controller
+NODE_IP="10.0.0.20"   # AWS EC2 IP is 10.0.0.20, if device is board, change NODE_IP
 NODE_NAME=$(hostname)  # Always use system hostname
 NODE_ROLE="bluechi"  # Default node role (master, nodeagent, bluechi)
 NODE_TYPE="vehicle"  # Default node type (vehicle, cloud)
