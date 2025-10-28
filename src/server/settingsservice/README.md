@@ -105,6 +105,7 @@ The Settings Service provides a comprehensive REST API:
 - `GET /api/v1/metrics/nodes/{node_name}` - Get specific node metric
 - `GET /api/v1/metrics/containers/{container_id}` - Get specific container metric
 - `GET /api/v1/metrics/filters` - List metric filters
+- `GET /api/v1/metrics/stress` - Get all stressmonitoring metrics
 - `POST /api/v1/metrics/filters` - Create metric filter
 - `DELETE /api/v1/metrics/{component}/{id}` - Delete specific metric
 
@@ -180,6 +181,11 @@ curl -X POST http://localhost:8080/api/v1/settings/vehicle/orchestrator \
   }'
 ```
 
+### Get All StressMonitoring Metrics
+```bash
+curl -sS -H "Accept: application/json" "http://localhost:8080/api/v1/metrics/stress"
+
+```
 ### Get Configuration
 
 ```bash
