@@ -3,7 +3,7 @@
 
 //! Integration with monitoring server's etcd storage
 
-use crate::monitoring_types::{BoardInfo, NodeInfo, SocInfo};
+use crate::monitoring_types::{BoardInfo, NodeInfo, SocInfo, StressMetrics};
 use common::monitoringserver::ContainerInfo;
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
@@ -98,6 +98,16 @@ pub async fn store_node_info(node_info: &NodeInfo) -> Result<()> {
 /// Get NodeInfo from etcd
 pub async fn get_node_info(node_name: &str) -> Result<NodeInfo> {
     get_info("nodes", node_name).await
+}
+
+/// Get Stressmetrics from etcd
+pub async fn get_stress_metrics(process_name: &str) -> Result<StressMetrics> {
+    get_info("stress", process_name).await
+}
+
+/// Get all stress metrics from etcd
+pub async fn get_all_stress_metrics() -> Result<Vec<StressMetrics>> {
+    get_all_info("stress").await
 }
 
 /// Get all nodes from etcd
