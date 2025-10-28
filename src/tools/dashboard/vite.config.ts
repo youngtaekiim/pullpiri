@@ -12,7 +12,7 @@ export default defineConfig({
     port: 5173,
     proxy: {      
       '/api/v1/metrics': {
-        target: 'http://10.0.0.30:8080',
+        target: 'http://52.207.244.167:8080',
         changeOrigin: true,
         secure: false,
       },
