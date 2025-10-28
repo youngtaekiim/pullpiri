@@ -51,7 +51,8 @@ export function Dashboard() {
     if (!settingserviceApiUrl) return;
     const fetchPods = () => {
 //      fetch(`${settingserviceApiUrl}/api/v1/metrics`)
-       fetch(`/api/containers`) //temp for Flash Server
+      fetch('/api/v1/metrics')
+//       fetch(`/api/containers`) //temp for Flash Server
         .then(res => res.json())
         .then(data => {
           // Filter for containers only
