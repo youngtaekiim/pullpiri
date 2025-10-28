@@ -1131,8 +1131,40 @@ async fn withdraw_yaml_artifact(
     }
 }
 
-// Helper function to send artifact to API Server
+// temp placeholder to avoid warnings (malloc crash on ARM architecture)
 async fn send_artifact_to_api_server(yaml_content: &str, method: &str) -> Result<String, String> {
+    let api_server_url = format!(
+        "http://{}/api/artifact",
+        common::apiserver::open_rest_server()
+    );
+
+    let request = match method {
+        "POST" => surf::post(api_server_url),
+        "DELETE" => surf::delete(api_server_url),
+        _ => return Err("Unsupported HTTP method".to_string()),
+    }
+    .header("Content-Type", "text/plain")
+    .body(yaml_content.to_string());
+
+    let mut response = request
+        .await
+        .map_err(|e| format!("HTTP request failed: {}", e))?;
+
+    let status = response.status();
+    let response_text = response
+        .body_string()
+        .await
+        .map_err(|e| format!("Failed to read response: {}", e))?;
+
+    if status.is_success() {
+        Ok(response_text)
+    } else {
+        Err(format!("API Server returned {}: {}", status, response_text))
+    }
+}
+
+// Helper function to send artifact to API Server
+/*async fn send_artifact_to_api_server(yaml_content: &str, method: &str) -> Result<String, String> {
     use reqwest::Client;
 
     debug!("send_artifact_to_api_server - Get Client");
@@ -1174,7 +1206,7 @@ async fn send_artifact_to_api_server(yaml_content: &str, method: &str) -> Result
             .unwrap_or_else(|_| "Unknown error".to_string());
         Err(format!("API Server returned {}: {}", status, error_text))
     }
-}
+}*/
 
 async fn get_all_container_metrics(
     State(state): State<ApiState>,

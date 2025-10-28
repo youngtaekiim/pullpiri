@@ -5,7 +5,7 @@
 
 //! Node lookup utilities for finding nodes in the cluster
 
-use base64::Engine;
+//use base64::Engine;
 use common::apiserver::NodeInfo;
 use common::etcd;
 use prost::Message;
@@ -43,7 +43,17 @@ pub async fn find_node_from_etcd() -> Option<String> {
             }
 
             if !kvs.is_empty() {
-                match base64::engine::general_purpose::STANDARD.decode(&kvs[0].value) {
+                if let Ok(node) = NodeInfo::decode(&kvs[0].value.as_bytes()[..]) {
+                    println!(
+                        "Decoded node: {} ({}), status: {}",
+                        node.node_id, node.ip_address, node.status
+                    );
+                    return Some(node.ip_address);
+                } else {
+                    println!("Failed to make node data");
+                    return None;
+                }
+                /*match base64::engine::general_purpose::STANDARD.decode(&kvs[0].value) {
                     Ok(buf) => match NodeInfo::decode(&buf[..]) {
                         Ok(node) => {
                             println!(
@@ -55,7 +65,7 @@ pub async fn find_node_from_etcd() -> Option<String> {
                         Err(e) => println!("Failed to decode node data: {}", e),
                     },
                     Err(e) => println!("Failed to decode base64: {}", e),
-                }
+                }*/
             }
             None
         }
@@ -105,15 +115,15 @@ pub async fn find_node_by_hostname(hostname: &str) -> Option<common::apiserver::
     match common::etcd::get_all_with_prefix("cluster/nodes/").await {
         Ok(kvs) => {
             for kv in kvs {
-                if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(&kv.value) {
-                    if let Ok(node_info) = common::apiserver::NodeInfo::decode(&decoded[..]) {
-                        if node_info.hostname == hostname {
-                            println!(
-                                "Found node with hostname {}: {}",
-                                hostname, node_info.ip_address
-                            );
-                            return Some(node_info);
-                        }
+                //if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(&kv.value) {
+                if let Ok(node_info) = NodeInfo::decode(&kv.value.as_bytes()[..]) {
+                    //if let Ok(node_info) = common::apiserver::NodeInfo::decode(&decoded[..]) {
+                    if node_info.hostname == hostname {
+                        println!(
+                            "Found node with hostname {}: {}",
+                            hostname, node_info.ip_address
+                        );
+                        return Some(node_info);
                     }
                 }
             }
@@ -171,16 +181,16 @@ pub async fn find_guest_nodes() -> Vec<NodeInfo> {
             let mut guest_nodes = Vec::new();
 
             for kv in kvs {
-                if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(&kv.value) {
-                    if let Ok(node_info) = NodeInfo::decode(&decoded[..]) {
-                        // 마스터 노드가 아닌 경우에만 게스트 노드로 간주
-                        if node_info.node_role != common::nodeagent::NodeRole::Master as i32 {
-                            println!(
-                                "Found guest node: {} ({}) with role: {}",
-                                node_info.node_id, node_info.ip_address, node_info.node_role
-                            );
-                            guest_nodes.push(node_info);
-                        }
+                //if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(&kv.value) {
+                //if let Ok(node_info) = NodeInfo::decode(&decoded[..]) {
+                if let Ok(node_info) = NodeInfo::decode(&kv.value.as_bytes()[..]) {
+                    // 마스터 노드가 아닌 경우에만 게스트 노드로 간주
+                    if node_info.node_role != common::nodeagent::NodeRole::Master as i32 {
+                        println!(
+                            "Found guest node: {} ({}) with role: {}",
+                            node_info.node_id, node_info.ip_address, node_info.node_role
+                        );
+                        guest_nodes.push(node_info);
                     }
                 }
             }
