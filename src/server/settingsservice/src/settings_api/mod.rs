@@ -243,9 +243,9 @@ impl ApiServer {
             .route("/api/v1/metrics/boards", get(get_all_board_metrics))
             .route("/api/v1/metrics/nodes/:name", get(get_node_metric_by_name))
             // Stress metrics endpoints
-            .route("/api/v1/metrics/stress", get(get_all_stress_metrics))
+            .route("/api/v1/metrics/stressmonitor", get(get_all_stress_metrics))
             .route(
-                "/api/v1/metrics/stress/:id",
+                "/api/v1/metrics/stressmonitor/:id",
                 get(get_stress_metric_by_process_name),
             )
             .route(
@@ -1242,7 +1242,7 @@ async fn get_all_stress_metrics(
     Query(query): Query<MetricsQuery>,
     State(_state): State<ApiState>,
 ) -> Result<Json<Vec<Value>>, (StatusCode, Json<ErrorResponse>)> {
-    debug!("GET /api/v1/metrics/stress with query: {:?}", query);
+    debug!("GET /api/v1/metrics/stressmonitor with query: {:?}", query);
 
     match crate::monitoring_etcd::get_all_stress_metrics().await {
         Ok(mut metrics) => {
@@ -1279,7 +1279,7 @@ async fn get_stress_metric_by_process_name(
     Path(id): Path<String>,
     State(_state): State<ApiState>,
 ) -> Result<Json<Value>, (StatusCode, Json<ErrorResponse>)> {
-    debug!("GET /api/v1/metrics/stress/{}", id);
+    debug!("GET /api/v1/metrics/stressmonitor/{}", id);
 
     match crate::monitoring_etcd::get_all_stress_metrics().await {
         Ok(metrics) => {
