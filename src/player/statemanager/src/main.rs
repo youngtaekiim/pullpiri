@@ -144,7 +144,7 @@ async fn initialize_grpc_server(
 
     println!("=== StateManager gRPC Server Stopped ===");
 }
-#[allow(dead_code)]
+
 async fn initialize_timpani_server() {
     println!("=== Timpani gRPC Server Starting ===");
 
@@ -233,11 +233,14 @@ async fn main() {
     // Launch gRPC server for external communication
     let grpc_task = initialize_grpc_server(tx_container, tx_state_change);
 
+    // Launch gRPC server for timpani deadline miss
+    let timpani_task = initialize_timpani_server();
+
     println!("Launching StateManager components concurrently...");
 
     // Run both components concurrently until shutdown
     // tokio::join! ensures both tasks complete before main exits
-    tokio::join!(manager_task, grpc_task);
+    tokio::join!(manager_task, grpc_task, timpani_task);
 
     // Both tasks return (), but we log completion for monitoring
     println!("StateManager service components have stopped:");
