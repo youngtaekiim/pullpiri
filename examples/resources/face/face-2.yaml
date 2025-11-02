@@ -82,10 +82,27 @@ metadata:
     app: object-detection
 spec:
   hostNetwork: true
+  hostIPC: true
   containers:
-    - name: face-recognition
-      image: docker.io/library/alpine:latest
-      command: ["sleep", "infinity"]
+    - name: od-apex
+      image: sdv.lge.com/demo/sdv_apex_system_manager:1.0-jammy-arm64
+      volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: timpani-volume
+          mountPath: /var/run/timpani
+    - name: od-perception
+      image: sdv.lge.com/demo/perception_task:1.0-jammy-arm64
+      volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+  volumes:
+    - name: tmp-volume
+      hostPath:
+        path: /tmp
+    - name: timpani-volume
+      hostPath:
+        path: /var/run/timpani
   terminationGracePeriodSeconds: 0
   restartPolicy: Always
 
