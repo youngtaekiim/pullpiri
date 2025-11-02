@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BODY1=$(< ./resources/face/face-1-stop.yaml)
+BODY1=$(< ./resources/face/face-1-pre.yaml)
 
 curl -X POST 'http://10.0.0.30:47099/api/artifact' \
 --header 'Content-Type: text/plain' \
