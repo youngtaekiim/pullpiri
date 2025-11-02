@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Scenario
+metadata:
+  name: face-1
+spec:
+  condition: null
+  action: update
+  target: face-1
+---
+apiVersion: v1
+kind: Package
+metadata:
+  label: null
+  name: face-1
+spec:
+  pattern:
+    - type: plain
+  models:
+    - name: face-detection
+      node: HPC
+      resources:
+        volume:
+        network:
+    - name: face-recognition
+      node: qm.host
+      resources:
+        volume:
+        network:
+---
+apiVersion: v1
+kind: Model
+metadata:
+  name: face-detection
+  annotations:
+    io.piccolo.annotations.package-type: fd
+    io.piccolo.annotations.package-name: fd
+    io.piccolo.annotations.package-network: default
+  labels:
+    app: face-detection
+spec:
+  hostNetwork: true
+  containers:
+    - name: face-detection
+      image: docker.io/library/alpine:latest
+      command: ["sleep", "infinity"]
+  terminationGracePeriodSeconds: 0
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Model
+metadata:
+  name: face-recognition
+  annotations:
+    io.piccolo.annotations.package-type: fr
+    io.piccolo.annotations.package-name: fr
+    io.piccolo.annotations.package-network: default
+  labels:
+    app: face-recognition
+spec:
+  hostNetwork: true
+  containers:
+    - name: face-recognition
+      image: docker.io/library/alpine:latest
+      command: ["sleep", "infinity"]
+  terminationGracePeriodSeconds: 0
+  restartPolicy: Always
