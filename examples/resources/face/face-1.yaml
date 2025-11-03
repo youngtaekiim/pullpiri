@@ -16,12 +16,12 @@ spec:
   pattern:
     - type: plain
   models:
-    - name: face-detection
+    - name: face
       node: HPC
       resources:
         volume:
         network:
-    - name: face-recognition
+    - name: facial
       node: qm.host
       resources:
         volume:
@@ -30,17 +30,17 @@ spec:
 apiVersion: v1
 kind: Model
 metadata:
-  name: face-detection
+  name: face
   annotations:
     io.piccolo.annotations.package-type: fd
     io.piccolo.annotations.package-name: fd
     io.piccolo.annotations.package-network: default
   labels:
-    app: face-detection
+    app: face
 spec:
   hostNetwork: true
   containers:
-    - name: face-detection
+    - name: detection
       image: docker.io/library/alpine:latest
       command: ["sleep", "infinity"]
   terminationGracePeriodSeconds: 0
@@ -49,17 +49,17 @@ spec:
 apiVersion: v1
 kind: Model
 metadata:
-  name: face-recognition
+  name: facial
   annotations:
     io.piccolo.annotations.package-type: fr
     io.piccolo.annotations.package-name: fr
     io.piccolo.annotations.package-network: default
   labels:
-    app: face-recognition
+    app: facial
 spec:
   hostNetwork: true
   containers:
-    - name: face-recognition
+    - name: recognition
       image: docker.io/library/alpine:latest
       command: ["sleep", "infinity"]
   terminationGracePeriodSeconds: 0

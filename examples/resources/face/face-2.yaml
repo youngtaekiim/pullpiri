@@ -16,17 +16,17 @@ spec:
   pattern:
     - type: plain
   models:
-    - name: face-detection
+    - name: face
       node: HPC
       resources:
         volume:
         network:
-    - name: face-recognition
+    - name: facial
       node: cloud
       resources:
         volume:
         network:
-    - name: object-detection
+    - name: object
       node: HPC
       resources:
         volume:
@@ -35,17 +35,17 @@ spec:
 apiVersion: v1
 kind: Model
 metadata:
-  name: face-detection
+  name: face
   annotations:
     io.piccolo.annotations.package-type: fd
     io.piccolo.annotations.package-name: fd
     io.piccolo.annotations.package-network: default
   labels:
-    app: face-detection
+    app: face
 spec:
   hostNetwork: true
   containers:
-    - name: face-detection
+    - name: detection
       image: docker.io/library/alpine:latest
       command: ["sleep", "infinity"]
   terminationGracePeriodSeconds: 0
@@ -54,17 +54,17 @@ spec:
 apiVersion: v1
 kind: Model
 metadata:
-  name: face-recognition
+  name: facial
   annotations:
     io.piccolo.annotations.package-type: fr
     io.piccolo.annotations.package-name: fr
     io.piccolo.annotations.package-network: default
   labels:
-    app: face-recognition
+    app: facial
 spec:
   hostNetwork: true
   containers:
-    - name: face-recognition
+    - name: recognition
       image: docker.io/library/alpine:latest
       command: ["sleep", "infinity"]
   terminationGracePeriodSeconds: 0
@@ -73,25 +73,25 @@ spec:
 apiVersion: v1
 kind: Model
 metadata:
-  name: object-detection
+  name: object
   annotations:
     io.piccolo.annotations.package-type: od
     io.piccolo.annotations.package-name: od
     io.piccolo.annotations.package-network: default
   labels:
-    app: object-detection
+    app: object
 spec:
   hostNetwork: true
   hostIPC: true
   containers:
-    - name: od-apex
+    - name: apex
       image: sdv.lge.com/demo/sdv_apex_system_manager:1.0-jammy-arm64
       volumeMounts:
         - name: tmp-volume
           mountPath: /tmp
         - name: timpani-volume
           mountPath: /var/run/timpani
-    - name: od-perception
+    - name: perception
       image: sdv.lge.com/demo/perception_task:1.0-jammy-arm64
       volumeMounts:
         - name: tmp-volume

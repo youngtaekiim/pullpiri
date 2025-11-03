@@ -1,22 +1,22 @@
 apiVersion: v1
 kind: Scenario
 metadata:
-  name: face-2-stop
+  name: face-2-pre
 spec:
   condition: null
   action: terminate
-  target: face-2-stop
+  target: face-2-pre
 ---
 apiVersion: v1
 kind: Package
 metadata:
   label: null
-  name: face-2-stop
+  name: face-2-pre
 spec:
   pattern:
     - type: plain
   models:
-    - name: face-recognition
+    - name: facial
       node: qm.host
       resources:
         volume:
@@ -25,17 +25,17 @@ spec:
 apiVersion: v1
 kind: Model
 metadata:
-  name: face-recognition
+  name: facial
   annotations:
     io.piccolo.annotations.package-type: fr
     io.piccolo.annotations.package-name: fr
     io.piccolo.annotations.package-network: default
   labels:
-    app: face-recognition
+    app: facial
 spec:
   hostNetwork: true
   containers:
-    - name: face-recognition
+    - name: recognition
       image: docker.io/library/alpine:latest
       command: ["sleep", "infinity"]
   terminationGracePeriodSeconds: 0
