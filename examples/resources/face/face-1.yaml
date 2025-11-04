@@ -16,12 +16,7 @@ spec:
   pattern:
     - type: plain
   models:
-    - name: face
-      node: HPC
-      resources:
-        volume:
-        network:
-    - name: facial
+    - name: Battery
       node: qm.host
       resources:
         volume:
@@ -30,37 +25,17 @@ spec:
 apiVersion: v1
 kind: Model
 metadata:
-  name: face
-  annotations:
-    io.piccolo.annotations.package-type: fd
-    io.piccolo.annotations.package-name: fd
-    io.piccolo.annotations.package-network: default
-  labels:
-    app: face
-spec:
-  hostNetwork: true
-  containers:
-    - name: detection
-      image: docker.io/library/alpine:latest
-      command: ["sleep", "infinity"]
-  terminationGracePeriodSeconds: 0
-  restartPolicy: Always
----
-apiVersion: v1
-kind: Model
-metadata:
-  name: facial
+  name: Battery
   annotations:
     io.piccolo.annotations.package-type: fr
     io.piccolo.annotations.package-name: fr
     io.piccolo.annotations.package-network: default
   labels:
-    app: facial
+    app: Battery
 spec:
   hostNetwork: true
   containers:
-    - name: recognition
-      image: docker.io/library/alpine:latest
-      command: ["sleep", "infinity"]
+    - name: Monitor
+      image: localhost/bms-sender:1.0
   terminationGracePeriodSeconds: 0
   restartPolicy: Always
