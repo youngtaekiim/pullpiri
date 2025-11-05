@@ -53,7 +53,8 @@
     "recharts": "^3.1.2",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "vite-plugin-svgr": "^4.5.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
@@ -71,6 +72,6 @@
     "ts-node": "^10.9.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2"
+    "vite": "^6.3.5"
   }
 }

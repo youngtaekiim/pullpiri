@@ -37,7 +37,7 @@ pub struct PodSpec {
     initContainers: Option<Vec<Container>>,
     restartPolicy: Option<String>,
     terminationGracePeriodSeconds: Option<i32>,
-    hostIpc: Option<bool>,
+    hostIPC: Option<bool>,
     runtimeClassName: Option<String>,
 }
 

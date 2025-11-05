@@ -13,13 +13,18 @@ spec:
   hostPid: true
   containers:
   - name: filtergateway
-    image: localhost/pullpiri:latest
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/filtergateway"]
     environment:
     - name: ROCKSDB_SERVICE_URL
       value: "http://localhost:50051"
+    volumeMounts:
+    - name: piccolo-yaml
+      mountPath: /root/piccolo_yaml
+    - name: config-path
+      mountPath: /etc/piccolo/settings.yaml
   - name: actioncontroller
-    image: localhost/pullpiri:latest
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/actioncontroller"]
     volumeMounts:
     - name: piccolo-yaml
@@ -34,7 +39,7 @@ spec:
     - name: ROCKSDB_SERVICE_URL
       value: "http://localhost:50051"
   - name: statemanager
-    image: localhost/pullpiri:latest
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/statemanager"]
     volumeMounts:
     - name: piccolo-yaml

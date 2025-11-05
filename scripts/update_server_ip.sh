@@ -4,6 +4,7 @@
 # 입력 및 출력 파일 경로
 SETTINGS_YAML="/etc/containers/systemd/piccolo/settings.yaml"
 SERVER_YAML="/etc/containers/systemd/piccolo/piccolo-server.yaml"
+PLAYER_YAML="/etc/containers/systemd/piccolo/piccolo-player.yaml"
 
 # settings.yaml에서 IP 주소 추출
 HOST_IP=$(grep -A 3 "host:" $SETTINGS_YAML | grep "ip:" | sed -e "s/^[ ]*ip:[ ]*//" -e "s/[ ]*$//")
@@ -19,4 +20,17 @@ fi
 sed -i "s/\\\$(HOST_IP)/${HOST_IP}/g" $SERVER_YAML
 
 echo "Successfully replaced \$(HOST_IP) with $HOST_IP in $SERVER_YAML"
+
+#
+# Get version info and update container image version and nodeagent in release note
+#
+VERSION_TXT="/etc/containers/systemd/piccolo/version.txt"
+VERSION=$(cat $VERSION_TXT)
+echo "Version is: $VERSION"
+
+sed -i "s/\\\$(VERSION)/${VERSION}/g" $SERVER_YAML
+sed -i "s/\\\$(VERSION)/${VERSION}/g" $PLAYER_YAML
+
+echo "Successfully replaced \$(VERSION) with $VERSION in $SERVER_YAML"
+echo "Successfully replaced \$(VERSION) with $VERSION in $PLAYER_YAML"
 exit 0

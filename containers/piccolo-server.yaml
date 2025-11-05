@@ -26,8 +26,7 @@ spec:
       runAsUser: 0
       runAsGroup: 0
   - name: apiserver
-    image: pullpiri:latest
-    imagePullPolicy: Never
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/apiserver"]
     volumeMounts:
     - name: piccolo-yaml
@@ -38,23 +37,25 @@ spec:
     - name: ROCKSDB_SERVICE_URL
       value: "http://localhost:50051"
   - name: policymanager
-    image: pullpiri:latest
-    imagePullPolicy: Never
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/policymanager"]
     environment:
     - name: ROCKSDB_SERVICE_URL
       value: "http://localhost:50051"
   - name: monitoringserver
-    image: pullpiri:latest
-    imagePullPolicy: Never
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/monitoringserver"]
     environment:
     - name: ROCKSDB_SERVICE_URL
       value: "http://localhost:50051"
+    volumeMounts:
+    - name: piccolo-yaml
+      mountPath: /etc/piccolo/yaml
+    - name: config-path
+      mountPath: /etc/piccolo/settings.yaml
   - name: settingsservice
-    image: pullpiri:latest
-    imagePullPolicy: Never
-    command: ["/piccolo/settingsservice", "--bind-address=0.0.0.0", "--bind-port=8080", "--log-level=info"]
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
+    command: ["/piccolo/settingsservice", "--bind-address=$(HOST_IP)", "--bind-port=8080", "--log-level=debug"]
     volumeMounts:
     - name: piccolo-yaml
       mountPath: /etc/piccolo/yaml
