@@ -1815,6 +1815,8 @@ mod tests {
             filter_id: Some("filter1".to_string()),
             page: Some(1),
             page_size: Some(10),
+            process_name: None,
+            pid: None,
         };
 
         assert_eq!(query.component.as_ref().unwrap(), "cpu");
@@ -1897,6 +1899,8 @@ mod tests {
             filter_id: Some("f".repeat(500)), // Long filter ID
             page: Some(u32::MAX),
             page_size: Some(u32::MAX),
+            process_name: Some("a".repeat(1000)),
+            pid: Some(i64::MAX),
         };
 
         assert_eq!(query.component.as_ref().unwrap().len(), 1000);
@@ -2058,6 +2062,8 @@ mod tests {
             filter_id: Some("filter1".to_string()),
             page: Some(1),
             page_size: Some(10),
+            process_name: None,
+            pid: None,
         };
         let debug_str = format!("{:?}", metrics_query);
         assert!(debug_str.contains("MetricsQuery"));
@@ -2613,6 +2619,8 @@ mod tests {
             filter_id: Some("non-existent-filter".to_string()),
             page: None,
             page_size: None,
+            process_name: None,
+            pid: None,
         };
 
         // Call the handler directly
@@ -2635,6 +2643,8 @@ mod tests {
             filter_id: None,
             page: Some(1),
             page_size: Some(10),
+            process_name: None,
+            pid: None,
         };
 
         // Call the handler directly

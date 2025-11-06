@@ -4,7 +4,7 @@ use crate::grpc::sender::statemanager::StateManagerSender;
 use crate::{grpc::sender::pharos::request_network_pod, runtime::bluechi};
 use common::{
     actioncontroller::PodStatus as Status,
-    spec::artifact::{Package, Scenario},
+    spec::artifact::{Model, Package, Scenario},
     statemanager::{ResourceType, StateChange},
     Result,
 };
@@ -276,7 +276,20 @@ impl ActionControllerManager {
 
                     // If pod need realtime feature, send sched info to timpani
                     if mi.get_resources().get_realtime().unwrap_or(false) {
-                        crate::grpc::sender::timpani::add_sched_info().await;
+                        let model_str =
+                            common::etcd::get(&format!("Model/{}", &mi.get_name())).await?;
+                        let model: Model = serde_yaml::from_str(&model_str)?;
+
+                        if let Some(command) = model.get_podspec().containers[0].command.clone() {
+                            if let Some(task_name) = command.last() {
+                                crate::grpc::sender::timpani::add_sched_info(
+                                    mi.get_name(),
+                                    task_name,
+                                    &model_node,
+                                )
+                                .await;
+                            }
+                        }
                     }
                 }
                 _ => {

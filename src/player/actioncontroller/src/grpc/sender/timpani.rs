@@ -9,16 +9,16 @@ use common::external::{
     SchedPolicy, TaskInfo,
 };
 
-pub async fn add_sched_info() {
+pub async fn add_sched_info(workload_id: String, task_name: &str, node_id: &str) {
     println!("Connecting to Timpani server ....");
     let mut client = SchedInfoServiceClient::connect(connect_timpani_server())
         .await
         .unwrap();
 
     let request = SchedInfo {
-        workload_id: String::from("timpani_test"),
+        workload_id: workload_id,
         tasks: vec![TaskInfo {
-            name: String::from("container_task"),
+            name: task_name.to_string(),
             priority: 50,
             policy: SchedPolicy::Fifo as i32,
             cpu_affinity: 7,
@@ -26,7 +26,7 @@ pub async fn add_sched_info() {
             release_time: 0,
             runtime: 5000,   // 5 miliseconds
             deadline: 10000, // 10 miliseconds
-            node_id: String::from("HPC"),
+            node_id: node_id.to_string(),
             max_dmiss: 3,
         }],
     };
