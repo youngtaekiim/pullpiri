@@ -4,9 +4,8 @@
  */
 
 use crate::rocksdbservice::{
-    rocks_db_service_client::RocksDbServiceClient,
-    PutRequest, GetRequest, DeleteRequest, BatchPutRequest, GetByPrefixRequest,
-    KeyValue, HealthRequest
+    rocks_db_service_client::RocksDbServiceClient, BatchPutRequest, DeleteRequest,
+    GetByPrefixRequest, GetRequest, HealthRequest, KeyValue, PutRequest,
 };
 
 lazy_static::lazy_static! {
@@ -18,15 +17,18 @@ lazy_static::lazy_static! {
 
 /// Put a key-value pair into the gRPC RocksDB service
 pub async fn put(key: &str, value: &str) -> Result<(), String> {
-    println!("[ETCD->RocksDB-gRPC] Putting key '{}' to service: {}", key, *ROCKSDB_SERVICE_URL);
-    
+    println!(
+        "[ETCD->RocksDB-gRPC] Putting key '{}' to service: {}",
+        key, *ROCKSDB_SERVICE_URL
+    );
+
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
             let request = tonic::Request::new(PutRequest {
                 key: key.to_string(),
                 value: value.to_string(),
             });
-            
+
             match client.put(request).await {
                 Ok(response) => {
                     let put_response = response.into_inner();
@@ -56,14 +58,17 @@ pub async fn put(key: &str, value: &str) -> Result<(), String> {
 
 /// Get a value by key from the gRPC RocksDB service
 pub async fn get(key: &str) -> Result<String, String> {
-    println!("[ETCD->RocksDB-gRPC] Getting key '{}' from service: {}", key, *ROCKSDB_SERVICE_URL);
-    
+    println!(
+        "[ETCD->RocksDB-gRPC] Getting key '{}' from service: {}",
+        key, *ROCKSDB_SERVICE_URL
+    );
+
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
             let request = tonic::Request::new(GetRequest {
                 key: key.to_string(),
             });
-            
+
             match client.get(request).await {
                 Ok(response) => {
                     let get_response = response.into_inner();
@@ -92,27 +97,38 @@ pub async fn get(key: &str) -> Result<String, String> {
 
 /// Get all key-value pairs with the specified prefix using gRPC RocksDB service
 pub async fn get_all_with_prefix(prefix: &str) -> Result<Vec<(String, String)>, String> {
-    println!("[ETCD->RocksDB-gRPC] Getting all keys with prefix '{}' from service: {}", prefix, *ROCKSDB_SERVICE_URL);
-    
+    println!(
+        "[ETCD->RocksDB-gRPC] Getting all keys with prefix '{}' from service: {}",
+        prefix, *ROCKSDB_SERVICE_URL
+    );
+
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
             let request = tonic::Request::new(GetByPrefixRequest {
                 prefix: prefix.to_string(),
                 limit: 0, // 0 means no limit
             });
-            
+
             match client.get_by_prefix(request).await {
                 Ok(response) => {
                     let get_response = response.into_inner();
                     if get_response.error.is_empty() {
-                        let result: Vec<(String, String)> = get_response.pairs
+                        let result: Vec<(String, String)> = get_response
+                            .pairs
                             .into_iter()
                             .map(|kv| (kv.key, kv.value))
                             .collect();
-                        println!("[ETCD->RocksDB-gRPC] Successfully retrieved {} keys with prefix '{}'", result.len(), prefix);
+                        println!(
+                            "[ETCD->RocksDB-gRPC] Successfully retrieved {} keys with prefix '{}'",
+                            result.len(),
+                            prefix
+                        );
                         Ok(result)
                     } else {
-                        println!("[ETCD->RocksDB-gRPC] Error from service: {}", get_response.error);
+                        println!(
+                            "[ETCD->RocksDB-gRPC] Error from service: {}",
+                            get_response.error
+                        );
                         Err(get_response.error)
                     }
                 }
@@ -133,14 +149,17 @@ pub async fn get_all_with_prefix(prefix: &str) -> Result<Vec<(String, String)>, 
 
 /// Delete a key from the gRPC RocksDB service
 pub async fn delete(key: &str) -> Result<(), String> {
-    println!("[ETCD->RocksDB-gRPC] Deleting key '{}' from service: {}", key, *ROCKSDB_SERVICE_URL);
-    
+    println!(
+        "[ETCD->RocksDB-gRPC] Deleting key '{}' from service: {}",
+        key, *ROCKSDB_SERVICE_URL
+    );
+
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
             let request = tonic::Request::new(DeleteRequest {
                 key: key.to_string(),
             });
-            
+
             match client.delete(request).await {
                 Ok(response) => {
                     let delete_response = response.into_inner();
@@ -170,27 +189,29 @@ pub async fn delete(key: &str) -> Result<(), String> {
 
 /// Batch put operation to store multiple key-value pairs using gRPC RocksDB service
 pub async fn batch_put(items: Vec<(String, String)>) -> Result<(), String> {
-    println!("[ETCD->RocksDB-gRPC] Batch putting {} items to service: {}", items.len(), *ROCKSDB_SERVICE_URL);
-    
+    println!(
+        "[ETCD->RocksDB-gRPC] Batch putting {} items to service: {}",
+        items.len(),
+        *ROCKSDB_SERVICE_URL
+    );
+
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
             let pairs: Vec<KeyValue> = items
                 .into_iter()
-                .map(|(key, value)| KeyValue {
-                    key,
-                    value,
-                })
+                .map(|(key, value)| KeyValue { key, value })
                 .collect();
-            
-            let request = tonic::Request::new(BatchPutRequest {
-                pairs,
-            });
-            
+
+            let request = tonic::Request::new(BatchPutRequest { pairs });
+
             match client.batch_put(request).await {
                 Ok(response) => {
                     let batch_response = response.into_inner();
                     if batch_response.success {
-                        println!("[ETCD->RocksDB-gRPC] Successfully stored {} items in batch", batch_response.processed_count);
+                        println!(
+                            "[ETCD->RocksDB-gRPC] Successfully stored {} items in batch",
+                            batch_response.processed_count
+                        );
                         Ok(())
                     } else {
                         let error_msg = batch_response.error;
@@ -215,17 +236,23 @@ pub async fn batch_put(items: Vec<(String, String)>) -> Result<(), String> {
 
 /// Health check for the gRPC RocksDB service
 pub async fn health_check() -> Result<bool, String> {
-    println!("[ETCD->RocksDB-gRPC] Health check for service: {}", *ROCKSDB_SERVICE_URL);
-    
+    println!(
+        "[ETCD->RocksDB-gRPC] Health check for service: {}",
+        *ROCKSDB_SERVICE_URL
+    );
+
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
             let request = tonic::Request::new(HealthRequest {});
-            
+
             match client.health(request).await {
                 Ok(response) => {
                     let health_response = response.into_inner();
                     let is_healthy = health_response.status == "healthy";
-                    println!("[ETCD->RocksDB-gRPC] Health check result: {}", health_response.status);
+                    println!(
+                        "[ETCD->RocksDB-gRPC] Health check result: {}",
+                        health_response.status
+                    );
                     Ok(is_healthy)
                 }
                 Err(e) => {

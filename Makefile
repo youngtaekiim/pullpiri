@@ -26,13 +26,6 @@ clean:
 image:
 	podman build -t localhost/pullpiri:latest -f containers/Dockerfile .
 
-.PHONY: rocksdb-image
-rocksdb-image:
-	podman build -t localhost/pullpiri-rocksdb:latest -f src/server/rocksdbservice/Dockerfile .
-
-.PHONY: all-images
-all-images: image rocksdb-image
-
 # command for DEVELOPMENT ONLY
 .PHONY: builder
 builder:
@@ -55,6 +48,13 @@ devimage:
 #	docker run --privileged --rm tonistiigi/binfmt --install all
 #	docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/eclipse-pullpiri/pullpiribuilder:latest -f containers/builder/Dockerfile-pullpiribuilder .
 #	docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/eclipse-pullpiri/pullpirirelease:latest -f containers/builder/Dockerfile-pullpirirelease .
+
+# DO NOT USE THIS COMMAND IN PRODUCTION
+#.PHONY: rocksdb-image
+#rocksdb-image:
+#	docker buildx create --name container-builder --driver docker-container --bootstrap --use
+#	docker run --privileged --rm tonistiigi/binfmt --install all
+#	docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/mco-piccolo/pullpiri-rocksdb:0.1 -f src/server/rocksdbservice/Dockerfile .
 
 #.PHONY: pre
 #pre:

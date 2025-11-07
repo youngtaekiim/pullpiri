@@ -108,11 +108,11 @@ spec:
 - **파일**: `src/server/apiserver/src/artifact/data.rs` (40라인~)
 - **호출 체인**: 
   ```
-  write_to_etcd() → common::etcd::put() → gRPC 클라이언트
+  write_to_etcd() → common::rocksdb::put() → gRPC 클라이언트
   ```
 
 #### **B. gRPC 클라이언트 레이어**  
-- **컴포넌트**: `common::etcd::put()`
+- **컴포넌트**: `common::rocksdb::put()`
 - **파일**: `src/common/src/etcd.rs` (20라인~)
 - **서비스 URL**: `http://localhost:50051` (환경변수 ROCKSDB_SERVICE_URL)
 - **전송 데이터 구조**:
@@ -197,7 +197,7 @@ graph TD
     C --> D[Manager - apply_artifact]
     D --> E[Artifact Parser - YAML Split]
     E --> F[Data Writer - write_to_etcd]
-    F --> G[ETCD Interface - common::etcd::put]
+    F --> G[ETCD Interface - common::rocksdb::put]
     G --> H[gRPC Client - RocksDbServiceClient]
     H --> I[RocksDB Service - put method]
     I --> J[Data Validation]

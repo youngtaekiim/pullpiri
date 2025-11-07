@@ -9,6 +9,6 @@ members = [
     "ppr",
     "idl2rs",
     "yamlvalidator",
-    "rocksdb-inspector"
+    "rocksdb-inspector",
     "settingscli"
 ]

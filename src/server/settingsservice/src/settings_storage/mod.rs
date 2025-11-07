@@ -60,9 +60,7 @@ impl EtcdClient {
             .await
             .map_err(|e| StorageError::OperationFailed(format!("List operation failed: {}", e)))?;
 
-        let results: Vec<(String, String)> = kvs.into_iter()
-            .map(|kv| (kv.0, kv.1))
-            .collect();
+        let results: Vec<(String, String)> = kvs.into_iter().map(|kv| (kv.0, kv.1)).collect();
 
         Ok(results)
     }

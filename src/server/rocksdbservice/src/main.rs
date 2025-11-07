@@ -4,18 +4,18 @@
  */
 
 use clap::Parser;
-use rocksdb::{DB, IteratorMode, Options, WriteBatch};
+use rocksdb::{IteratorMode, Options, WriteBatch, DB};
 use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 use tonic::{transport::Server, Request, Response, Status};
-use tracing::{info, error};
+use tracing::{error, info};
 
 // Import protobuf definitions
 use common::rocksdbservice::{
     rocks_db_service_server::{RocksDbService, RocksDbServiceServer},
-    BatchPutRequest, DeleteRequest, GetRequest, HealthRequest, HealthResponse,
-    PutRequest, PutResponse, GetResponse, DeleteResponse, BatchPutResponse,
-    GetByPrefixRequest, GetByPrefixResponse, KeyValue, ListKeysRequest, ListKeysResponse
+    BatchPutRequest, BatchPutResponse, DeleteRequest, DeleteResponse, GetByPrefixRequest,
+    GetByPrefixResponse, GetRequest, GetResponse, HealthRequest, HealthResponse, KeyValue,
+    ListKeysRequest, ListKeysResponse, PutRequest, PutResponse,
 };
 
 // Global RocksDB instance
@@ -28,11 +28,11 @@ struct Args {
     /// RocksDB data path
     #[arg(short, long, default_value = "/tmp/pullpiri_rocksdb")]
     path: String,
-    
+
     /// Service port
     #[arg(short = 'P', long, default_value = "50051")]
     port: u16,
-    
+
     /// Bind address
     #[arg(short, long, default_value = "0.0.0.0")]
     addr: String,
@@ -41,34 +41,36 @@ struct Args {
 // Initialize RocksDB
 fn init_db(path: &str) -> anyhow::Result<()> {
     info!("Initializing RocksDB at path: '{}'", path);
-    
+
     let mut opts = Options::default();
     opts.create_if_missing(true);
-    
+
     // Performance optimizations
-    opts.set_max_background_jobs(6);                    // 백그라운드 작업 증가
-    opts.set_write_buffer_size(128 * 1024 * 1024);     // 128MB 버퍼
-    opts.set_max_write_buffer_number(4);               // 버퍼 개수
+    opts.set_max_background_jobs(6); // 백그라운드 작업 증가
+    opts.set_write_buffer_size(128 * 1024 * 1024); // 128MB 버퍼
+    opts.set_max_write_buffer_number(4); // 버퍼 개수
     opts.set_target_file_size_base(128 * 1024 * 1024); // SST 파일 크기
-    opts.increase_parallelism(6);                       // CPU 병렬 처리
-    
+    opts.increase_parallelism(6); // CPU 병렬 처리
+
     // Compression
     opts.set_compression_type(rocksdb::DBCompressionType::Lz4);
-    
+
     info!("Opening RocksDB with optimized settings...");
-    
+
     let db = DB::open(&opts, path)?;
-    
-    DB_INSTANCE.set(Arc::new(Mutex::new(db)))
+
+    DB_INSTANCE
+        .set(Arc::new(Mutex::new(db)))
         .map_err(|_| anyhow::anyhow!("RocksDB already initialized"))?;
-    
+
     info!("RocksDB successfully initialized at path: '{}'", path);
     Ok(())
 }
 
 // Get DB instance safely
 fn get_db() -> Result<Arc<Mutex<DB>>, Status> {
-    DB_INSTANCE.get()
+    DB_INSTANCE
+        .get()
         .ok_or_else(|| Status::unavailable("RocksDB not initialized"))
         .map(|db| db.clone())
 }
@@ -83,16 +85,14 @@ impl RocksDbService for RocksDbServiceImpl {
         _request: Request<HealthRequest>,
     ) -> Result<Response<HealthResponse>, Status> {
         let db_initialized = DB_INSTANCE.get().is_some();
-        
+
         let status = if db_initialized {
             // Try a simple read operation
             match get_db() {
-                Ok(db) => {
-                    match db.try_lock() {
-                        Ok(_) => "healthy".to_string(),
-                        Err(_) => "busy".to_string(),
-                    }
-                }
+                Ok(db) => match db.try_lock() {
+                    Ok(_) => "healthy".to_string(),
+                    Err(_) => "busy".to_string(),
+                },
                 Err(_) => "error".to_string(),
             }
         } else {
@@ -108,28 +108,29 @@ impl RocksDbService for RocksDbServiceImpl {
         Ok(Response::new(response))
     }
 
-    async fn put(
-        &self,
-        request: Request<PutRequest>,
-    ) -> Result<Response<PutResponse>, Status> {
+    async fn put(&self, request: Request<PutRequest>) -> Result<Response<PutResponse>, Status> {
         let req = request.into_inner();
-        
+
         // Validate key
         if req.key.is_empty() {
             return Err(Status::invalid_argument("Key cannot be empty"));
         }
 
         if req.key.len() > 1024 {
-            return Err(Status::invalid_argument("Key exceeds maximum allowed length of 1024 characters"));
+            return Err(Status::invalid_argument(
+                "Key exceeds maximum allowed length of 1024 characters",
+            ));
         }
 
         if req.key.contains(['<', '>', '?', '{', '}']) {
-            return Err(Status::invalid_argument("Key contains invalid special characters"));
+            return Err(Status::invalid_argument(
+                "Key contains invalid special characters",
+            ));
         }
 
         let db = get_db()?;
         let db_lock = db.lock().await;
-        
+
         match db_lock.put(req.key.as_bytes(), req.value.as_bytes()) {
             Ok(()) => {
                 info!("Successfully stored key: '{}'", req.key);
@@ -145,36 +146,31 @@ impl RocksDbService for RocksDbServiceImpl {
         }
     }
 
-    async fn get(
-        &self,
-        request: Request<GetRequest>,
-    ) -> Result<Response<GetResponse>, Status> {
+    async fn get(&self, request: Request<GetRequest>) -> Result<Response<GetResponse>, Status> {
         let req = request.into_inner();
-        
+
         if req.key.is_empty() {
             return Err(Status::invalid_argument("Key cannot be empty"));
         }
 
         let db = get_db()?;
         let db_lock = db.lock().await;
-        
+
         match db_lock.get(req.key.as_bytes()) {
-            Ok(Some(value)) => {
-                match String::from_utf8(value) {
-                    Ok(value_str) => {
-                        info!("Successfully retrieved key: '{}'", req.key);
-                        Ok(Response::new(GetResponse {
-                            success: true,
-                            value: value_str,
-                            message: "Key found".to_string(),
-                        }))
-                    }
-                    Err(e) => {
-                        error!("UTF-8 conversion error for key '{}': {}", req.key, e);
-                        Err(Status::internal(format!("UTF-8 conversion error: {}", e)))
-                    }
+            Ok(Some(value)) => match String::from_utf8(value) {
+                Ok(value_str) => {
+                    info!("Successfully retrieved key: '{}'", req.key);
+                    Ok(Response::new(GetResponse {
+                        success: true,
+                        value: value_str,
+                        message: "Key found".to_string(),
+                    }))
                 }
-            }
+                Err(e) => {
+                    error!("UTF-8 conversion error for key '{}': {}", req.key, e);
+                    Err(Status::internal(format!("UTF-8 conversion error: {}", e)))
+                }
+            },
             Ok(None) => {
                 info!("Key not found: '{}'", req.key);
                 Ok(Response::new(GetResponse {
@@ -195,14 +191,14 @@ impl RocksDbService for RocksDbServiceImpl {
         request: Request<DeleteRequest>,
     ) -> Result<Response<DeleteResponse>, Status> {
         let req = request.into_inner();
-        
+
         if req.key.is_empty() {
             return Err(Status::invalid_argument("Key cannot be empty"));
         }
 
         let db = get_db()?;
         let db_lock = db.lock().await;
-        
+
         match db_lock.delete(req.key.as_bytes()) {
             Ok(()) => {
                 info!("Successfully deleted key: '{}'", req.key);
@@ -223,7 +219,7 @@ impl RocksDbService for RocksDbServiceImpl {
         request: Request<BatchPutRequest>,
     ) -> Result<Response<BatchPutResponse>, Status> {
         let req = request.into_inner();
-        
+
         if req.pairs.is_empty() {
             return Ok(Response::new(BatchPutResponse {
                 success: true,
@@ -234,19 +230,25 @@ impl RocksDbService for RocksDbServiceImpl {
 
         // Validate all keys first
         for item in &req.pairs {
-            if item.key.is_empty() || item.key.len() > 1024 || item.key.contains(['<', '>', '?', '{', '}']) {
-                return Err(Status::invalid_argument(format!("Invalid key: {}", item.key)));
+            if item.key.is_empty()
+                || item.key.len() > 1024
+                || item.key.contains(['<', '>', '?', '{', '}'])
+            {
+                return Err(Status::invalid_argument(format!(
+                    "Invalid key: {}",
+                    item.key
+                )));
             }
         }
 
         let db = get_db()?;
         let db_lock = db.lock().await;
         let mut batch = WriteBatch::default();
-        
+
         for item in &req.pairs {
             batch.put(item.key.as_bytes(), item.value.as_bytes());
         }
-        
+
         match db_lock.write(batch) {
             Ok(()) => {
                 info!("Successfully stored {} items in batch", req.pairs.len());
@@ -258,7 +260,10 @@ impl RocksDbService for RocksDbServiceImpl {
             }
             Err(e) => {
                 error!("Batch write failed: {}", e);
-                Err(Status::internal(format!("RocksDB batch write error: {}", e)))
+                Err(Status::internal(format!(
+                    "RocksDB batch write error: {}",
+                    e
+                )))
             }
         }
     }
@@ -268,7 +273,7 @@ impl RocksDbService for RocksDbServiceImpl {
         request: Request<GetByPrefixRequest>,
     ) -> Result<Response<GetByPrefixResponse>, Status> {
         let req = request.into_inner();
-        
+
         if req.prefix.is_empty() {
             return Err(Status::invalid_argument("Prefix cannot be empty"));
         }
@@ -277,11 +282,14 @@ impl RocksDbService for RocksDbServiceImpl {
         let db_lock = db.lock().await;
         let mut results = Vec::new();
         let iter = db_lock.iterator(IteratorMode::Start);
-        
+
         for item in iter {
             match item {
                 Ok((key_bytes, value_bytes)) => {
-                    match (String::from_utf8(key_bytes.to_vec()), String::from_utf8(value_bytes.to_vec())) {
+                    match (
+                        String::from_utf8(key_bytes.to_vec()),
+                        String::from_utf8(value_bytes.to_vec()),
+                    ) {
                         (Ok(key), Ok(value)) => {
                             if key.starts_with(&req.prefix) {
                                 results.push(KeyValue { key, value });
@@ -293,7 +301,7 @@ impl RocksDbService for RocksDbServiceImpl {
                 Err(_) => continue, // Skip errors
             }
         }
-        
+
         let count = results.len() as i32;
         info!("Found {} keys with prefix '{}'", count, req.prefix);
         Ok(Response::new(GetByPrefixResponse {
@@ -308,20 +316,24 @@ impl RocksDbService for RocksDbServiceImpl {
         request: Request<ListKeysRequest>,
     ) -> Result<Response<ListKeysResponse>, Status> {
         let req = request.into_inner();
-        
+
         let db = get_db()?;
         let db_lock = db.lock().await;
         let mut keys = Vec::new();
         let iter = db_lock.iterator(IteratorMode::Start);
-        
+
         let mut count = 0;
-        let limit = if req.limit > 0 { req.limit as usize } else { usize::MAX };
-        
+        let limit = if req.limit > 0 {
+            req.limit as usize
+        } else {
+            usize::MAX
+        };
+
         for item in iter {
             if count >= limit {
                 break;
             }
-            
+
             match item {
                 Ok((key_bytes, _)) => {
                     if let Ok(key) = String::from_utf8(key_bytes.to_vec()) {
@@ -334,7 +346,7 @@ impl RocksDbService for RocksDbServiceImpl {
                 Err(_) => continue,
             }
         }
-        
+
         let count = keys.len() as i32;
         info!("Listed {} keys with prefix '{}'", count, req.prefix);
         Ok(Response::new(ListKeysResponse {

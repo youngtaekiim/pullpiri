@@ -21,16 +21,16 @@ tower-http = { version = "0.6.1", features = ["cors", "trace"] }
 
 # Serialization
 serde = { version = "1.0.214", features = ["derive"] }
-serde_json = "1.0"
+serde_json = "1.0.143"
 serde_yaml = "0.9"
 
 # Validation
 jsonschema = "0.18"
 
-# Data storage (now handled by common::etcd which uses RocksDB)
+# Data storage (now handled by common::rocksdb which uses RocksDB)
 
 # CLI
-clap = { version = "4.0", features = ["derive", "env"] }
+clap = { version = "4.5.47", features = ["derive", "env"] }
 rustyline = "14.0"
 
 # Logging and errors
