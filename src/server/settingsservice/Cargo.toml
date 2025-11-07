@@ -27,8 +27,7 @@ serde_yaml = "0.9"
 # Validation
 jsonschema = "0.18"
 
-# Data storage
-etcd-client = "0.14"
+# Data storage (now handled by common::etcd which uses RocksDB)
 
 # CLI
 clap = { version = "4.0", features = ["derive", "env"] }

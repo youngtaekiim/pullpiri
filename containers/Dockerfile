@@ -19,7 +19,8 @@ COPY ./src/player/ /piccolo/player
 
 # Install build dependencies
 RUN apt update -y && \
-    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev
+    apt install -y libdbus-1-dev pkg-config protobuf-compiler libssl-dev \
+    clang libclang-dev llvm-dev build-essential cmake
 
 # Build server binaries
 WORKDIR /piccolo/server
@@ -49,7 +50,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     for lib in \
         libc.so.6 libcap.so.2 libdbus-1.so.3 libgcc_s.so.1 \
         libgcrypt.so.20 libgpg-error.so.0 liblzma.so.5 \
-        liblz4.so.1 libm.so.6 libsystemd.so.0 libzstd.so.1; do \
+        liblz4.so.1 libm.so.6 libsystemd.so.0 libzstd.so.1 \
+        libstdc++.so.6; do \
         cp -v /lib/${ITEMARCH}-linux-gnu/$lib* /dummy/${ITEMARCH}-linux-gnu/ || true; \
     done
 

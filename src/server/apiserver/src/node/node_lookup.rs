@@ -17,8 +17,8 @@ pub async fn find_node_by_simple_key() -> Option<String> {
         Ok(kvs) => {
             println!("Found {} simplified node keys", kvs.len());
             if let Some(kv) = kvs.first() {
-                println!("Node key: {}", kv.key);
-                let ip_address = kv.key.trim_start_matches("nodes/");
+                println!("Node key: {}", kv.0);
+                let ip_address = kv.0.trim_start_matches("nodes/");
                 println!("Found node IP directly from key: {}", ip_address);
                 return Some(ip_address.to_string());
             }

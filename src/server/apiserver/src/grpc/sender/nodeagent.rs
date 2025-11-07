@@ -8,7 +8,13 @@ pub async fn send_to_node(
     action: HandleYamlRequest,
     node_ip: String,
 ) -> Result<Response<HandleYamlResponse>, Status> {
-    let addr = format!("http://{}:47004", node_ip);
+    // Fix 0.0.0.0 to actual host IP for NodeAgent connection
+    let fixed_ip = if node_ip == "0.0.0.0" {
+        "10.231.176.244".to_string()
+    } else {
+        node_ip.clone()
+    };
+    let addr = format!("http://{}:47004", fixed_ip);
 
     println!("Attempting to connect to NodeAgent at: {}", addr);
 

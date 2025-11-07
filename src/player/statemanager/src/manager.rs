@@ -784,7 +784,7 @@ impl StateManagerManager {
         match common::etcd::get_all_with_prefix("Scenario/").await {
             Ok(scenario_entries) => {
                 for kv in scenario_entries {
-                    match serde_yaml::from_str::<common::spec::artifact::Scenario>(&kv.value) {
+                    match serde_yaml::from_str::<common::spec::artifact::Scenario>(&kv.1) {
                         Ok(scenario) => {
                             // Check if this scenario references the package
                             if scenario.get_targets() == package_name {
@@ -792,7 +792,7 @@ impl StateManagerManager {
                             }
                         }
                         Err(e) => {
-                            println!("      Failed to parse scenario {}: {:?}", kv.key, e);
+                            println!("      Failed to parse scenario {}: {:?}", kv.0, e);
                         }
                     }
                 }
