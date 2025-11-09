@@ -17,7 +17,7 @@ jobs:
       - name: Install essential dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y docker-compose jq curl lsb-release protobuf-compiler libdbus-1-dev pkg-config build-essential gcc musl-tools
+          sudo apt-get install -y docker-compose jq curl lsb-release protobuf-compiler libdbus-1-dev pkg-config build-essential gcc g++ musl-tools
 
       # Step 3: Install Rust toolchain
       - name: Install Rust toolchain
