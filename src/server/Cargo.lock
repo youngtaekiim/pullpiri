@@ -510,13 +510,11 @@ checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
 name = "common"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "config",
  "const_format",
  "etcd-client",
  "lazy_static",
  "prost 0.13.5",
- "reqwest",
  "rocksdb",
  "serde",
  "serde_json",
@@ -524,7 +522,6 @@ dependencies = [
  "tokio",
  "tonic",
  "tonic-build",
- "urlencoding",
 ]
 
 [[package]]
@@ -2297,21 +2294,6 @@ checksum = "ddb7af00d2b17dbd07d82c0063e25411959748ff03e8d4f96134c2ff41fce34f"
 dependencies = [
  "libc",
  "librocksdb-sys",
-]
-
-[[package]]
-name = "rocksdbservice"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "common",
- "prost 0.13.5",
- "rocksdb",
- "tokio",
- "tonic",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
