@@ -26,7 +26,7 @@ static DB_INSTANCE: OnceLock<Arc<Mutex<DB>>> = OnceLock::new();
 #[command(about = "Pullpiri RocksDB gRPC Service")]
 struct Args {
     /// RocksDB data path
-    #[arg(short, long, default_value = "/tmp/pullpiri_rocksdb")]
+    #[arg(short, long, default_value = "/tmp/pullpiri_shared_rocksdb")]
     path: String,
 
     /// Service port
@@ -102,7 +102,7 @@ impl RocksDbService for RocksDbServiceImpl {
         let response = HealthResponse {
             status,
             version: "1.0.0".to_string(),
-            database_path: "/tmp/pullpiri_rocksdb".to_string(),
+            database_path: "/tmp/pullpiri_shared_rocksdb".to_string(),
         };
 
         Ok(Response::new(response))

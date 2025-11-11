@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.85.0-slim as builder
+FROM rust:1.88.0-slim as builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -19,16 +19,9 @@ COPY src/common/ ./src/common/
 # Copy rocksdbservice source
 COPY src/server/rocksdbservice/ ./src/server/rocksdbservice/
 
-# Create workspace Cargo.toml for building
-RUN echo '[workspace]' > Cargo.toml && \
-    echo 'members = ["src/common", "src/server/rocksdbservice"]' >> Cargo.toml && \
-    echo 'resolver = "2"' >> Cargo.toml && \
-    echo '' >> Cargo.toml && \
-    echo '[workspace.dependencies]' >> Cargo.toml && \
-    echo 'common = { path = "src/common" }' >> Cargo.toml
-
 # Build the RocksDB service
-RUN cargo build --release --bin rocksdbservice
+WORKDIR /app/src/server/rocksdbservice
+RUN cargo build --release
 
 # Runtime stage
 FROM ubuntu:22.04
@@ -45,7 +38,7 @@ RUN useradd -r -s /bin/false app
 RUN mkdir -p /data && chown app:app /data
 
 # Copy binary
-COPY --from=builder /app/target/release/rocksdbservice /usr/local/bin/rocksdbservice
+COPY --from=builder /app/src/server/rocksdbservice/target/release/rocksdbservice /usr/local/bin/rocksdbservice
 
 # Set permissions
 RUN chmod +x /usr/local/bin/rocksdbservice
