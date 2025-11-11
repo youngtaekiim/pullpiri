@@ -12,3 +12,6 @@ members = [
     "rocksdb-inspector",
     "settingscli"
 ]
+
+[workspace.dependencies]
+common = { path = "../common" }

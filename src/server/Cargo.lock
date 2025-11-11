@@ -515,7 +515,6 @@ dependencies = [
  "etcd-client",
  "lazy_static",
  "prost 0.13.5",
- "rocksdb",
  "serde",
  "serde_json",
  "serde_yaml",

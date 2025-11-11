@@ -188,11 +188,11 @@ if command_exists ping; then
             fi
             
             # Check ETCD port
-            #if nc -z -w 2 $MASTER_IP 2379 &> /dev/null; then
-                #log "ETCD port accessible: $MASTER_IP:2379"
+            # if nc -z -w 2 $MASTER_IP 2379 &> /dev/null; then
+            #    log "ETCD port accessible: $MASTER_IP:2379"
             #else
-                #log "Error: Cannot connect to ETCD port: $MASTER_IP:2379"
-                #ERROR_COUNT=$((ERROR_COUNT+1))
+            #    log "Error: Cannot connect to ETCD port: $MASTER_IP:2379"
+            #    ERROR_COUNT=$((ERROR_COUNT+1))
             #fi
         else
             log "Warning: 'nc' command not available, skipping port connectivity checks"

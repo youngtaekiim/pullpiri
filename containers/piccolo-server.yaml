@@ -13,7 +13,7 @@ spec:
   hostPid: true
   containers:
   - name: rocksdbservice
-    image: ghcr.io/mco-piccolo/pullpiri-rocksdb:0.1
+    image: localhost/pullpiri-rocksdb:latest
     command: ["rocksdbservice", "--path", "/data", "--addr", "$(HOST_IP)", "--port", "50051"]
     volumeMounts:
     - name: rocksdb-data
