@@ -1,3 +1,7 @@
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 use common::external::fault_service_server::FaultService;
 use common::external::{FaultInfo, Response as TimpaniResponse};
 use tonic::{Request, Response, Status};
