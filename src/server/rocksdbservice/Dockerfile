@@ -22,7 +22,10 @@ COPY src/server/rocksdbservice/ ./src/server/rocksdbservice/
 # Create workspace Cargo.toml for building
 RUN echo '[workspace]' > Cargo.toml && \
     echo 'members = ["src/common", "src/server/rocksdbservice"]' >> Cargo.toml && \
-    echo 'resolver = "2"' >> Cargo.toml
+    echo 'resolver = "2"' >> Cargo.toml && \
+    echo '' >> Cargo.toml && \
+    echo '[workspace.dependencies]' >> Cargo.toml && \
+    echo 'common = { path = "src/common" }' >> Cargo.toml
 
 # Build the RocksDB service
 RUN cargo build --release --bin rocksdbservice

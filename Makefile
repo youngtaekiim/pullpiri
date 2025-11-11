@@ -26,6 +26,16 @@ clean:
 image:
 	podman build -t localhost/pullpiri:latest -f containers/Dockerfile .
 
+.PHONY: rocksdb-image
+rocksdb-image:
+	podman build -t localhost/pullpiri-rocksdb:latest -f src/server/rocksdbservice/Dockerfile .
+
+.PHONY: all-images
+all-images: image rocksdb-image
+	@echo "Built all container images:"
+	@echo "  - localhost/pullpiri:latest (main services)"
+	@echo "  - localhost/pullpiri-rocksdb:latest (RocksDB service)"
+
 # command for DEVELOPMENT ONLY
 .PHONY: builder
 builder:
@@ -74,7 +84,7 @@ setup-shared-rocksdb:
 	-chown 1001:1001 /tmp/pullpiri_shared_rocksdb
 
 .PHONY: install
-install: setup-shared-rocksdb
+install: setup-shared-rocksdb image rocksdb-image
 	-mkdir -p /etc/piccolo/yaml
 	-mkdir -p /etc/containers/systemd/piccolo/
 	-cp -r ./src/settings.yaml /etc/containers/systemd/piccolo/

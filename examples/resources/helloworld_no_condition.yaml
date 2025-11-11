@@ -17,7 +17,7 @@ spec:
     - type: plain
   models:
     - name: helloworld
-      node: aws-ec2
+      node: HPC
       resources:
         volume:
         network:

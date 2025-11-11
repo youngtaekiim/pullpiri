@@ -510,21 +510,17 @@ checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
 name = "common"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "config",
  "const_format",
  "etcd-client",
  "lazy_static",
  "prost 0.13.5",
- "reqwest",
- "rocksdb",
  "serde",
  "serde_json",
  "serde_yaml",
  "tokio",
  "tonic",
  "tonic-build",
- "urlencoding",
 ]
 
 [[package]]

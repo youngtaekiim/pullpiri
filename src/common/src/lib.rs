@@ -6,7 +6,6 @@ pub use crate::error::Result;
 
 pub mod error;
 pub mod etcd;
-pub mod rocksdb;
 pub mod setting;
 pub mod spec;
 
