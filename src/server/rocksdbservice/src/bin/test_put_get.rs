@@ -10,7 +10,7 @@ use std::io::{self, Write};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set the service URL for testing
-    env::set_var("ROCKSDB_SERVICE_URL", "http://localhost:50051");
+    env::set_var("ROCKSDB_SERVICE_URL", "http://localhost:47007");
 
     println!("🚀 RocksDB 인터랙티브 PUT/GET 테스트");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

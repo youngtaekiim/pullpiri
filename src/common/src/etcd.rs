@@ -11,7 +11,7 @@ use crate::rocksdbservice::{
 lazy_static::lazy_static! {
     static ref ROCKSDB_SERVICE_URL: String = {
         std::env::var("ROCKSDB_SERVICE_URL")
-            .unwrap_or_else(|_| "http://localhost:50051".to_string())
+            .unwrap_or_else(|_| "http://localhost:47007".to_string())
     };
 }
 

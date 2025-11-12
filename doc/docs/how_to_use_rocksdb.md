@@ -114,7 +114,7 @@ spec:
 #### **B. gRPC 클라이언트 레이어**  
 - **컴포넌트**: `common::rocksdb::put()`
 - **파일**: `src/common/src/etcd.rs` (20라인~)
-- **서비스 URL**: `http://localhost:50051` (환경변수 ROCKSDB_SERVICE_URL)
+- **서비스 URL**: `http://localhost:47007` (환경변수 ROCKSDB_SERVICE_URL)
 - **전송 데이터 구조**:
   ```rust
   PutRequest {
@@ -124,7 +124,7 @@ spec:
   ```
 - **로그 메시지**: 
   ```
-  [ETCD->RocksDB-gRPC] Putting key 'Scenario/helloworld' to service: http://localhost:50051
+  [ETCD->RocksDB-gRPC] Putting key 'Scenario/helloworld' to service: http://localhost:47007
   [ETCD->RocksDB-gRPC] Successfully stored key: Scenario/helloworld
   ```
 
@@ -134,7 +134,7 @@ spec:
 - **컴포넌트**: `piccolo-server-rocksdbservice` 컨테이너
 - **파일**: `src/server/rocksdbservice/src/main.rs` (100라인~)
 - **구현**: `RocksDbServiceImpl::put()` 메서드
-- **포트**: `0.0.0.0:50051`
+- **포트**: `0.0.0.0:47007`
 
 #### **B. 데이터 검증 및 저장**
 - **키 검증 규칙**: 
@@ -214,7 +214,7 @@ graph TD
 
 1. **HTTP Request** (`curl`) → **API Server** (`47099`)
 2. **API Server** → **YAML 파싱** → **3개 아티팩트 추출**
-3. **각 아티팩트** → **gRPC 호출** → **RocksDB Service** (`50051`)
+3. **각 아티팩트** → **gRPC 호출** → **RocksDB Service** (`47007`)
 4. **RocksDB Service** → **데이터 검증** → **RocksDB 저장** (`/data`)
 5. **병렬 처리**: **NodeAgent 전송** (`47004`) + **StateManager 상태 설정**
 

@@ -1,1 +1,1 @@
-v11.11.0-rocksdb
+v11.12.0-rocksdb

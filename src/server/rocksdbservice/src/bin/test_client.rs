@@ -9,7 +9,7 @@ use std::env;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set the service URL for testing
-    env::set_var("ROCKSDB_SERVICE_URL", "http://localhost:50051");
+    env::set_var("ROCKSDB_SERVICE_URL", "http://localhost:47007");
 
     println!("🧪 Testing gRPC RocksDB Service...");
 

@@ -75,9 +75,9 @@ tools:
 .PHONY: test-rocksdb-service
 test-rocksdb-service:
 	@echo "Testing gRPC RocksDB Service..."
-	@echo "Service should be running on localhost:50051"
+	@echo "Service should be running on localhost:47007"
 	@echo "Use grpcurl to test the service:"
-	@echo "  grpcurl -plaintext localhost:50051 rocksdbservice.RocksDbService/Health"
+	@echo "  grpcurl -plaintext localhost:47007 rocksdbservice.RocksDbService/Health"
 	@echo ""
 	@echo "Building and running a simple test..."
 	@cd src/server/rocksdbservice && cargo run -- --help

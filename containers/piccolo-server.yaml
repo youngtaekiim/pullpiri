@@ -14,7 +14,7 @@ spec:
   containers:
   - name: rocksdbservice
     image: ghcr.io/mco-piccolo/pullpiri-rocksdb:v11.11.0
-    command: ["rocksdbservice", "--path", "/data", "--addr", "$(HOST_IP)", "--port", "50051"]
+    command: ["rocksdbservice", "--path", "/data", "--addr", "$(HOST_IP)", "--port", "47007"]
     volumeMounts:
     - name: rocksdb-data
       mountPath: /data
@@ -34,19 +34,19 @@ spec:
       mountPath: /etc/piccolo/settings.yaml
     environment:
     - name: ROCKSDB_SERVICE_URL
-      value: "http://$(HOST_IP):50051"
+      value: "http://$(HOST_IP):47007"
   - name: policymanager
     image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/policymanager"]
     environment:
     - name: ROCKSDB_SERVICE_URL
-      value: "http://$(HOST_IP):50051"
+      value: "http://$(HOST_IP):47007"
   - name: monitoringserver
     image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/monitoringserver"]
     environment:
     - name: ROCKSDB_SERVICE_URL
-      value: "http://$(HOST_IP):50051"
+      value: "http://$(HOST_IP):47007"
     volumeMounts:
     - name: piccolo-yaml
       mountPath: /etc/piccolo/yaml
@@ -62,7 +62,7 @@ spec:
       mountPath: /etc/piccolo/settings.yaml
     environment:
     - name: ROCKSDB_SERVICE_URL
-      value: "http://$(HOST_IP):50051"
+      value: "http://$(HOST_IP):47007"
   volumes:
   - name: piccolo-yaml
     hostPath:

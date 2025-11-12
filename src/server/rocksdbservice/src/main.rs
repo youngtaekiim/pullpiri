@@ -30,7 +30,7 @@ struct Args {
     path: String,
 
     /// Service port
-    #[arg(short = 'P', long, default_value = "50051")]
+    #[arg(short = 'P', long, default_value = "47007")]
     port: u16,
 
     /// Bind address

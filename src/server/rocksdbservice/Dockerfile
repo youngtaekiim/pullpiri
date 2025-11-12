@@ -47,10 +47,10 @@ RUN chmod +x /usr/local/bin/rocksdbservice
 USER app
 
 # Expose gRPC port
-EXPOSE 50051
+EXPOSE 47007
 
 # Set default data path
 ENV ROCKSDB_PATH=/data
 
 # Start the gRPC service
-CMD ["rocksdbservice", "--path", "/data", "--addr", "0.0.0.0", "--port", "50051"]
+CMD ["rocksdbservice", "--path", "/data", "--addr", "0.0.0.0", "--port", "47007"]
