@@ -13,7 +13,7 @@ spec:
   hostPid: true
   containers:
   - name: rocksdbservice
-    image: localhost/pullpiri-rocksdb:latest
+    image: ghcr.io/mco-piccolo/pullpiri-rocksdb:v11.11.0
     command: ["rocksdbservice", "--path", "/data", "--addr", "$(HOST_IP)", "--port", "50051"]
     volumeMounts:
     - name: rocksdb-data
@@ -25,7 +25,7 @@ spec:
       runAsUser: 0
       runAsGroup: 0
   - name: apiserver
-    image: localhost/pullpiri:latest
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/apiserver"]
     volumeMounts:
     - name: piccolo-yaml
@@ -36,13 +36,13 @@ spec:
     - name: ROCKSDB_SERVICE_URL
       value: "http://$(HOST_IP):50051"
   - name: policymanager
-    image: localhost/pullpiri:latest
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/policymanager"]
     environment:
     - name: ROCKSDB_SERVICE_URL
       value: "http://$(HOST_IP):50051"
   - name: monitoringserver
-    image: localhost/pullpiri:latest
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/monitoringserver"]
     environment:
     - name: ROCKSDB_SERVICE_URL
@@ -53,7 +53,7 @@ spec:
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
   - name: settingsservice
-    image: localhost/pullpiri:latest
+    image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/settingsservice", "--bind-address=$(HOST_IP)", "--bind-port=8080", "--log-level=debug"]
     volumeMounts:
     - name: piccolo-yaml
