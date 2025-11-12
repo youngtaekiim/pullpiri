@@ -187,13 +187,13 @@ if command_exists ping; then
                 ERROR_COUNT=$((ERROR_COUNT+1))
             fi
             
-            # Check ETCD port
-            # if nc -z -w 2 $MASTER_IP 2379 &> /dev/null; then
-            #    log "ETCD port accessible: $MASTER_IP:2379"
-            #else
-            #    log "Error: Cannot connect to ETCD port: $MASTER_IP:2379"
-            #    ERROR_COUNT=$((ERROR_COUNT+1))
-            #fi
+            # Check RocksDB port
+            if nc -z -w 2 $MASTER_IP 47007 &> /dev/null; then
+                log "RocksDB port accessible: $MASTER_IP:47007"
+            else
+                log "Error: Cannot connect to RocksDB port: $MASTER_IP:47007"
+                ERROR_COUNT=$((ERROR_COUNT+1))
+            fi
         else
             log "Warning: 'nc' command not available, skipping port connectivity checks"
             WARNING_COUNT=$((WARNING_COUNT+1))

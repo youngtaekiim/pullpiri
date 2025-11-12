@@ -7,4 +7,5 @@ accepted = [
     "BSD-3-Clause",
     "ISC",
     "Zlib",
+    "MPL-2.0",
 ]
