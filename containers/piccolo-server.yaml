@@ -14,7 +14,7 @@ spec:
   containers:
   - name: rocksdbservice
     image: ghcr.io/mco-piccolo/pullpiri-rocksdb:v11.11.0
-    command: ["rocksdbservice", "--path", "/data", "--addr", "$(HOST_IP)", "--port", "47007"]
+    command: ["rocksdbservice", "--path", "/data", "--addr", "0.0.0.0", "--port", "47007"]
     volumeMounts:
     - name: rocksdb-data
       mountPath: /data
