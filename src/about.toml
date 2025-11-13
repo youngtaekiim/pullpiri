@@ -4,8 +4,9 @@ accepted = [
     "Apache-2.0 WITH LLVM-exception",
     "0BSD",
     "Unicode-3.0",
+    "BSD-2-Clause",
     "BSD-3-Clause",
     "ISC",
     "Zlib",
-    "BSD-2-Clause"
+    "BSL-1.0",
 ]

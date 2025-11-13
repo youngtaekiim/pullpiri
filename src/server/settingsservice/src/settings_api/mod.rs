@@ -3,7 +3,7 @@
 
 //! REST API server module
 use crate::monitoring_etcd;
-use crate::monitoring_types::{BoardInfo, NodeInfo, SocInfo, StressMetrics};
+use crate::monitoring_types::{BoardInfo, NodeInfo, SocInfo}; //, StressMetrics};
 use crate::settings_config::{Config, ConfigManager, ConfigSummary, ValidationResult};
 use crate::settings_history::{HistoryEntry, HistoryManager};
 use crate::settings_monitoring::{

@@ -18,8 +18,10 @@ fi
 
 # 문자 그대로의 $(HOST_IP)를 실제 IP 주소로 대체
 sed -i "s/\\\$(HOST_IP)/${HOST_IP}/g" $SERVER_YAML
-
 echo "Successfully replaced \$(HOST_IP) with $HOST_IP in $SERVER_YAML"
+
+sed -i "s/\\\$(HOST_IP)/${HOST_IP}/g" $PLAYER_YAML
+echo "Successfully replaced \$(HOST_IP) with $HOST_IP in $PLAYER_YAML"
 
 #
 # Get version info and update container image version and nodeagent in release note

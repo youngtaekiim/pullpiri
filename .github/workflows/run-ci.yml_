@@ -116,7 +116,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nodeagent-binary-amd64
+          name: nodeagent-binary
           path: dist/binaries/nodeagent-linux-amd64
 
       # Step 18: Upload test coverage reports
@@ -241,42 +241,3 @@ jobs:
       #     token: ${{ env.CODECOV_TOKEN }}
       #     slug: ${{ github.repository }}
       #     files: dist/coverage/lcov.info
-  build_linux_arm64:
-    runs-on: ubuntu-22.04-arm
-    steps:
-      # Step 1: Checkout the code
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # Step 2: Install essential dependencies including protobuf-compiler and dbus
-      - name: Install essential dependencies
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y docker-compose jq curl lsb-release protobuf-compiler libdbus-1-dev pkg-config build-essential
-
-      # Step 3: Install Rust toolchain
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      # Step 4: Add musl target for static linking
-      - name: Add musl target
-        run: rustup target add aarch64-unknown-linux-musl
-
-      # Step 5: Build nodeagent binary for ARM64 release
-      - name: Build nodeagent binary (ARM64 static)
-        run: |
-          echo "Building nodeagent (static) from src/agent/nodeagent directory for ARM64..."
-          cd src/agent/nodeagent
-          cargo build --release --target aarch64-unknown-linux-musl
-          cd ../../../
-          mkdir -p dist/binaries
-          cp src/agent/target/aarch64-unknown-linux-musl/release/nodeagent dist/binaries/nodeagent-linux-arm64
-          ls -la dist/binaries/
-          file dist/binaries/nodeagent-linux-arm64
-      # Step 6: Upload ARM64 nodeagent binary
-      - name: Upload nodeagent binary (ARM64)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: nodeagent-binary-arm64
-          path: dist/binaries/nodeagent-linux-arm64

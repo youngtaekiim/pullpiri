@@ -17,8 +17,8 @@ pub async fn find_node_by_simple_key() -> Option<String> {
         Ok(kvs) => {
             println!("Found {} simplified node keys", kvs.len());
             if let Some(kv) = kvs.first() {
-                println!("Node key: {}", kv.key);
-                let ip_address = kv.key.trim_start_matches("nodes/");
+                println!("Node key: {}", kv.0);
+                let ip_address = kv.0.trim_start_matches("nodes/");
                 println!("Found node IP directly from key: {}", ip_address);
                 return Some(ip_address.to_string());
             }
@@ -44,14 +44,14 @@ pub async fn find_node_from_etcd() -> Option<String> {
 
     println!("Found {} node entries", kvs.len());
     for kv in &kvs {
-        println!("Node entry: {}", kv.key);
+        println!("Node entry: {}", kv.0);
     }
 
     if kvs.is_empty() {
         return None;
     }
 
-    match serde_json::from_str::<NodeInfo>(&kvs[0].value) {
+    match serde_json::from_str::<NodeInfo>(&kvs[0].1) {
         Ok(node) => {
             println!(
                 "Decoded node: {} ({}), status: {}",
@@ -60,7 +60,7 @@ pub async fn find_node_from_etcd() -> Option<String> {
             Some(node.ip_address)
         }
         Err(e) => {
-            println!("Failed to parse JSON: {} for value: {}", e, &kvs[0].value);
+            println!("Failed to parse JSON: {} for value: {}", e, &kvs[0].1);
             None
         }
     }
@@ -114,10 +114,10 @@ pub async fn find_node_by_hostname(hostname: &str) -> Option<common::apiserver::
     for kv in kvs {
         println!(
             "Processing key: {}",
-            String::from_utf8_lossy(kv.key.as_bytes())
+            String::from_utf8_lossy(kv.0.as_bytes())
         );
 
-        match serde_json::from_str::<common::apiserver::NodeInfo>(&kv.value) {
+        match serde_json::from_str::<common::apiserver::NodeInfo>(&kv.1) {
             Ok(node_info) => {
                 println!("Successfully parsed node info: {}", node_info.hostname);
                 if node_info.hostname == hostname {
@@ -128,7 +128,7 @@ pub async fn find_node_by_hostname(hostname: &str) -> Option<common::apiserver::
                     return Some(node_info);
                 }
             }
-            Err(e) => println!("Failed to parse JSON: {} for value: {}", e, kv.value),
+            Err(e) => println!("Failed to parse JSON: {} for value: {}", e, kv.1),
         }
     }
 
@@ -186,7 +186,7 @@ pub async fn find_guest_nodes() -> Vec<NodeInfo> {
     let mut guest_nodes = Vec::new();
 
     for kv in kvs {
-        match serde_json::from_str::<NodeInfo>(&kv.value) {
+        match serde_json::from_str::<NodeInfo>(&kv.1) {
             Ok(node_info) => {
                 // 마스터 노드가 아닌 경우에만 게스트 노드로 간주
                 if node_info.node_role != common::nodeagent::NodeRole::Master as i32 {
@@ -197,7 +197,7 @@ pub async fn find_guest_nodes() -> Vec<NodeInfo> {
                     guest_nodes.push(node_info);
                 }
             }
-            Err(e) => println!("Failed to parse JSON: {} for value: {}", e, kv.value),
+            Err(e) => println!("Failed to parse JSON: {} for value: {}", e, kv.1),
         }
     }
 

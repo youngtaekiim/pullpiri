@@ -15,6 +15,9 @@ spec:
   - name: filtergateway
     image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/filtergateway"]
+    environment:
+    - name: ROCKSDB_SERVICE_URL
+      value: "http://$(HOST_IP):47007"
     volumeMounts:
     - name: piccolo-yaml
       mountPath: /root/piccolo_yaml
@@ -32,6 +35,9 @@ spec:
       mountPath: /etc/containers/systemd
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
+    environment:
+    - name: ROCKSDB_SERVICE_URL
+      value: "http://$(HOST_IP):47007"
   - name: statemanager
     image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/statemanager"]
@@ -44,6 +50,9 @@ spec:
       mountPath: /etc/containers/systemd
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
+    environment:
+    - name: ROCKSDB_SERVICE_URL
+      value: "http://$(HOST_IP):47007"
   volumes:
   - name: piccolo-yaml
     hostPath:

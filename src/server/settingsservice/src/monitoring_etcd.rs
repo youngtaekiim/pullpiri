@@ -62,12 +62,12 @@ async fn get_all_info<T: DeserializeOwned>(resource_type: &str) -> Result<Vec<T>
 
     let mut items = Vec::new();
     for kv in kv_pairs {
-        match serde_json::from_str::<T>(&kv.value) {
+        match serde_json::from_str::<T>(&kv.1) {
             Ok(item) => items.push(item),
             Err(e) => {
                 warn!(
                     "Failed to deserialize {} from {}: {}",
-                    resource_type, kv.key, e
+                    resource_type, kv.0, e
                 );
             }
         }
@@ -209,7 +209,7 @@ async fn get_logs(resource_type: &str, resource_id: &str) -> Result<Vec<String>>
 
     let mut logs = Vec::new();
     for kv in kv_pairs {
-        logs.push(kv.value);
+        logs.push(kv.1);
     }
 
     debug!(

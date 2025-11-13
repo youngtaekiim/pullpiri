@@ -12,16 +12,18 @@ spec:
   hostNetwork: true
   hostPid: true
   containers:
-  - name: etcd
-    image: gcr.io/etcd-development/etcd:v3.5.24
-    command: ["/usr/local/bin/etcd"]
-    args: 
-    - "--data-dir=/etcd-data"
-    - "--listen-client-urls=http://127.0.0.1:2379,http://$(HOST_IP):2379"
-    - "--advertise-client-urls=http://$(HOST_IP):2379"
+  - name: rocksdbservice
+    image: ghcr.io/mco-piccolo/pullpiri-rocksdb:v11.11.0
+    command: ["rocksdbservice", "--path", "/data", "--addr", "0.0.0.0", "--port", "47007"]
     volumeMounts:
-    - name: etcd-data
-      mountPath: /etcd-data
+    - name: rocksdb-data
+      mountPath: /data
+    environment:
+    - name: RUST_LOG
+      value: "info"
+    securityContext:
+      runAsUser: 0
+      runAsGroup: 0
   - name: apiserver
     image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/apiserver"]
@@ -30,12 +32,21 @@ spec:
       mountPath: /etc/piccolo/yaml
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
+    environment:
+    - name: ROCKSDB_SERVICE_URL
+      value: "http://$(HOST_IP):47007"
   - name: policymanager
     image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/policymanager"]
+    environment:
+    - name: ROCKSDB_SERVICE_URL
+      value: "http://$(HOST_IP):47007"
   - name: monitoringserver
     image: ghcr.io/eclipse-pullpiri/pullpiri:$(VERSION)
     command: ["/piccolo/monitoringserver"]
+    environment:
+    - name: ROCKSDB_SERVICE_URL
+      value: "http://$(HOST_IP):47007"
     volumeMounts:
     - name: piccolo-yaml
       mountPath: /etc/piccolo/yaml
@@ -49,13 +60,16 @@ spec:
       mountPath: /etc/piccolo/yaml
     - name: config-path
       mountPath: /etc/piccolo/settings.yaml
+    environment:
+    - name: ROCKSDB_SERVICE_URL
+      value: "http://$(HOST_IP):47007"
   volumes:
   - name: piccolo-yaml
     hostPath:
       path: /etc/piccolo/yaml
-  - name: etcd-data
-    hostPath:
-      path: /etc/containers/systemd/piccolo/etcd-data
   - name: config-path
     hostPath:
       path: /etc/containers/systemd/piccolo/settings.yaml
+  - name: rocksdb-data
+    hostPath:
+      path: /tmp/pullpiri_shared_rocksdb
