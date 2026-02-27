@@ -1,15 +1,39 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+# SPDX-License-Identifier: Apache-2.0
 
-# Initialize variables
-MASTER_IP="127.0.0.1" # MUST FIX - Piccolo master IP address
+# Get arguments
+MASTER_IP="${1:-}"  # First argument - Piccolo master IP address
+NODE_IP="${2:-}"    # Second argument - Node IP address
 
-NODE_IP=$(hostname -I | awk '{print $1}')   # This Node IP address
+# Check if both IPs are provided
+if [[ -z "${MASTER_IP}" ]] || [[ -z "${NODE_IP}" ]]; then
+	echo "ERROR: Both MASTER_IP and NODE_IP arguments are required." >&2
+	echo "Usage: $0 MASTER_IP NODE_IP" >&2
+	echo "  MASTER_IP: Piccolo master IP address" >&2
+	echo "  NODE_IP: Node IP address" >&2
+	exit 1
+fi
+
+# Validate MASTER_IP
+if [[ "$MASTER_IP" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
+	echo "MASTER_IP: '${MASTER_IP}'"
+else
+	echo "ERROR: Invalid IPv4 address for MASTER_IP - '${MASTER_IP}'"
+	exit 1
+fi
+
+# Validate NODE_IP
+if [[ "$NODE_IP" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
+	echo "NODE_IP: '${NODE_IP}'"
+else
+	echo "ERROR: Invalid IPv4 address for NODE_IP - '${NODE_IP}'"
+	exit 1
+fi
+
 NODE_NAME=$(hostname)  # Always use system hostname
 NODE_ROLE="nodeagent"  # Default node role (master, nodeagent, bluechi)
 NODE_TYPE="vehicle"  # Default node type (vehicle, cloud)
-
-# Check environment argument
-ENV="${1:-TODO}"
 
 # Get the root path (script is in containers/, so go up one level)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,44 +42,27 @@ ROOT_PATH="$(dirname "$SCRIPT_DIR")"
 # Set architecture
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
-    SUFFIX="amd64"
+	SUFFIX="amd64"
 elif [ "$ARCH" = "aarch64" ]; then
-    SUFFIX="arm64"
+	SUFFIX="arm64"
 else
-    echo "Error: Unsupported architecture '${ARCH}'."
-    exit 1
+	echo "Error: Unsupported architecture '${ARCH}'."
+	exit 1
 fi
 
-# Set Binary PATH and download/prepare binary
-if [ "$ENV" = "prod" ]; then
-    BINARY_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/latest/download/nodeagent-linux-${SUFFIX}"
-    echo "Downloading binary from ${BINARY_URL}..."
-    curl -L -o nodeagent "${BINARY_URL}"
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to download binary from ${BINARY_URL}"
-        exit 1
-    fi
-    chmod +x nodeagent
-    BINARY_PATH="./nodeagent"
-elif [ "$ENV" = "dev" ]; then
-    BINARY_PATH="${ROOT_PATH}/src/agent/nodeagent/target/debug/nodeagent"
-    if [ ! -f "${BINARY_PATH}" ]; then
-        echo "Error: Binary not found at ${BINARY_PATH}"
-        exit 1
-    fi
-    # Copy to current directory for consistent handling
-    cp "${BINARY_PATH}" ./nodeagent
-    BINARY_PATH="./nodeagent"
-else
-    echo "Error: Invalid environment '${ENV}'. Must be 'prod' or 'dev'."
-    exit 1
-fi
-echo "Running agent in ${ENV} mode with binary: ${BINARY_PATH}"
-
-# Install binary to /opt/piccolo
-echo "Installing nodeagent to /opt/piccolo..."
+# Make directory and binary
+AGENT_BINARY_PATH="/opt/piccolo/nodeagent"
 sudo mkdir -p /opt/piccolo
-sudo mv nodeagent /opt/piccolo/nodeagent
+if [ ! -f "$AGENT_BINARY_PATH" ]; then
+	BINARY_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/latest/download/nodeagent-linux-${SUFFIX}"
+	echo "Downloading binary from ${BINARY_URL}..."
+	curl -L -o nodeagent "${BINARY_URL}"
+	if [ $? -ne 0 ]; then
+		echo "Error: Failed to download binary from ${BINARY_URL}"
+		exit 1
+	fi
+	sudo mv -f nodeagent /opt/piccolo/nodeagent
+fi
 sudo chmod +x /opt/piccolo/nodeagent
 echo "Binary installed to /opt/piccolo/nodeagent"
 
@@ -114,13 +121,13 @@ EOF
 echo "Enabling NodeAgent service..."
 sudo systemctl daemon-reload
 sudo systemctl enable nodeagent.service || {
-    echo "Error: Failed to enable NodeAgent service."
-    exit 1
+	echo "Error: Failed to enable NodeAgent service."
+	exit 1
 }
 
 # Start service
 echo "Starting NodeAgent service..."
 sudo systemctl start nodeagent.service || {
-    echo "Warning: Failed to start NodeAgent service."
-    exit 1
+	echo "Warning: Failed to start NodeAgent service."
+	exit 1
 }

@@ -1,0 +1,14 @@
+#!/bin/bash
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+rm -rf /etc/piccolo/*
+
+podman pod stop -t 0 piccolo-player
+podman pod rm -f --ignore piccolo-player
+podman pod stop -t 0 piccolo-server
+podman pod rm -f --ignore piccolo-server
+
+sleep 1
+
+./uninstall-agent.sh

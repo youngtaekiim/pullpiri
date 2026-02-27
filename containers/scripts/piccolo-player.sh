@@ -1,21 +1,20 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+# SPDX-License-Identifier: Apache-2.0
 
-# Check environment argument
-ENV="${1:-TODO}"
+if [ -n "${1:-}" ]; then
+	MASTER_IP="$1"
+else
+	MASTER_IP="$(hostname -I | awk '{print $1}')"
+fi
 
 # Set environment variables
 VERSION="latest"
-if [ "$ENV" = "prod" ]; then
-    CONTAINER_IMAGE="ghcr.io/eclipse-pullpiri/pullpiri:${VERSION}"
-elif [ "$ENV" = "dev" ]; then
-    CONTAINER_IMAGE="localhost/pullpiri:latest"
-else
-    echo "Error: Invalid environment '${ENV}'. Must be 'prod' or 'dev'."
-    exit 1
-fi
-echo "Running player in ${ENV} mode with image: ${CONTAINER_IMAGE}"
+CONTAINER_IMAGE="ghcr.io/eclipse-pullpiri/pullpiri:${VERSION}"
+# If you want to use a locally built image, uncomment the line below and comment out the line above
+# CONTAINER_IMAGE="localhost/pullpiri:latest"
+echo "Running player with image: ${CONTAINER_IMAGE}"
 
-HOST_IP=$(hostname -I | awk '{print $1}')
 # Create a pod with host networking
 podman pod create \
   --name piccolo-player \
@@ -26,7 +25,7 @@ podman pod create \
 podman run -d \
   --pod piccolo-player \
   --name piccolo-filtergateway \
-  -e ROCKSDB_SERVICE_URL="http://${HOST_IP}:47007" \
+  -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
   ${CONTAINER_IMAGE} \
   /piccolo/filtergateway
@@ -35,7 +34,7 @@ podman run -d \
 podman run -d \
   --pod piccolo-player \
   --name piccolo-actioncontroller \
-  -e ROCKSDB_SERVICE_URL="http://${HOST_IP}:47007" \
+  -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
   ${CONTAINER_IMAGE} \
   /piccolo/actioncontroller
@@ -44,7 +43,7 @@ podman run -d \
 podman run -d \
   --pod piccolo-player \
   --name piccolo-statemanager \
-  -e ROCKSDB_SERVICE_URL="http://${HOST_IP}:47007" \
+  -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
   ${CONTAINER_IMAGE} \
   /piccolo/statemanager
