@@ -39,20 +39,11 @@ all-images: image rocksdb-image
 
 .PHONY: install
 install:
-	-mkdir -p /etc/piccolo/pullpiri_shared_rocksdb
-	-chown 1001:1001 /etc/piccolo/pullpiri_shared_rocksdb
-	-mkdir -p /etc/piccolo
-	-cp -r ./containers/settings.yaml /etc/piccolo/
-	-cp -r ./containers/piccolo-*.* /etc/piccolo/
-	-./containers/piccolo-server.sh prod
-	-./containers/piccolo-player.sh prod
+	-./containers/install-piccolo.sh
 
 .PHONY: uninstall
 uninstall:
-	-cp -r /etc/piccolo/nodeagent.yaml /etc/nodeagent.yaml.bak
-	-rm -rf /etc/piccolo/*
-	-mv /etc/nodeagent.yaml.bak /etc/piccolo/nodeagent.yaml
-	-./containers/piccolo-uninstall.sh
+	-./containers/uninstall-piccolo.sh
 
 # DO NOT USE THIS COMMAND IN PRODUCTION
 #.PHONY: rocksdb-image
