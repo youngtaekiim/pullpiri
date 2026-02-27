@@ -3,8 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # SET Piccolo Master node IP address
-DEFAULT_IP=$(hostname -I | awk '{print $1}')
-MASTER_IP="${1:-$DEFAULT_IP}"
+if [ -n "${1:-}" ]; then
+	MASTER_IP="$1"
+else
+	MASTER_IP="$(hostname -I | awk '{print $1}')"
+fi
 
 # Make rocksdb folder
 mkdir -p /etc/piccolo/pullpiri_shared_rocksdb
