@@ -88,7 +88,7 @@ impl DdsManager {
             warn!("Listener for topic '{}' already exists", topic_name);
             return Ok(());
         }
-        print!(
+        println!(
             "DDSManager - Creating typed listener for topic '{}'",
             topic_name
         );

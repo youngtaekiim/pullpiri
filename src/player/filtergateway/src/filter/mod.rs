@@ -78,7 +78,7 @@ impl Filter {
         let target_value = condition.get_value();
         let express = condition.get_express();
 
-        print!(
+        println!(
         "Checking condition for scenario: {}\nTopic: {}\nTarget Value: {}\nValue Name: {}\nExpression: {}\n",
         self.scenario_name, topic, target_value, value_name, express
     );
@@ -268,7 +268,7 @@ impl Filter {
             return Ok(());
         }
 
-        print!(
+        println!(
             "process data for scenario: {}\nTopic: {:?}\nTarget Name: {:?}\nTarget Value: {:?}\n",
             self.scenario_name, data.name, data.value, data.fields
         );
