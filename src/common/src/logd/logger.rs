@@ -138,7 +138,7 @@ pub async fn init_async_logger(tag: &str) -> std::io::Result<()> {
 /// * `message` - Formatted log message.
 pub async fn log(level: i32, message: String) {
     if let Err(err) = enqueue(level, message).await {
-        eprintln!("logger enqueue failed: {err}");
+        crate::logd!(6, "logger enqueue failed: {err}");
     }
 }
 
@@ -153,12 +153,12 @@ pub fn log_nowait(level: i32, message: String) {
         Ok(handle) => {
             handle.spawn(async move {
                 if let Err(err) = enqueue(level, message).await {
-                    eprintln!("logger enqueue failed: {err}");
+                    crate::logd!(6, "logger enqueue failed: {err}");
                 }
             });
         }
         Err(_) => {
-            eprintln!("logger not running inside a Tokio runtime; dropping log");
+            crate::logd!(4, "logger not running inside a Tokio runtime; dropping log");
         }
     }
 }
@@ -259,6 +259,7 @@ async fn drain_channel(
 
     let mut iter = batch.into_iter();
     while let Some(env) = iter.next() {
+        print_stdout(&env);
         let mut buf = BytesMut::with_capacity(env.encoded_len());
         if env.encode(&mut buf).is_err() {
             continue;
@@ -274,6 +275,32 @@ async fn drain_channel(
     }
 
     DrainState::Idle
+}
+
+fn print_stdout(env: &LogEnvelope) {
+    use chrono::{DateTime, Local};
+    use std::time::{Duration, UNIX_EPOCH};
+
+    let sys_time = UNIX_EPOCH + Duration::from_nanos(env.ts_real_ns);
+    let chrono_time: DateTime<Local> = DateTime::from(sys_time);
+    let time_str = chrono_time.format("%Y-%m-%d %H:%M:%S%.3f");
+    let tag = env.tag.clone();
+    let message = env.message.clone();
+
+    let level = match env.level {
+        1 => "V",
+        2 => "D",
+        3 => "I",
+        4 => "W",
+        5 => "E",
+        6 => "F",
+        _ => "?",
+    };
+
+    println!(
+        "{:<24} │ {:<2} │ {:<30} │ {}",
+        time_str, level, tag, message
+    );
 }
 
 /// Read the current realtime clock as an absolute nanosecond value.

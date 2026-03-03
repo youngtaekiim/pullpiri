@@ -34,7 +34,10 @@ pub struct WebState {
 /// Default address (`0.0.0.0:47097`) for the built-in log viewer.
 pub fn default_http_addr() -> SocketAddr {
     //SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), 47097)
-    SocketAddr::new(common::setting::get_config().host.ip.parse().unwrap(), 47097)
+    SocketAddr::new(
+        common::setting::get_config().host.ip.parse().unwrap(),
+        47097,
+    )
 }
 
 const INDEX_HTML: &str = r#"<!DOCTYPE html>

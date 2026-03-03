@@ -32,7 +32,7 @@ fn main() {
 #[cfg(not(feature = "tarpaulin_include"))]
 #[tokio::main]
 async fn main() {
-    logger::init_async_logger("apiserver").await;
+    let _ = logger::init_async_logger("apiserver").await;
     logd!(1, "initiailize api server");
 
     manager::initialize().await

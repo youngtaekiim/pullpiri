@@ -40,6 +40,7 @@ podman run -d \
   --name piccolo-apiserver \
   -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
+  -v /run/piccololog/:/run/piccololog/ \
   ${CONTAINER_IMAGE} \
   /piccolo/apiserver
 
@@ -48,6 +49,7 @@ podman run -d \
   --pod piccolo-server \
   --name piccolo-policymanager \
   -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
+  -v /run/piccololog/:/run/piccololog/ \
   ${CONTAINER_IMAGE} \
   /piccolo/policymanager
 
@@ -57,6 +59,7 @@ podman run -d \
   --name piccolo-monitoringserver \
   -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
+  -v /run/piccololog/:/run/piccololog/ \
   ${CONTAINER_IMAGE} \
   /piccolo/monitoringserver
 
@@ -66,6 +69,7 @@ podman run -d \
   --name piccolo-logservice \
   -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
+  -v /run/piccololog/:/run/piccololog/ \
   ${CONTAINER_IMAGE} \
   /piccolo/logservice
 
@@ -75,5 +79,6 @@ podman run -d \
   --name piccolo-settingsservice \
   -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
+  -v /run/piccololog/:/run/piccololog/ \
   ${CONTAINER_IMAGE} \
   /piccolo/settingsservice --bind-address=${MASTER_IP} --bind-port=8080 --log-level=debug

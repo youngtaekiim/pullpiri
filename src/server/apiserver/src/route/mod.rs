@@ -12,9 +12,9 @@ use axum::{
     response::{IntoResponse, Response},
     Json, Router,
 };
+use common::logd;
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
-use common::logd;
 
 /// Serve Piccolo HTTP API service
 ///
@@ -32,7 +32,11 @@ pub async fn launch_tcp_listener() {
     let app = Router::new().merge(api::router()).layer(cors);
 
     println!("http api listening on {}", listener.local_addr().unwrap());
-    logd!(2, "http api listening on {}", listener.local_addr().unwrap());
+    logd!(
+        2,
+        "http api listening on {}",
+        listener.local_addr().unwrap()
+    );
     axum::serve(listener, app).await.unwrap();
 }
 

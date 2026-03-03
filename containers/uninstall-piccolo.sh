@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 rm -rf /etc/piccolo/*
 rm -rf /run/piccololog
 
@@ -12,4 +14,4 @@ podman pod rm -f --ignore piccolo-server
 
 sleep 1
 
-./containers/uninstall-agent.sh
+"${SCRIPT_DIR}/uninstall-agent.sh"

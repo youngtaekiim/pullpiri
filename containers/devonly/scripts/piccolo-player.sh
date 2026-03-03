@@ -9,6 +9,9 @@ else
 fi
 
 # Set environment variables
+# VERSION="latest"
+# CONTAINER_IMAGE="ghcr.io/eclipse-pullpiri/pullpiri:${VERSION}"
+# If you want to use a locally built image, uncomment the line below and comment out the line above
 CONTAINER_IMAGE="localhost/pullpiri:latest"
 echo "Running player with image: ${CONTAINER_IMAGE}"
 
@@ -34,6 +37,7 @@ podman run -d \
   --name piccolo-actioncontroller \
   -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
+  -v /run/piccololog/:/run/piccololog/ \
   ${CONTAINER_IMAGE} \
   /piccolo/actioncontroller
 
@@ -43,5 +47,6 @@ podman run -d \
   --name piccolo-statemanager \
   -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
+  -v /run/piccololog/:/run/piccololog/ \
   ${CONTAINER_IMAGE} \
   /piccolo/statemanager

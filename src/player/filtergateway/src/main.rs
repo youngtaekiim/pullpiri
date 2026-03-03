@@ -30,7 +30,7 @@ use common::logd::logger;
 async fn main() {
     logger::init_async_logger("filtergateway").await;
     logd!(1, "Initializing FilterGateway");
-    
+
     // Initialize tracing subscriber for logging
     let (tx_grpc, rx_grpc): (Sender<ScenarioParameter>, Receiver<ScenarioParameter>) = channel(100);
     // Launch the manager thread

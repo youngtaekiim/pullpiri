@@ -17,9 +17,11 @@ lazy_static::lazy_static! {
 
 /// Put a key-value pair into the gRPC RocksDB service
 pub async fn put(key: &str, value: &str) -> Result<(), String> {
-    println!(
+    crate::logd!(
+        2,
         "[ETCD->RocksDB-gRPC] Putting key '{}' to service: {}",
-        key, *ROCKSDB_SERVICE_URL
+        key,
+        *ROCKSDB_SERVICE_URL
     );
 
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
