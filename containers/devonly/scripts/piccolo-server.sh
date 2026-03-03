@@ -12,10 +12,7 @@ fi
 ROCKSDB_VERSION="v11.18.0"
 ROCKSDB_IMAGE="ghcr.io/mco-piccolo/pullpiri-rocksdb:${ROCKSDB_VERSION}"
 
-VERSION="latest"
-CONTAINER_IMAGE="ghcr.io/eclipse-pullpiri/pullpiri:${VERSION}"
-# If you want to use a locally built image, uncomment the line below and comment out the line above
-# CONTAINER_IMAGE="localhost/pullpiri:latest"
+CONTAINER_IMAGE="localhost/pullpiri:latest"
 echo "Running server with image: ${CONTAINER_IMAGE}"
 
 # Create a pod with host networking
@@ -40,6 +37,7 @@ podman run -d \
   --name piccolo-apiserver \
   -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
+  -v /run/piccololog/:/run/piccololog/ \
   ${CONTAINER_IMAGE} \
   /piccolo/apiserver
 
@@ -66,6 +64,7 @@ podman run -d \
   --name piccolo-logservice \
   -e ROCKSDB_SERVICE_URL="http://${MASTER_IP}:47007" \
   -v /etc/piccolo/settings.yaml:/etc/piccolo/settings.yaml:Z \
+  -v /run/piccololog/:/run/piccololog/ \
   ${CONTAINER_IMAGE} \
   /piccolo/logservice
 

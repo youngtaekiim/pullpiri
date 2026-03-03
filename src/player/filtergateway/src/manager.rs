@@ -10,6 +10,7 @@ use crate::vehicle::VehicleManager;
 use common::spec::artifact::Scenario;
 use common::statemanager::{ResourceType, StateChange};
 use common::{spec::artifact::Artifact, Result};
+use common::logd;
 // use dust_dds::infrastructure::wait_set::Condition;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
@@ -82,6 +83,7 @@ impl FilterGatewayManager {
     /// * `Result<()>` - Success or error result
     pub async fn initialize(&self) -> Result<()> {
         println!("FilterGatewayManager init");
+        logd!(3, "FilterGatewayManager init");
         // Initialize vehicle manager
         let etcd_scenario = Self::read_all_scenario_from_etcd()
             .await

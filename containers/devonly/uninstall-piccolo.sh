@@ -12,4 +12,4 @@ podman pod rm -f --ignore piccolo-server
 
 sleep 1
 
-./containers/uninstall-agent.sh
+./containers/devonly/uninstall-agent.sh

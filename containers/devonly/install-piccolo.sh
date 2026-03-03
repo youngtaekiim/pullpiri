@@ -32,9 +32,9 @@ dds:
   domain_id: 100
 EOF
 
-./containers/scripts/piccolo-server.sh ${MASTER_IP}
-./containers/scripts/piccolo-player.sh ${MASTER_IP}
+./containers/devonly/scripts/piccolo-server.sh ${MASTER_IP}
+./containers/devonly/scripts/piccolo-player.sh ${MASTER_IP}
 
 sleep 1
 
-./containers/install-agent.sh ${MASTER_IP} ${MASTER_IP}
+./containers/devonly/install-agent.sh ${MASTER_IP} ${MASTER_IP}
