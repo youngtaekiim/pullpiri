@@ -707,7 +707,6 @@ dependencies = [
  "dust_dds_derive",
  "env_logger",
  "idl-parser",
- "log",
  "mockall",
  "once_cell",
  "prost",

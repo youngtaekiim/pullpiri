@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+use crate::logd;
 use crate::rocksdbservice::{
     rocks_db_service_client::RocksDbServiceClient, BatchPutRequest, DeleteRequest,
     GetByPrefixRequest, GetRequest, HealthRequest, KeyValue, PutRequest,
@@ -17,9 +18,9 @@ lazy_static::lazy_static! {
 
 /// Put a key-value pair into the gRPC RocksDB service
 pub async fn put(key: &str, value: &str) -> Result<(), String> {
-    crate::logd!(
+    logd!(
         2,
-        "[ETCD->RocksDB-gRPC] Putting key '{}' to service: {}",
+        "[RocksDB] Putting key '{}' to service: {}",
         key,
         *ROCKSDB_SERVICE_URL
     );
@@ -35,24 +36,23 @@ pub async fn put(key: &str, value: &str) -> Result<(), String> {
                 Ok(response) => {
                     let put_response = response.into_inner();
                     if put_response.success {
-                        println!("[ETCD->RocksDB-gRPC] Successfully stored key: {}", key);
                         Ok(())
                     } else {
                         let error_msg = put_response.error;
-                        println!("[ETCD->RocksDB-gRPC] Put failed: {}", error_msg);
+                        logd!(5, "[RocksDB] Put failed: {}", error_msg);
                         Err(error_msg)
                     }
                 }
                 Err(e) => {
                     let error_msg = format!("gRPC request failed: {}", e);
-                    println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+                    logd!(5, "[RocksDB] {}", error_msg);
                     Err(error_msg)
                 }
             }
         }
         Err(e) => {
             let error_msg = format!("Failed to create client: {}", e);
-            println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+            logd!(5, "[RocksDB] {}", error_msg);
             Err(error_msg)
         }
     }
@@ -60,9 +60,11 @@ pub async fn put(key: &str, value: &str) -> Result<(), String> {
 
 /// Get a value by key from the gRPC RocksDB service
 pub async fn get(key: &str) -> Result<String, String> {
-    println!(
-        "[ETCD->RocksDB-gRPC] Getting key '{}' from service: {}",
-        key, *ROCKSDB_SERVICE_URL
+    logd!(
+        2,
+        "[RocksDB] Getting key '{}' from service: {}",
+        key,
+        *ROCKSDB_SERVICE_URL
     );
 
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
@@ -75,23 +77,28 @@ pub async fn get(key: &str) -> Result<String, String> {
                 Ok(response) => {
                     let get_response = response.into_inner();
                     if get_response.success {
-                        println!("[ETCD->RocksDB-gRPC] Successfully retrieved key: {} (value length: {})", key, get_response.value.len());
+                        logd!(
+                            2,
+                            "[RocksDB] Successfully retrieved key: {} (value length: {})",
+                            key,
+                            get_response.value.len()
+                        );
                         Ok(get_response.value)
                     } else {
-                        println!("[ETCD->RocksDB-gRPC] Key not found: {}", key);
+                        logd!(5, "[RocksDB] Key not found: {}", key);
                         Err("Key not found".to_string())
                     }
                 }
                 Err(e) => {
                     let error_msg = format!("gRPC request failed: {}", e);
-                    println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+                    logd!(5, "[RocksDB] {}", error_msg);
                     Err(error_msg)
                 }
             }
         }
         Err(e) => {
             let error_msg = format!("Failed to create client: {}", e);
-            println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+            logd!(5, "[RocksDB] {}", error_msg);
             Err(error_msg)
         }
     }
@@ -99,9 +106,11 @@ pub async fn get(key: &str) -> Result<String, String> {
 
 /// Get all key-value pairs with the specified prefix using gRPC RocksDB service
 pub async fn get_all_with_prefix(prefix: &str) -> Result<Vec<(String, String)>, String> {
-    println!(
-        "[ETCD->RocksDB-gRPC] Getting all keys with prefix '{}' from service: {}",
-        prefix, *ROCKSDB_SERVICE_URL
+    logd!(
+        2,
+        "[RocksDB] Getting all keys with prefix '{}' from service: {}",
+        prefix,
+        *ROCKSDB_SERVICE_URL
     );
 
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
@@ -120,30 +129,28 @@ pub async fn get_all_with_prefix(prefix: &str) -> Result<Vec<(String, String)>, 
                             .into_iter()
                             .map(|kv| (kv.key, kv.value))
                             .collect();
-                        println!(
-                            "[ETCD->RocksDB-gRPC] Successfully retrieved {} keys with prefix '{}'",
+                        logd!(
+                            2,
+                            "[RocksDB] Successfully retrieved {} keys with prefix '{}'",
                             result.len(),
                             prefix
                         );
                         Ok(result)
                     } else {
-                        println!(
-                            "[ETCD->RocksDB-gRPC] Error from service: {}",
-                            get_response.error
-                        );
+                        logd!(5, "[RocksDB] Error from service: {}", get_response.error);
                         Err(get_response.error)
                     }
                 }
                 Err(e) => {
                     let error_msg = format!("gRPC request failed: {}", e);
-                    println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+                    logd!(5, "[RocksDB] {}", error_msg);
                     Err(error_msg)
                 }
             }
         }
         Err(e) => {
             let error_msg = format!("Failed to create client: {}", e);
-            println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+            logd!(5, "[RocksDB] {}", error_msg);
             Err(error_msg)
         }
     }
@@ -151,9 +158,11 @@ pub async fn get_all_with_prefix(prefix: &str) -> Result<Vec<(String, String)>, 
 
 /// Delete a key from the gRPC RocksDB service
 pub async fn delete(key: &str) -> Result<(), String> {
-    println!(
-        "[ETCD->RocksDB-gRPC] Deleting key '{}' from service: {}",
-        key, *ROCKSDB_SERVICE_URL
+    logd!(
+        2,
+        "[RocksDB] Deleting key '{}' from service: {}",
+        key,
+        *ROCKSDB_SERVICE_URL
     );
 
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
@@ -166,24 +175,24 @@ pub async fn delete(key: &str) -> Result<(), String> {
                 Ok(response) => {
                     let delete_response = response.into_inner();
                     if delete_response.success {
-                        println!("[ETCD->RocksDB-gRPC] Successfully deleted key: {}", key);
+                        logd!(2, "[RocksDB] Successfully deleted key: {}", key);
                         Ok(())
                     } else {
                         let error_msg = delete_response.error;
-                        println!("[ETCD->RocksDB-gRPC] Delete failed: {}", error_msg);
+                        logd!(5, "[RocksDB] Delete failed: {}", error_msg);
                         Err(error_msg)
                     }
                 }
                 Err(e) => {
                     let error_msg = format!("gRPC request failed: {}", e);
-                    println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+                    logd!(5, "[RocksDB] {}", error_msg);
                     Err(error_msg)
                 }
             }
         }
         Err(e) => {
             let error_msg = format!("Failed to create client: {}", e);
-            println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+            logd!(5, "[RocksDB] {}", error_msg);
             Err(error_msg)
         }
     }
@@ -191,8 +200,9 @@ pub async fn delete(key: &str) -> Result<(), String> {
 
 /// Batch put operation to store multiple key-value pairs using gRPC RocksDB service
 pub async fn batch_put(items: Vec<(String, String)>) -> Result<(), String> {
-    println!(
-        "[ETCD->RocksDB-gRPC] Batch putting {} items to service: {}",
+    logd!(
+        3,
+        "[RocksDB] Batch putting {} items to service: {}",
         items.len(),
         *ROCKSDB_SERVICE_URL
     );
@@ -210,27 +220,28 @@ pub async fn batch_put(items: Vec<(String, String)>) -> Result<(), String> {
                 Ok(response) => {
                     let batch_response = response.into_inner();
                     if batch_response.success {
-                        println!(
-                            "[ETCD->RocksDB-gRPC] Successfully stored {} items in batch",
+                        logd!(
+                            2,
+                            "[RocksDB] Successfully stored {} items in batch",
                             batch_response.processed_count
                         );
                         Ok(())
                     } else {
                         let error_msg = batch_response.error;
-                        println!("[ETCD->RocksDB-gRPC] Batch put failed: {}", error_msg);
+                        logd!(5, "[RocksDB] Batch put failed: {}", error_msg);
                         Err(error_msg)
                     }
                 }
                 Err(e) => {
                     let error_msg = format!("gRPC request failed: {}", e);
-                    println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+                    logd!(5, "[RocksDB] {}", error_msg);
                     Err(error_msg)
                 }
             }
         }
         Err(e) => {
             let error_msg = format!("Failed to create client: {}", e);
-            println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+            logd!(5, "[RocksDB] {}", error_msg);
             Err(error_msg)
         }
     }
@@ -238,8 +249,9 @@ pub async fn batch_put(items: Vec<(String, String)>) -> Result<(), String> {
 
 /// Health check for the gRPC RocksDB service
 pub async fn health_check() -> Result<bool, String> {
-    println!(
-        "[ETCD->RocksDB-gRPC] Health check for service: {}",
+    logd!(
+        1,
+        "[RocksDB] Health check for service: {}",
         *ROCKSDB_SERVICE_URL
     );
 
@@ -251,22 +263,23 @@ pub async fn health_check() -> Result<bool, String> {
                 Ok(response) => {
                     let health_response = response.into_inner();
                     let is_healthy = health_response.status == "healthy";
-                    println!(
-                        "[ETCD->RocksDB-gRPC] Health check result: {}",
+                    logd!(
+                        2,
+                        "[RocksDB] Health check result: {}",
                         health_response.status
                     );
                     Ok(is_healthy)
                 }
                 Err(e) => {
                     let error_msg = format!("Health check failed: {}", e);
-                    println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+                    logd!(5, "[RocksDB] {}", error_msg);
                     Err(error_msg)
                 }
             }
         }
         Err(e) => {
             let error_msg = format!("Failed to create client: {}", e);
-            println!("[ETCD->RocksDB-gRPC] {}", error_msg);
+            logd!(5, "[RocksDB] {}", error_msg);
             Err(error_msg)
         }
     }

@@ -2,9 +2,9 @@
 * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 * SPDX-License-Identifier: Apache-2.0
 */
-use std::error::Error;
 use common::logd;
 use common::logd::logger;
+use std::error::Error;
 
 mod grpc;
 mod manager;
@@ -32,11 +32,15 @@ async fn initialize(skip_grpc: bool) -> Result<(), Box<dyn Error>> {
     let node_type = &config.host.r#type;
 
     /*if node_type == "bluechi" {
-        println!("Adding {} to bluechi_nodes from settings.yaml", hostname);
+        logd!(2, "Adding {} to bluechi_nodes from settings.yaml", hostname);
         manager.bluechi_nodes.push(hostname.clone());
     } else*/
     {
-        println!("Adding {} to nodeagent_nodes from settings.yaml", hostname);
+        logd!(
+            2,
+            "Adding {} to nodeagent_nodes from settings.yaml",
+            hostname
+        );
         manager.nodeagent_nodes.push(hostname.clone());
     }
 
