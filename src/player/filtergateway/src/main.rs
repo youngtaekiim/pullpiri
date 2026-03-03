@@ -28,7 +28,7 @@ use common::logd::logger;
 #[cfg(not(feature = "tarpaulin_include"))]
 #[tokio::main]
 async fn main() {
-    logger::init_async_logger("filtergateway").await;
+    let _ = logger::init_async_logger("filtergateway").await;
     logd!(1, "Initializing FilterGateway");
 
     // Initialize tracing subscriber for logging

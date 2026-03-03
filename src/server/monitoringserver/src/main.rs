@@ -13,6 +13,8 @@ pub mod etcd_storage;
 pub mod grpc;
 pub mod manager;
 
+use common::logd;
+use common::logd::logger;
 use common::monitoringserver::monitoring_server_connection_server::MonitoringServerConnectionServer;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
@@ -72,7 +74,8 @@ async fn initialize(
 
 #[tokio::main]
 async fn main() {
-    println!("Starting MonitoringServer...");
+    let _ = logger::init_async_logger("monitoringserver").await;
+    logd!(1, "initiailize monitoring server");
 
     let (tx_container, rx_container) = channel::<ContainerList>(100);
     let (tx_node, rx_node) = channel::<NodeInfo>(100);

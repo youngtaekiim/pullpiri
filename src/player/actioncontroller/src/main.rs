@@ -3,6 +3,8 @@
 * SPDX-License-Identifier: Apache-2.0
 */
 use std::error::Error;
+use common::logd;
+use common::logd::logger;
 
 mod grpc;
 mod manager;
@@ -59,7 +61,8 @@ async fn initialize(skip_grpc: bool) -> Result<(), Box<dyn Error>> {
 /// critical error during operation.
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    println!("Starting ActionController...");
+    let _ = logger::init_async_logger("actioncontroller").await;
+    logd!(1, "initiailize action controller");
 
     // Initialize the controller
     initialize(false).await?;
@@ -68,7 +71,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Keep the application running
     tokio::signal::ctrl_c().await?;
-    println!("Shutting down ActionController...");
+    logd!(3, "Shutting down ActionController...");
 
     Ok(())
 }

@@ -16,6 +16,8 @@ use common::monitoringserver::ContainerList;
 use common::statemanager::{
     state_manager_connection_server::StateManagerConnectionServer, StateChange,
 };
+use common::logd;
+use common::logd::logger::{self, log};
 use std::env;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tonic::transport::Server;
@@ -234,19 +236,13 @@ async fn initialize_timpani_server() {
 /// - Graceful shutdown even if one component fails
 #[tokio::main]
 async fn main() {
-    println!("========================================");
-    println!("         PICCOLO StateManager           ");
-    println!("========================================");
-    println!("Starting StateManager service...");
+    let _ = logger::init_async_logger("statemanager").await;
+    logd!(1, "initiailize statemanager...");
 
     // Create async channels for communication between gRPC server and processing engine
     // Buffer size of 100 provides good throughput while preventing excessive memory usage
     let (tx_container, rx_container) = channel::<ContainerList>(100);
     let (tx_state_change, rx_state_change) = channel::<StateChange>(100);
-
-    println!("Async communication channels created:");
-    println!("  - ContainerList channel: 100 message buffer");
-    println!("  - StateChange channel: 100 message buffer");
 
     // Launch StateManager processing engine
     let manager_task = launch_manager(rx_container, rx_state_change);
@@ -257,20 +253,12 @@ async fn main() {
     // Launch gRPC server for timpani deadline miss
     let timpani_task = initialize_timpani_server();
 
-    println!("Launching StateManager components concurrently...");
-
     // Run both components concurrently until shutdown
     // tokio::join! ensures both tasks complete before main exits
     tokio::join!(manager_task, grpc_task, timpani_task);
 
     // Both tasks return (), but we log completion for monitoring
-    println!("StateManager service components have stopped:");
-    println!("  - StateManager engine: completed");
-    println!("  - gRPC server: completed");
-
-    println!("========================================");
-    println!("     StateManager Service Stopped      ");
-    println!("========================================");
+    logd!(6, "statemanager service stopped");
 }
 
 #[cfg(test)]
