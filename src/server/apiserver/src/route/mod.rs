@@ -31,7 +31,11 @@ pub async fn launch_tcp_listener() {
         .allow_headers(Any);
     let app = Router::new().merge(api::router()).layer(cors);
 
-    println!("http api listening on {}", listener.local_addr().unwrap());
+    logd!(
+        2,
+        "http api listening on {}",
+        listener.local_addr().unwrap()
+    );
     logd!(
         2,
         "http api listening on {}",

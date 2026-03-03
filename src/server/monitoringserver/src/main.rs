@@ -31,13 +31,13 @@ async fn launch_manager(
 
     match manager.initialize().await {
         Ok(_) => {
-            println!("MonitoringServerManager successfully initialized");
+            logd!(3, "MonitoringServerManager successfully initialized");
             if let Err(e) = manager.run().await {
-                eprintln!("Error running MonitoringServerManager: {:?}", e);
+                logd!(5, "Error running MonitoringServerManager: {:?}", e);
             }
         }
         Err(e) => {
-            eprintln!("Failed to initialize MonitoringServerManager: {:?}", e);
+            logd!(5, "Failed to initialize MonitoringServerManager: {:?}", e);
         }
     }
 }
@@ -61,14 +61,14 @@ async fn initialize(
     let addr = common::monitoringserver::open_server()
         .parse()
         .expect("monitoringserver address parsing error");
-    println!("MonitoringServer listening on {}", addr);
+    logd!(3, "MonitoringServer listening on {}", addr);
 
     if let Err(e) = Server::builder()
         .add_service(MonitoringServerConnectionServer::new(server))
         .serve(addr)
         .await
     {
-        eprintln!("gRPC server error: {}", e);
+        logd!(5, "gRPC server error: {}", e);
     }
 }
 

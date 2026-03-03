@@ -27,7 +27,7 @@ use common::logd::logger;
 #[cfg(feature = "tarpaulin_include")]
 fn main() {
     // Dummy main for coverage builds
-    println!("Tarpaulin coverage build: main function stub.");
+    logd!(0, "Tarpaulin coverage build: main function stub.");
 }
 #[cfg(not(feature = "tarpaulin_include"))]
 #[tokio::main]

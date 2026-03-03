@@ -16,14 +16,18 @@ lazy_static::lazy_static! {
     };
 }
 
+const DEV: bool = false;
+
 /// Put a key-value pair into the gRPC RocksDB service
 pub async fn put(key: &str, value: &str) -> Result<(), String> {
-    logd!(
-        2,
-        "[RocksDB] Putting key '{}' to service: {}",
-        key,
-        *ROCKSDB_SERVICE_URL
-    );
+    if DEV {
+        logd!(
+            1,
+            "[RocksDB] Putting key '{}' to service: {}",
+            key,
+            *ROCKSDB_SERVICE_URL
+        );
+    }
 
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
@@ -60,12 +64,14 @@ pub async fn put(key: &str, value: &str) -> Result<(), String> {
 
 /// Get a value by key from the gRPC RocksDB service
 pub async fn get(key: &str) -> Result<String, String> {
-    logd!(
-        2,
-        "[RocksDB] Getting key '{}' from service: {}",
-        key,
-        *ROCKSDB_SERVICE_URL
-    );
+    if DEV {
+        logd!(
+            1,
+            "[RocksDB] Getting key '{}' from service: {}",
+            key,
+            *ROCKSDB_SERVICE_URL
+        );
+    }
 
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
@@ -77,12 +83,14 @@ pub async fn get(key: &str) -> Result<String, String> {
                 Ok(response) => {
                     let get_response = response.into_inner();
                     if get_response.success {
-                        logd!(
-                            2,
-                            "[RocksDB] Successfully retrieved key: {} (value length: {})",
-                            key,
-                            get_response.value.len()
-                        );
+                        if DEV {
+                            logd!(
+                                1,
+                                "[RocksDB] Successfully retrieved key: {} (value length: {})",
+                                key,
+                                get_response.value.len()
+                            );
+                        }
                         Ok(get_response.value)
                     } else {
                         logd!(5, "[RocksDB] Key not found: {}", key);
@@ -106,12 +114,14 @@ pub async fn get(key: &str) -> Result<String, String> {
 
 /// Get all key-value pairs with the specified prefix using gRPC RocksDB service
 pub async fn get_all_with_prefix(prefix: &str) -> Result<Vec<(String, String)>, String> {
-    logd!(
-        2,
-        "[RocksDB] Getting all keys with prefix '{}' from service: {}",
-        prefix,
-        *ROCKSDB_SERVICE_URL
-    );
+    if DEV {
+        logd!(
+            1,
+            "[RocksDB] Getting all keys with prefix '{}' from service: {}",
+            prefix,
+            *ROCKSDB_SERVICE_URL
+        );
+    }
 
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
@@ -129,12 +139,14 @@ pub async fn get_all_with_prefix(prefix: &str) -> Result<Vec<(String, String)>, 
                             .into_iter()
                             .map(|kv| (kv.key, kv.value))
                             .collect();
-                        logd!(
-                            2,
-                            "[RocksDB] Successfully retrieved {} keys with prefix '{}'",
-                            result.len(),
-                            prefix
-                        );
+                        if DEV {
+                            logd!(
+                                1,
+                                "[RocksDB] Successfully retrieved {} keys with prefix '{}'",
+                                result.len(),
+                                prefix
+                            );
+                        }
                         Ok(result)
                     } else {
                         logd!(5, "[RocksDB] Error from service: {}", get_response.error);
@@ -158,12 +170,14 @@ pub async fn get_all_with_prefix(prefix: &str) -> Result<Vec<(String, String)>, 
 
 /// Delete a key from the gRPC RocksDB service
 pub async fn delete(key: &str) -> Result<(), String> {
-    logd!(
-        2,
-        "[RocksDB] Deleting key '{}' from service: {}",
-        key,
-        *ROCKSDB_SERVICE_URL
-    );
+    if DEV {
+        logd!(
+            1,
+            "[RocksDB] Deleting key '{}' from service: {}",
+            key,
+            *ROCKSDB_SERVICE_URL
+        );
+    }
 
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
@@ -175,7 +189,9 @@ pub async fn delete(key: &str) -> Result<(), String> {
                 Ok(response) => {
                     let delete_response = response.into_inner();
                     if delete_response.success {
-                        logd!(2, "[RocksDB] Successfully deleted key: {}", key);
+                        if DEV {
+                            logd!(1, "[RocksDB] Successfully deleted key: {}", key);
+                        }
                         Ok(())
                     } else {
                         let error_msg = delete_response.error;
@@ -200,12 +216,14 @@ pub async fn delete(key: &str) -> Result<(), String> {
 
 /// Batch put operation to store multiple key-value pairs using gRPC RocksDB service
 pub async fn batch_put(items: Vec<(String, String)>) -> Result<(), String> {
-    logd!(
-        3,
-        "[RocksDB] Batch putting {} items to service: {}",
-        items.len(),
-        *ROCKSDB_SERVICE_URL
-    );
+    if DEV {
+        logd!(
+            1,
+            "[RocksDB] Batch putting {} items to service: {}",
+            items.len(),
+            *ROCKSDB_SERVICE_URL
+        );
+    }
 
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
@@ -220,11 +238,13 @@ pub async fn batch_put(items: Vec<(String, String)>) -> Result<(), String> {
                 Ok(response) => {
                     let batch_response = response.into_inner();
                     if batch_response.success {
-                        logd!(
-                            2,
-                            "[RocksDB] Successfully stored {} items in batch",
-                            batch_response.processed_count
-                        );
+                        if DEV {
+                            logd!(
+                                1,
+                                "[RocksDB] Successfully stored {} items in batch",
+                                batch_response.processed_count
+                            );
+                        }
                         Ok(())
                     } else {
                         let error_msg = batch_response.error;
@@ -249,11 +269,13 @@ pub async fn batch_put(items: Vec<(String, String)>) -> Result<(), String> {
 
 /// Health check for the gRPC RocksDB service
 pub async fn health_check() -> Result<bool, String> {
-    logd!(
-        1,
-        "[RocksDB] Health check for service: {}",
-        *ROCKSDB_SERVICE_URL
-    );
+    if DEV {
+        logd!(
+            1,
+            "[RocksDB] Health check for service: {}",
+            *ROCKSDB_SERVICE_URL
+        );
+    }
 
     match RocksDbServiceClient::connect(ROCKSDB_SERVICE_URL.clone()).await {
         Ok(mut client) => {
@@ -263,11 +285,13 @@ pub async fn health_check() -> Result<bool, String> {
                 Ok(response) => {
                     let health_response = response.into_inner();
                     let is_healthy = health_response.status == "healthy";
-                    logd!(
-                        2,
-                        "[RocksDB] Health check result: {}",
-                        health_response.status
-                    );
+                    if DEV {
+                        logd!(
+                            1,
+                            "[RocksDB] Health check result: {}",
+                            health_response.status
+                        );
+                    }
                     Ok(is_healthy)
                 }
                 Err(e) => {
