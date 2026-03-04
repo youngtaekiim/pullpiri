@@ -2,9 +2,15 @@
 # SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-# Get arguments
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Get arguments - Read carefully below paragraph
 MASTER_IP="${1:-}"  # First argument - Piccolo master IP address
 NODE_IP="${2:-}"    # Second argument - Node IP address
+# If you want to hardcode the IPs for testing, you can
+# uncomment the lines below and comment out the argument parsing above
+# MASTER_IP="127.0.0.1"  # First argument - Piccolo master IP address
+# NODE_IP="127.0.0.1"    # Second argument - Node IP address
 
 # Check if both IPs are provided
 if [[ -z "${MASTER_IP}" ]] || [[ -z "${NODE_IP}" ]]; then
@@ -34,10 +40,6 @@ fi
 NODE_NAME=$(hostname)  # Always use system hostname
 NODE_ROLE="nodeagent"  # Default node role (master, nodeagent, bluechi)
 NODE_TYPE="vehicle"  # Default node type (vehicle, cloud)
-
-# Get the root path (script is in containers/, so go up one level)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_PATH="$(dirname "$SCRIPT_DIR")"
 
 # Set architecture
 ARCH=$(uname -m)

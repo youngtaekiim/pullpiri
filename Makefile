@@ -52,6 +52,14 @@ uninstall:
 #	docker run --privileged --rm tonistiigi/binfmt --install all
 #	docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/mco-piccolo/pullpiri-rocksdb:v11.18.0 -f src/server/rocksdbservice/Dockerfile .
 
+.PHONY: dev-install
+dev-install:
+	-./containers/devonly/install-piccolo.sh
+
+.PHONY: dev-uninstall
+dev-uninstall:
+	-./containers/devonly/uninstall-piccolo.sh
+
 .PHONY: tools
 tools:
 	cargo build --manifest-path=src/tools/Cargo.toml --release
