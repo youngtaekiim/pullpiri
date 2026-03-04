@@ -1,8 +1,13 @@
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 use crate::vehicle::dds::DdsData;
 use common::Result;
 use std::collections::HashMap;
 
 #[async_trait]
+#[allow(dead_code)]
 pub trait DdsTopicListener: Send + Sync {
     fn is_running(&self) -> bool;
     async fn start(&mut self) -> Result<()>;
@@ -11,39 +16,40 @@ pub trait DdsTopicListener: Send + Sync {
     fn is_topic(&self, topic_name: &str) -> bool;
 }
 
+#[allow(unused_variables, unused_imports)]
 use dust_dds::{
     domain::domain_participant::DomainParticipant,
-    domain::domain_participant_factory::{DomainId, DomainParticipantFactory},
+    domain::domain_participant_factory::DomainParticipantFactory,
     infrastructure::{
         qos::QosKind,
         qos_policy::{DataRepresentationQosPolicy, XCDR2_DATA_REPRESENTATION},
-        status::{StatusKind, NO_STATUS},
+        status::NO_STATUS,
         time::Duration,
     },
     subscription::data_reader::DataReader,
     subscription::sample_info::{ANY_INSTANCE_STATE, ANY_SAMPLE_STATE, ANY_VIEW_STATE},
     subscription::subscriber::Subscriber,
-    topic_definition::type_support::{DdsDeserialize, DdsType, TypeSupport},
+    topic_definition::type_support::{DdsDeserialize, TypeSupport},
 };
 
 use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 use tokio::time;
 
-use anyhow::{anyhow, Result as AnyhowResult};
-use serde_json::{json, Map, Value};
+use anyhow::anyhow;
+use serde_json::Value;
 
 use async_trait::async_trait;
-use clap::Parser;
-use common;
-use log::{debug, error, info, warn};
-use once_cell::sync::Lazy;
+// use clap::Parser;
+use common::logd;
+// use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 /// DDS topic listener
 ///
 /// Listens to a specific DDS topic and forwards data to the filter system.
+#[allow(dead_code)]
 pub struct TopicListener {
     /// Name of the topic
     pub topic_name: String,
@@ -130,7 +136,7 @@ impl DdsTopicListener for TopicListener {
         // Spawn the listener task
         let task = tokio::spawn(async move {
             if let Err(e) = Self::listener_loop(topic_name, data_type_name, tx, domain_id).await {
-                error!("Error in listener loop: {:?}", e);
+                logd!(5, "Error in listener loop: {:?}", e);
             }
         });
 
@@ -161,6 +167,7 @@ impl DdsTopicListener for TopicListener {
 
 impl TopicListener {
     /// Main listener loop for processing DDS data
+    #[allow(dead_code)]
     async fn listener_loop(
         topic_name: String,
         data_type_name: String,
@@ -168,7 +175,7 @@ impl TopicListener {
         domain_id: i32,
     ) -> Result<()> {
         // 도메인 참여자 생성
-        info!("Generic listener started for topic '{}'", topic_name);
+        logd!(3, "Generic listener started for topic '{}'", topic_name);
 
         let domain_participant_factory = DomainParticipantFactory::get_instance();
         let participant = domain_participant_factory
@@ -176,19 +183,22 @@ impl TopicListener {
             .map_err(|e| anyhow!("Failed to create domain participant: {:?}", e))?;
 
         // 구독자 생성
-        let subscriber = participant
+        // commenting below subscriber never used in this block
+        let _subscriber = participant
             .create_subscriber(QosKind::Default, None, NO_STATUS)
             .map_err(|e| anyhow!("Failed to create subscriber: {:?}", e))?;
 
         // IDL 타입 정보를 유동적으로 처리
         // 토픽 메타데이터에 따라 데이터 처리를 다르게 함
-        info!(
+        logd!(
+            3,
             "Setting up listener for topic {} of type {}",
-            topic_name, data_type_name
+            topic_name,
+            data_type_name
         );
 
         // 메시지 수신 루프
-        let mut interval = time::interval(time::Duration::from_millis(100));
+        let mut interval = time::interval(time::Duration::from_millis(2000));
 
         loop {
             interval.tick().await;
@@ -202,7 +212,7 @@ impl TopicListener {
 
             // 데이터 전송 채널이 닫히면 루프 종료
             if tx.send(dds_data).await.is_err() {
-                warn!("Channel closed, stopping listener for {}", topic_name);
+                logd!(4, "Channel closed, stopping listener for {}", topic_name);
                 break;
             }
         }
@@ -214,6 +224,7 @@ impl TopicListener {
 /// 타입별 DDS 토픽 리스너 베이스 구현
 ///
 /// TypeSupport 특성으로 다양한 DDS 데이터 타입 처리
+#[allow(dead_code)]
 pub struct GenericTopicListener<
     T: TypeSupport
         + Default
@@ -270,6 +281,7 @@ impl<
     }
 
     /// 타입별 리스너 루프
+    #[allow(dead_code)]
     async fn typed_listener_loop(
         topic_name: String,
         data_type_name: String,
@@ -296,13 +308,14 @@ impl<
             .create_datareader::<T>(&topic, QosKind::Default, None, NO_STATUS)
             .map_err(|e| anyhow!("Failed to create data reader: {:?}", e))?;
 
-        println!(
+        logd!(
+            3,
             "Successfully created data reader for topic '{}'",
             topic_name
         );
 
         // 메시지 수신 루프
-        let mut interval = time::interval(time::Duration::from_millis(100));
+        let mut interval = time::interval(time::Duration::from_millis(2000));
 
         loop {
             interval.tick().await;
@@ -339,14 +352,14 @@ impl<
 
                             // Send data through channel
                             if tx.send(dds_data).await.is_err() {
-                                warn!("Channel closed, stopping listener for {}", topic_name);
+                                logd!(4, "Channel closed, stopping listener for {}", topic_name);
                                 return Ok(());
                             }
                         }
                     }
                 }
                 Err(e) => {
-                    debug!("No new samples available: {:?}", e);
+                    logd!(5, "No new samples available: {:?}", e);
                 }
             }
         }
@@ -384,7 +397,12 @@ impl<
             if let Err(e) =
                 Self::typed_listener_loop(topic_name.clone(), data_type_name, tx, domain_id).await
             {
-                error!("Error in typed listener loop for {}: {:?}", topic_name, e);
+                logd!(
+                    5,
+                    "Error in typed listener loop for {}: {:?}",
+                    topic_name,
+                    e
+                );
             }
         });
 

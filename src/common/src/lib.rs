@@ -9,6 +9,11 @@ pub mod etcd;
 pub mod setting;
 pub mod spec;
 
+// gRPC protobuf module for RocksDB service
+pub mod rocksdbservice {
+    include!("generated/rocksdbservice.rs");
+}
+
 fn open_server(port: u16) -> String {
     format!("{}:{}", crate::setting::get_config().host.ip, port)
 }
@@ -24,13 +29,14 @@ fn connect_server(port: u16) -> String {
 }
 
 // guest 서버 연결 함수 수정: 이제 항상 호스트 서버 주소 반환
-fn connect_guest_server(port: u16) -> String {
+//using rust build in _ to below code , as it was never used anywhere to prevent warnings
+fn _connect_guest_server(port: u16) -> String {
     // 항상 호스트 서버 주소 반환
     connect_server(port)
 }
 
 pub mod actioncontroller {
-    tonic::include_proto!("actioncontroller");
+    include!("generated/actioncontroller.rs");
 
     pub fn open_server() -> String {
         super::open_server(47001)
@@ -42,7 +48,7 @@ pub mod actioncontroller {
 }
 
 pub mod apiserver {
-    tonic::include_proto!("apiserver");
+    include!("generated/apiserver.rs");
 
     pub fn open_rest_server() -> String {
         super::open_server(47099)
@@ -58,7 +64,7 @@ pub mod apiserver {
 }
 
 pub mod filtergateway {
-    tonic::include_proto!("filtergateway");
+    include!("generated/filtergateway.rs");
 
     pub fn open_server() -> String {
         super::open_server(47002)
@@ -70,7 +76,7 @@ pub mod filtergateway {
 }
 
 pub mod monitoringserver {
-    tonic::include_proto!("monitoringserver");
+    include!("generated/monitoringserver.rs");
 
     pub fn open_server() -> String {
         super::open_server(47003)
@@ -82,27 +88,23 @@ pub mod monitoringserver {
 }
 
 pub mod nodeagent {
-    tonic::include_proto!("nodeagent");
+    include!("generated/nodeagent.rs");
 
-    //     pub fn open_server() -> String {
-    //         super::open_server(47004)
-    //     }
+    pub mod fromactioncontroller {
+        include!("generated/nodeagent.fromactioncontroller.rs");
 
-    //     pub fn open_guest_server() -> String {
-    //         super::open_guest_server(47004)
-    //     }
+        pub fn connect_server(node_ip: &str) -> String {
+            format!("http://{node_ip}:47004")
+        }
+    }
 
-    //     pub fn connect_server() -> String {
-    //         super::connect_server(47004)
-    //     }
-
-    //     pub fn connect_guest_server() -> String {
-    //         super::connect_guest_server(47004)
-    //     }
+    pub mod fromapiserver {
+        include!("generated/nodeagent.fromapiserver.rs");
+    }
 }
 
 pub mod policymanager {
-    tonic::include_proto!("policymanager");
+    include!("generated/policymanager.rs");
 
     pub fn open_server() -> String {
         super::open_server(47005)
@@ -114,7 +116,7 @@ pub mod policymanager {
 }
 
 pub mod statemanager {
-    tonic::include_proto!("statemanager");
+    include!("generated/statemanager.rs");
 
     pub fn open_server() -> String {
         super::open_server(47006)
@@ -125,12 +127,24 @@ pub mod statemanager {
     }
 }
 
-pub mod pharos_service {
-    tonic::include_proto!("pharos.api.v1");
-    pub fn connect_pharos_server() -> String {
-        format!("http://{}:{}", crate::setting::get_config().host.ip, 47006)
+pub mod logd;
+
+pub mod external {
+    pub mod timpani {
+        include!("generated/schedinfo.v1.rs");
+        pub fn connect_timpani_server() -> String {
+            format!("http://{}:{}", crate::setting::get_config().host.ip, 50052)
+        }
+    }
+
+    pub mod pharos {
+        include!("generated/pharos.api.v1.rs");
+        pub fn connect_pharos_server() -> String {
+            format!("http://{}:{}", crate::setting::get_config().host.ip, 47006)
+        }
     }
 }
+
 //Unit Test Cases
 #[cfg(test)]
 mod tests {

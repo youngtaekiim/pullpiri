@@ -1,12 +1,17 @@
-use core::sync;
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
+// use core::sync;
 use std::io::Error;
 
 use crate::manager::ScenarioParameter;
-use crate::vehicle::dds::DdsData;
+// use crate::vehicle::dds::DdsData;
 
-use common::spec::artifact::{Artifact, Scenario};
+use common::logd;
+use common::spec::artifact::Scenario;
 use common::Result;
-use tokio::sync::mpsc::{self, error::SendError};
+use tokio::sync::mpsc::{self};
 use tonic::{Request, Response, Status};
 
 // Import the generated protobuf code from filtergateway.proto
@@ -16,10 +21,11 @@ use common::filtergateway::{
 };
 
 /// FilterGateway gRPC service handler
+#[allow(dead_code)]
 pub struct FilterGatewayReceiver {
     tx: mpsc::Sender<ScenarioParameter>,
 }
-
+#[allow(dead_code)]
 impl FilterGatewayReceiver {
     /// Create a new FilterGatewayReceiver
     ///
@@ -63,18 +69,15 @@ impl FilterGatewayReceiver {
         // Parse the scenario YAML string into a Scenario struct
         let scenario = serde_yaml::from_str::<Scenario>(&scenario_yaml_str)?;
 
-        let param = ScenarioParameter {
-            action: action,
-            scenario: scenario,
-        };
+        let param = ScenarioParameter { action, scenario };
 
         self.tx.send(param).await.map_err(|e| {
-            eprintln!("Failed to send scenario: {}", e);
-            Error::new(std::io::ErrorKind::Other, "Failed to send scenario")
+            logd!(5, "Failed to send scenario: {}", e);
+            Error::other("Failed to send scenario")
         })?;
 
         let elapsed = start.elapsed();
-        println!("handle_scenario: elapsed = {:?}", elapsed);
+        logd!(1, "handle_scenario: elapsed = {:?}", elapsed);
 
         Ok(())
     }
@@ -87,15 +90,15 @@ impl FilterGatewayConnection for FilterGatewayReceiver {
         request: Request<HandleScenarioRequest>,
     ) -> std::result::Result<Response<HandleScenarioResponse>, Status> {
         let req = request.into_inner();
-        println!("Received scenario handling request");
+        logd!(2, "Received scenario handling request");
 
         // Extract the scenario YAML string and action from the request
         match self.handle_scenario(req.scenario, req.action).await {
             Ok(_) => {
-                println!("Successfully handled scenario");
+                logd!(2, "Successfully handled scenario");
             }
             Err(e) => {
-                eprintln!("Error handling scenario: {}", e);
+                logd!(5, "Error handling scenario: {}", e);
                 return Err(Status::internal(format!(
                     "Failed to handle scenario: {}",
                     e

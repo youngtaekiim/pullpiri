@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+# SPDX-License-Identifier: Apache-2.0
 # node_ready_check.sh - Node clustering pre-state check script
 # Optimized system check for embedded environments
 
@@ -166,7 +168,8 @@ log "Checking network connectivity..."
 
 # Check if master node IP is set
 MASTER_IP=${MASTER_NODE_IP:-"127.0.0.1"}
-GRPC_PORT=${GRPC_PORT:-50051}
+#GRPC_PORT=${GRPC_PORT:-47098}
+GRPC_PORT="47098"
 
 log "Using master node IP: $MASTER_IP (from environment or default)"
 log "Using gRPC port: $GRPC_PORT (from environment or default)"
@@ -186,11 +189,11 @@ if command_exists ping; then
                 ERROR_COUNT=$((ERROR_COUNT+1))
             fi
             
-            # Check ETCD port
-            if nc -z -w 2 $MASTER_IP 2379 &> /dev/null; then
-                log "ETCD port accessible: $MASTER_IP:2379"
+            # Check RocksDB port
+            if nc -z -w 2 $MASTER_IP 47007 &> /dev/null; then
+                log "RocksDB port accessible: $MASTER_IP:47007"
             else
-                log "Error: Cannot connect to ETCD port: $MASTER_IP:2379"
+                log "Error: Cannot connect to RocksDB port: $MASTER_IP:47007"
                 ERROR_COUNT=$((ERROR_COUNT+1))
             fi
         else

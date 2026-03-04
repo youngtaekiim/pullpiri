@@ -1,3 +1,7 @@
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 use common::filtergateway::{
     filter_gateway_connection_client::FilterGatewayConnectionClient, HandleScenarioRequest,
 };
@@ -64,7 +68,7 @@ async fn test_handle_scenario_with_invalid_yaml() {
     let (tx, _rx) = mpsc::channel(1);
     let receiver = FilterGatewayReceiver::new(tx);
 
-    let addr: SocketAddr = "127.0.0.1:50056".parse().unwrap();
+    let addr: SocketAddr = "127.0.0.1:60056".parse().unwrap();
     let server = tokio::spawn(async move {
         Server::builder()
             .add_service(receiver.into_service())
@@ -73,9 +77,9 @@ async fn test_handle_scenario_with_invalid_yaml() {
             .unwrap();
     });
 
-    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
-    let mut client = FilterGatewayConnectionClient::connect("http://127.0.0.1:50056")
+    let mut client = FilterGatewayConnectionClient::connect("http://127.0.0.1:60056")
         .await
         .expect("Failed to connect");
 

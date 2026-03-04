@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+# SPDX-License-Identifier: Apache-2.0
 set -euo pipefail  # Exit on error, undefined variables, or pipe failure
 
 # Initialize log and report files
@@ -20,11 +22,10 @@ FAILED_TOTAL=0   # Count of manifests that failed deny check
 PASSED_TOTAL=0   # Count of manifests that passed deny check
 
 # Define paths to Cargo.toml manifests to check
-COMMON_MANIFEST="src/common/Cargo.toml"
-AGENT_MANIFEST="src/agent/Cargo.toml"
+MAJOR_MANIFEST="src/Cargo.toml"
+NODEAGENT_MANIFEST="src/agent/nodeagent/Cargo.toml"
+ROCKSDBSERVICE_MANIFEST="src/server/rocksdbservice/Cargo.toml"
 TOOLS_MANIFEST="src/tools/Cargo.toml"
-APISERVER_MANIFEST="src/server/apiserver/Cargo.toml"
-FILTERGATEWAY_MANIFEST="src/player/filtergateway/Cargo.toml"
 
 # Function to run cargo-deny on a given manifest and log results
 run_deny() {
@@ -58,11 +59,10 @@ run_deny() {
 # Run cargo-deny on desired manifests
 # Uncomment manifests as needed
 
-#[[ -f "$COMMON_MANIFEST" ]]        && run_deny "$COMMON_MANIFEST" "common"        || echo "::warning ::$COMMON_MANIFEST not found, skipping..."
-#[[ -f "$AGENT_MANIFEST" ]]         && run_deny "$AGENT_MANIFEST" "agent"          || echo "::warning ::$AGENT_MANIFEST not found, skipping..."
-#[[ -f "$TOOLS_MANIFEST" ]]         && run_deny "$TOOLS_MANIFEST" "tools"          || echo "::warning ::$TOOLS_MANIFEST not found, skipping..."
-[[ -f "$APISERVER_MANIFEST" ]]     && run_deny "$APISERVER_MANIFEST" "apiserver"  || echo "::warning ::$APISERVER_MANIFEST not found, skipping..."
-#[[ -f "$FILTERGATEWAY_MANIFEST" ]] && run_deny "$FILTERGATEWAY_MANIFEST" "filtergateway" || echo "::warning ::$FILTERGATEWAY_MANIFEST not found, skipping..."
+[[ -f "$MAJOR_MANIFEST" ]]          && run_deny "$MAJOR_MANIFEST" "major" || echo "::warning ::$MAJOR_MANIFEST not found, skipping..."
+[[ -f "$NODEAGENT_MANIFEST" ]]      && run_deny "$NODEAGENT_MANIFEST" "nodeagent" || echo "::warning ::$NODEAGENT_MANIFEST not found, skipping..."
+[[ -f "$ROCKSDBSERVICE_MANIFEST" ]] && run_deny "$ROCKSDBSERVICE_MANIFEST" "rocksdbservice" || echo "::warning ::$ROCKSDBSERVICE_MANIFEST not found, skipping..."
+[[ -f "$TOOLS_MANIFEST" ]]          && run_deny "$TOOLS_MANIFEST" "tools" || echo "::warning ::$TOOLS_MANIFEST not found, skipping..."
 
 # Print final summary report to console and log
 echo -e "\n📄 Summary:" | tee -a "$LOG_FILE"

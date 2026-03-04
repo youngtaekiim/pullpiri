@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+# SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 
 PROJECT_ROOT="$(pwd)"
@@ -10,11 +12,10 @@ touch "$LOG_FILE"
 echo "🔍 Starting license checks..." | tee -a "$LOG_FILE"
 
 MANIFESTS=(
-    "src/server/Cargo.toml"
-    "src/common/Cargo.toml"
-    "src/agent/Cargo.toml"
+    "src/Cargo.toml"
+    "src/agent/nodeagent/Cargo.toml"
+    "src/server/rocksdbservice/Cargo.toml"
     "src/tools/Cargo.toml"
-    "src/player/Cargo.toml"
 )
 
 # Ensure cargo-about is installed

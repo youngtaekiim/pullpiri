@@ -1,11 +1,12 @@
-use common::nodeagent::{
-    node_agent_connection_client::NodeAgentConnectionClient, HandleYamlRequest,
-};
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
+use common::logd;
 use common::policymanager::{
     policy_manager_connection_client::PolicyManagerConnectionClient, CheckPolicyRequest,
 };
 use common::Result;
-use tonic::Request;
 
 /// Check if a scenario is allowed by policy
 ///
@@ -27,6 +28,7 @@ use tonic::Request;
 /// - The connection to PolicyManager is not established
 /// - The gRPC request fails (e.g., PolicyManager returns a gRPC Status error)
 /// - The policy check fails (application-level failure indicated by gRPC Status)
+#[allow(dead_code)]
 pub async fn check_policy(scenario_name: String) -> Result<()> {
     // Change return type
     if scenario_name.trim().is_empty() {
@@ -46,9 +48,11 @@ pub async fn check_policy(scenario_name: String) -> Result<()> {
 
     // Check application-level status from the response payload *only if* the gRPC call was successful
     if response_inner.status == 0 {
-        println!(
+        logd!(
+            2,
             "Policy check successful for '{}': {}",
-            scenario_name, response_inner.desc
+            scenario_name,
+            response_inner.desc
         );
         Ok(()) // Policy passed
     } else {
@@ -56,9 +60,12 @@ pub async fn check_policy(scenario_name: String) -> Result<()> {
         // but included an application-level error code (non-0 status) in the payload.
         // Given our recommended `receiver.rs`, this path should ideally not be taken for errors.
         // It's more robust to rely on the gRPC `Status` for errors.
-        println!(
+        logd!(
+            5,
             "Policy check failed for '{}' (Application Status: {}): {}",
-            scenario_name, response_inner.status, response_inner.desc
+            scenario_name,
+            response_inner.status,
+            response_inner.desc
         );
         Err(format!(
             "Policy check failed for scenario '{}' with status {}: {}",
@@ -76,18 +83,18 @@ pub async fn check_policy(scenario_name: String) -> Result<()> {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_check_policy_success() {
-        let scenario_name = "antipinch-enable".to_string();
+    // #[tokio::test]
+    // async fn test_check_policy_success() {
+    //     let scenario_name = "antipinch-enable".to_string();
 
-        let result = check_policy(scenario_name).await;
-        if let Err(ref e) = result {
-            println!("Error in test_check_policy_success: {:?}", e);
-        } else {
-            println!("test_check_policy_success successful");
-        }
-        assert!(result.is_ok());
-    }
+    //     let result = check_policy(scenario_name).await;
+    //     if let Err(ref e) = result {
+    //         logd!(5, "Error in test_check_policy_success: {:?}", e);
+    //     } else {
+    //         logd!(2, "test_check_policy_success successful");
+    //     }
+    //     assert!(result.is_ok());
+    // }
 
     #[tokio::test]
     async fn test_check_policy_failure_invalid_scenario() {

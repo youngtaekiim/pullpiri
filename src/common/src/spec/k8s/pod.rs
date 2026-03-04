@@ -32,13 +32,14 @@ impl From<Model> for Pod {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct PodSpec {
     hostNetwork: Option<bool>,
-    containers: Vec<Container>,
+    pub containers: Vec<Container>,
     pub volumes: Option<Vec<Volume>>,
     initContainers: Option<Vec<Container>>,
     restartPolicy: Option<String>,
     terminationGracePeriodSeconds: Option<i32>,
-    hostIpc: Option<bool>,
+    hostIPC: Option<bool>,
     runtimeClassName: Option<String>,
+    securityContext: Option<PodSecurityContext>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
@@ -48,9 +49,16 @@ pub struct Container {
     volumeMounts: Option<Vec<VolumeMount>>,
     env: Option<Vec<Env>>,
     ports: Option<Vec<Port>>,
-    command: Option<Vec<String>>,
+    pub command: Option<Vec<String>>,
     workingDir: Option<String>,
     resources: Option<Resources>,
+    securityContext: Option<SecurityContext>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct PodSecurityContext {
+    runAsUser: Option<i64>,
+    runAsGroup: Option<i64>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
@@ -85,6 +93,7 @@ pub struct Port {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Resources {
     requests: Option<Requests>,
+    limits: Option<Limits>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
@@ -93,12 +102,32 @@ pub struct Requests {
     memory: Option<String>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct Limits {
+    cpu: Option<String>,
+    memory: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct SecurityContext {
+    privileged: Option<bool>,
+    capabilities: Option<Capabilities>,
+    runAsUser: Option<i64>,
+    runAsGroup: Option<i64>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct Capabilities {
+    add: Option<Vec<String>>,
+    drop: Option<Vec<String>>,
+}
+
 impl PodSpec {
     /// Returns the image of the first container in the PodSpec.
     /// If no containers are present, returns `None`.
     pub fn get_image(&self) -> Option<&str> {
         self.containers
-            .get(0)
+            .first()
             .map(|container| container.image.as_str())
     }
 
@@ -125,6 +154,7 @@ mod tests {
             command: None,
             workingDir: None,
             resources: None,
+            securityContext: None,
         };
         let container2 = Container {
             name: String::from("container-2"),
@@ -135,6 +165,7 @@ mod tests {
             command: None,
             workingDir: None,
             resources: None,
+            securityContext: None,
         };
         let podspec = PodSpec {
             hostNetwork: None,
@@ -143,8 +174,9 @@ mod tests {
             initContainers: None,
             restartPolicy: None,
             terminationGracePeriodSeconds: None,
-            hostIpc: None,
+            hostIPC: None,
             runtimeClassName: None,
+            securityContext: None,
         };
         assert_eq!(podspec.get_image(), Some("image-1"));
     }
@@ -159,8 +191,9 @@ mod tests {
             initContainers: None,
             restartPolicy: None,
             terminationGracePeriodSeconds: None,
-            hostIpc: None,
+            hostIPC: None,
             runtimeClassName: None,
+            securityContext: None,
         };
         assert_eq!(podspec.get_image(), None);
     }
@@ -178,6 +211,7 @@ mod tests {
             command: None,
             workingDir: None,
             resources: None,
+            securityContext: None,
         };
         let podspec = PodSpec {
             hostNetwork: None,
@@ -186,8 +220,9 @@ mod tests {
             initContainers: None,
             restartPolicy: None,
             terminationGracePeriodSeconds: None,
-            hostIpc: None,
+            hostIPC: None,
             runtimeClassName: None,
+            securityContext: None,
         };
         assert_eq!(podspec.get_image(), Some(""));
     }
@@ -215,8 +250,9 @@ mod tests {
             initContainers: None,
             restartPolicy: None,
             terminationGracePeriodSeconds: None,
-            hostIpc: None,
+            hostIPC: None,
             runtimeClassName: None,
+            securityContext: None,
         };
         assert_eq!(
             podspec.get_volume(),
@@ -247,8 +283,9 @@ mod tests {
             initContainers: None,
             restartPolicy: None,
             terminationGracePeriodSeconds: None,
-            hostIpc: None,
+            hostIPC: None,
             runtimeClassName: None,
+            securityContext: None,
         };
         assert_eq!(podspec.get_volume(), &None);
     }
@@ -263,8 +300,9 @@ mod tests {
             initContainers: None,
             restartPolicy: None,
             terminationGracePeriodSeconds: None,
-            hostIpc: None,
+            hostIPC: None,
             runtimeClassName: None,
+            securityContext: None,
         };
         assert_eq!(podspec.get_volume(), &Some(vec![]));
     }
@@ -285,8 +323,9 @@ mod tests {
             initContainers: None,
             restartPolicy: None,
             terminationGracePeriodSeconds: None,
-            hostIpc: None,
+            hostIPC: None,
             runtimeClassName: None,
+            securityContext: None,
         };
         assert_eq!(
             podspec.get_volume(),
@@ -312,6 +351,7 @@ mod tests {
             command: None,
             workingDir: None,
             resources: None,
+            securityContext: None,
         };
         let podspec = PodSpec {
             hostNetwork: None,
@@ -320,8 +360,9 @@ mod tests {
             initContainers: None,
             restartPolicy: None,
             terminationGracePeriodSeconds: None,
-            hostIpc: None,
+            hostIPC: None,
             runtimeClassName: None,
+            securityContext: None,
         };
         assert_eq!(podspec.get_image(), Some("special:image@tag"));
     }

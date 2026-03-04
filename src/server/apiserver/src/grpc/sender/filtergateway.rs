@@ -26,11 +26,11 @@ pub async fn send(
 
     let mut client = FilterGatewayConnectionClient::connect(connect_server())
         .await
-        .unwrap();
+        .map_err(|e| Status::unavailable(format!("Failed to connect to FilterGateway: {}", e)))?;
     let response = client.handle_scenario(Request::new(scenario)).await;
 
     let elapsed = start.elapsed();
-    println!("send: elapsed = {:?}", elapsed);
+    common::logd!(1, "send: elapsed = {:?}", elapsed);
 
     response
 }
@@ -132,9 +132,7 @@ spec:
 
         tokio::spawn(async move {
             tonic::transport::Server::builder()
-                .add_service(FilterGatewayConnectionServer::new(
-                    MockFilterGateway::default(),
-                ))
+                .add_service(FilterGatewayConnectionServer::new(MockFilterGateway))
                 .serve_with_incoming(stream)
                 .await
                 .unwrap();

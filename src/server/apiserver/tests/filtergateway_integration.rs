@@ -1,3 +1,7 @@
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 use apiserver::grpc::sender::filtergateway::send;
 use common::filtergateway::{Action, HandleScenarioRequest};
 
@@ -43,6 +47,7 @@ spec:
 
 /// Test sending with valid scenario and Action::Apply
 #[tokio::test]
+#[ignore = "Requires FilterGateway service to be running"]
 async fn test_send_with_valid_scenario_apply() {
     let scenario = HandleScenarioRequest {
         action: Action::Apply.into(),
@@ -55,6 +60,7 @@ async fn test_send_with_valid_scenario_apply() {
 
 /// Test sending with valid scenario and Action::Withdraw
 #[tokio::test]
+#[ignore = "Requires FilterGateway service to be running"]
 async fn test_send_with_valid_scenario_withdraw() {
     let scenario = HandleScenarioRequest {
         action: Action::Withdraw.into(),

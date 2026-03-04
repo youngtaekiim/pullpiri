@@ -1,3 +1,7 @@
+<!--
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+-->
 # PICCOLO 클러스터링 시스템
 
 **문서 번호**: PICCOLO-CLUSTERING-LLD-2025-001  
@@ -303,7 +307,7 @@ install_required_packages() {
 # 매개변수 설정
 MASTER_IP=$1
 NODE_TYPE=${2:-"sub"}
-GRPC_PORT=${3:-"50051"}
+GRPC_PORT=${3:-"47004"}
 DOWNLOAD_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/tag/v0.2.1"
 INSTALL_DIR="/opt/piccolo"
 CONFIG_DIR="/etc/piccolo"
@@ -581,10 +585,10 @@ if ping -c 1 -W 2 $MASTER_IP &> /dev/null; then
     log "마스터 노드 연결 가능: $MASTER_IP"
     
     # API 서버 포트 확인
-    if nc -z -w 2 $MASTER_IP ${GRPC_PORT:-50051} &> /dev/null; then
-        log "API 서버 gRPC 포트 접속 가능: $MASTER_IP:${GRPC_PORT:-50051}"
+    if nc -z -w 2 $MASTER_IP ${GRPC_PORT:-47098} &> /dev/null; then
+        log "API 서버 gRPC 포트 접속 가능: $MASTER_IP:${GRPC_PORT:-47098}"
     else
-        log "오류: API 서버 gRPC 포트에 접속할 수 없습니다: $MASTER_IP:${GRPC_PORT:-50051}"
+        log "오류: API 서버 gRPC 포트에 접속할 수 없습니다: $MASTER_IP:${GRPC_PORT:-47098}"
         ERROR_COUNT=$((ERROR_COUNT+1))
     fi
     

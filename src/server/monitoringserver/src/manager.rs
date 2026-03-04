@@ -1,12 +1,15 @@
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 //! MonitoringServerManager: Asynchronous manager for MonitoringServer
 //!
 //! This struct manages scenario requests received via gRPC, and provides
 //! a gRPC sender for communicating with the nodeagent or other services.
 //! It is designed to be thread-safe and run in an async context.
 use crate::data_structures::{BoardInfo, DataStore, SocInfo};
-use common::monitoringserver::{ContainerInfo, ContainerList, NodeInfo}; // Use protobuf types
+use common::monitoringserver::{ContainerList, NodeInfo}; // Use protobuf types
 use common::Result;
-use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
@@ -19,6 +22,8 @@ pub struct MonitoringServerManager {
     rx_container: Arc<Mutex<mpsc::Receiver<ContainerList>>>,
     /// Receiver for node information from gRPC
     rx_node: Arc<Mutex<mpsc::Receiver<NodeInfo>>>,
+    /// Receiver for stress metrics (JSON strings) from gRPC
+    rx_stress: Arc<Mutex<mpsc::Receiver<String>>>,
     /// Data store for managing NodeInfo, SocInfo, and BoardInfo
     data_store: Arc<Mutex<DataStore>>,
 }
@@ -28,10 +33,12 @@ impl MonitoringServerManager {
     pub async fn new(
         rx_container: mpsc::Receiver<ContainerList>,
         rx_node: mpsc::Receiver<NodeInfo>,
+        rx_stress: mpsc::Receiver<String>,
     ) -> Self {
         Self {
             rx_container: Arc::new(Mutex::new(rx_container)),
             rx_node: Arc::new(Mutex::new(rx_node)),
+            rx_stress: Arc::new(Mutex::new(rx_stress)),
             data_store: Arc::new(Mutex::new(DataStore::new())),
         }
     }
@@ -39,7 +46,15 @@ impl MonitoringServerManager {
     /// Initializes the MonitoringServerManager (e.g., loads scenarios, prepares state).
     pub async fn initialize(&mut self) -> Result<()> {
         println!("MonitoringServerManager init");
-        // Add initialization logic here (e.g., read scenarios, subscribe, etc.)
+
+        // Clear stale container data from previous runs
+        if let Err(e) = crate::etcd_storage::delete_all_containers().await {
+            eprintln!(
+                "[MonitoringServerManager] Warning: Failed to clear containers: {}",
+                e
+            );
+        }
+
         Ok(())
     }
 
@@ -341,7 +356,7 @@ impl MonitoringServerManager {
                 board_info
                     .socs
                     .iter()
-                    .map(|s| s.soc_id.split('.').last().unwrap_or(""))
+                    .map(|s| s.soc_id.split('.').next_back().unwrap_or(""))
                     .collect::<Vec<_>>()
                     .join(", ")
             );
@@ -731,9 +746,58 @@ impl MonitoringServerManager {
         Ok(())
     }
 
+    /// Main loop for processing incoming stress metric JSON strings.
+    ///
+    /// Consumes JSON strings forwarded by the gRPC receiver and handles them (currently logs).
+    pub async fn process_stress_requests(&self) -> Result<()> {
+        loop {
+            let stress_metric_opt = {
+                let mut rx_stress = self.rx_stress.lock().await;
+                rx_stress.recv().await
+            };
+            if let Some(json) = stress_metric_opt {
+                // Validate JSON first
+                match serde_json::from_str::<serde_json::Value>(&json) {
+                    Ok(val) => {
+                        let pname = val
+                            .get("process_name")
+                            .and_then(|s| s.as_str())
+                            .unwrap_or("unknown");
+                        let pid = val.get("pid").and_then(|p| p.as_i64()).unwrap_or(0);
+
+                        // Persist raw JSON into etcd (uses existing helper)
+                        match crate::etcd_storage::store_stress_metric_json(&json).await {
+                            Ok(_) => {
+                                println!(
+                                    "[MonitoringServer] SUCCESS: Stored stress metric for process={} pid={}",
+                                    pname, pid
+                                );
+                            }
+                            Err(e) => {
+                                eprintln!(
+                                    "[MonitoringServer] ERROR: Failed to store stress metric to etcd: {}",
+                                    e
+                                );
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "[MonitoringServer] ERROR: received invalid stress metric JSON: {} -- payload: {}",
+                            e, json
+                        );
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+        Ok(())
+    }
+
     /// Runs the MonitoringServerManager event loop.
     ///
-    /// Spawns both container and node info processing tasks and waits for them to finish.
+    /// Spawns container, node and stress processing tasks and waits for them to finish.
     pub async fn run(self) -> Result<()> {
         let arc_self = Arc::new(self);
 
@@ -753,8 +817,264 @@ impl MonitoringServerManager {
             }
         });
 
-        let _ = tokio::try_join!(container_processor, node_processor);
+        // Stress metric processor task
+        let stress_manager = Arc::clone(&arc_self);
+        let stress_processor = tokio::spawn(async move {
+            if let Err(e) = stress_manager.process_stress_requests().await {
+                eprintln!("Stress processor error: {:?}", e);
+            }
+        });
+
+        let _ = tokio::try_join!(container_processor, node_processor, stress_processor);
         println!("MonitoringServerManager stopped");
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::monitoringserver::{ContainerInfo, ContainerList, NodeInfo};
+    use std::collections::HashMap;
+    use std::time::SystemTime;
+    use tokio::sync::mpsc;
+
+    // Helper: construct a MonitoringServerManager with new channels (including stress receiver)
+    async fn new_mgr() -> MonitoringServerManager {
+        let (_tx_c, rx_c) = mpsc::channel(1);
+        let (_tx_n, rx_n) = mpsc::channel(1);
+        let (_tx_s, rx_s) = mpsc::channel::<String>(1);
+        MonitoringServerManager::new(rx_c, rx_n, rx_s).await
+    }
+
+    fn sample_node(name: &str, ip: &str) -> NodeInfo {
+        NodeInfo {
+            node_name: name.to_string(),
+            ip: ip.to_string(),
+            cpu_usage: 42.0,
+            cpu_count: 2,
+            gpu_count: 1,
+            used_memory: 1024,
+            total_memory: 2048,
+            mem_usage: 50.0,
+            rx_bytes: 100,
+            tx_bytes: 200,
+            read_bytes: 300,
+            write_bytes: 400,
+            arch: "x86_64".to_string(),
+            os: "linux".to_string(),
+        }
+    }
+
+    fn sample_container(id: &str, name: &str, status: &str) -> ContainerInfo {
+        let mut state = HashMap::new();
+        state.insert("Status".to_string(), status.to_string());
+        ContainerInfo {
+            id: id.to_string(),
+            names: vec![name.to_string()],
+            image: "testimg".to_string(),
+            state,
+            ..Default::default()
+        }
+    }
+
+    fn sample_container_list(node_name: &str, containers: Vec<ContainerInfo>) -> ContainerList {
+        ContainerList {
+            node_name: node_name.to_string(),
+            containers,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_new_and_initialize() {
+        let mut mgr = new_mgr().await;
+        assert!(mgr.initialize().await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_container_list_and_print_summary() {
+        let mgr = new_mgr().await;
+
+        let container1 = sample_container("c1", "cont1", "running");
+        let container2 = sample_container("c2", "cont2", "exited");
+        let clist = sample_container_list("node1", vec![container1, container2]);
+
+        mgr.handle_container_list(clist).await;
+        // No assertion: just ensure no panic and output is printed
+    }
+
+    #[tokio::test]
+    async fn test_print_container_overview() {
+        let mgr = new_mgr().await;
+
+        // Insert containers into data_store
+        {
+            let mut ds = mgr.data_store.lock().await;
+            let mut running = sample_container("c1", "cont1", "running");
+            running
+                .state
+                .insert("Running".to_string(), "true".to_string());
+            let mut stopped = sample_container("c2", "cont2", "exited");
+            stopped
+                .state
+                .insert("Running".to_string(), "false".to_string());
+            ds.containers.insert("c1".to_string(), running);
+            ds.containers.insert("c2".to_string(), stopped);
+        }
+        mgr.print_container_overview().await;
+    }
+
+    #[tokio::test]
+    async fn test_print_all_nodes_and_containers() {
+        let mgr = new_mgr().await;
+
+        {
+            let mut ds = mgr.data_store.lock().await;
+            let node = sample_node("node1", "192.168.10.201");
+            ds.nodes.insert("node1".to_string(), node);
+            let container = sample_container("c1", "cont1", "running");
+            ds.containers.insert("c1".to_string(), container);
+            ds.container_node_mapping
+                .insert("c1".to_string(), "node1".to_string());
+        }
+        mgr.print_all_nodes().await;
+        mgr.print_all_containers().await;
+    }
+
+    #[tokio::test]
+    async fn test_print_all_boards_and_socs() {
+        let mgr = new_mgr().await;
+
+        {
+            let mut ds = mgr.data_store.lock().await;
+            let node = sample_node("node1", "192.168.10.201");
+            let soc = SocInfo::new("socid".to_string(), node.clone());
+            let mut board = BoardInfo::new("boardid".to_string(), node.clone());
+            board.socs.push(soc.clone());
+            ds.socs.insert("socid".to_string(), soc);
+            ds.boards.insert("boardid".to_string(), board);
+        }
+        mgr.print_all_boards().await;
+        mgr.print_all_socs().await;
+    }
+
+    #[tokio::test]
+    async fn test_print_node_info_and_board_info_and_soc_info() {
+        let mgr = new_mgr().await;
+
+        let node = sample_node("node1", "192.168.10.201");
+        mgr.print_node_info(&node);
+
+        let soc = SocInfo::new("socid".to_string(), node.clone());
+        mgr.print_soc_info(&soc);
+
+        let mut board = BoardInfo::new("boardid".to_string(), node.clone());
+        board.socs.push(soc);
+        mgr.print_board_info(&board);
+    }
+
+    #[tokio::test]
+    async fn test_print_id_generation_details() {
+        let mgr = new_mgr().await;
+        mgr.print_id_generation_details("192.168.10.201");
+        mgr.print_id_generation_details("bad_ip");
+    }
+
+    #[tokio::test]
+    async fn test_format_bytes_and_memory_and_time_ago_and_efficiency() {
+        let mgr = new_mgr().await;
+
+        assert_eq!(mgr.format_bytes(512), "512 B");
+        assert_eq!(mgr.format_bytes(2048), "2.0 KB");
+        assert_eq!(mgr.format_bytes(2 * 1024 * 1024), "2.0 MB");
+
+        assert_eq!(mgr.format_memory(512), "512 KB");
+        assert_eq!(mgr.format_memory(2048), "2.0 MB");
+        assert_eq!(mgr.format_memory(2 * 1024 * 1024), "2.0 GB");
+
+        let now = SystemTime::now();
+        assert!(mgr.format_time_ago(&now).ends_with("ago"));
+
+        assert_eq!(mgr.calculate_efficiency(95.0), "HIGH");
+        assert_eq!(mgr.calculate_efficiency(80.0), "GOOD");
+        assert_eq!(mgr.calculate_efficiency(50.0), "NORM");
+        assert_eq!(mgr.calculate_efficiency(10.0), "LOW");
+    }
+
+    #[tokio::test]
+    async fn test_calculate_system_averages() {
+        let mgr = new_mgr().await;
+
+        let mut ds = DataStore::new();
+        assert_eq!(mgr.calculate_system_averages(&ds), (0.0, 0.0, 0, 0));
+
+        let node = sample_node("node1", "192.168.10.201");
+        ds.nodes.insert("node1".to_string(), node);
+        let (cpu, mem, cores, gpus) = mgr.calculate_system_averages(&ds);
+        assert_eq!(cpu, 42.0);
+        assert_eq!(mem, 50.0);
+        assert_eq!(cores, 2);
+        assert_eq!(gpus, 1);
+    }
+
+    #[tokio::test]
+    async fn test_print_all_data() {
+        use tokio::time::{timeout, Duration};
+
+        let mgr = new_mgr().await;
+
+        {
+            let mut ds = mgr.data_store.lock().await;
+            let node = sample_node("node1", "192.168.10.201");
+            ds.nodes.insert("node1".to_string(), node.clone());
+            let soc = SocInfo::new("socid".to_string(), node.clone());
+            ds.socs.insert("socid".to_string(), soc);
+            let board = BoardInfo::new("boardid".to_string(), node.clone());
+            ds.boards.insert("boardid".to_string(), board);
+            let container = sample_container("c1", "cont1", "running");
+            ds.containers.insert("c1".to_string(), container);
+        }
+        // Ensure the print_all_data future completes within 2 seconds
+        let _ = timeout(Duration::from_secs(2), mgr.print_all_data()).await;
+    }
+
+    #[tokio::test]
+    async fn test_handle_node_info_and_print_aggregated_info() {
+        use tokio::time::{timeout, Duration};
+
+        let mgr = new_mgr().await;
+
+        let node = sample_node("node1", "192.168.10.201");
+
+        // Run handle_node_info with a timeout to ensure the test does not hang
+        let result = timeout(Duration::from_secs(1), mgr.handle_node_info(node)).await;
+        assert!(result.is_ok(), "handle_node_info did not complete in time");
+    }
+
+    #[tokio::test]
+    async fn test_print_detailed_soc_mapping() {
+        let mgr = new_mgr().await;
+
+        let mut ds = DataStore::new();
+        let node = sample_node("node1", "192.168.10.201");
+        let soc = SocInfo::new("socid".to_string(), node.clone());
+        ds.socs.insert("socid".to_string(), soc);
+        let board = BoardInfo::new("boardid".to_string(), node.clone());
+        ds.boards.insert("boardid".to_string(), board);
+
+        mgr.print_detailed_soc_mapping(&ds).await;
+    }
+
+    #[tokio::test]
+    async fn test_print_summary_stats() {
+        let mgr = new_mgr().await;
+
+        let mut ds = DataStore::new();
+        let node = sample_node("node1", "192.168.10.201");
+        ds.nodes.insert("node1".to_string(), node);
+        mgr.print_summary_stats(&ds).await;
+    }
+}
+
+// Note: process_container_requests, process_node_info_requests, and run are event loops
+// and require integration/async tests with channel senders, which is not practical for

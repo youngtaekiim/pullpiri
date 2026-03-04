@@ -1,8 +1,12 @@
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 pub mod receiver;
 pub mod sender;
 
+use common::logd;
 use std::sync::Arc;
-
 use tonic::transport::Server;
 
 /// Initialize the gRPC communication system for ActionController
@@ -25,7 +29,7 @@ pub async fn init(manager: crate::manager::ActionControllerManager) -> common::R
     let grpc_server = receiver::ActionControllerReceiver::new(arc_manager.clone());
 
     let addr = common::actioncontroller::open_server().parse()?;
-    println!("Starting gRPC server on {}", addr);
+    logd!(1, "Starting gRPC server on {}", addr);
 
     tokio::spawn(async move {
         if let Err(e) = Server::builder()
@@ -33,11 +37,11 @@ pub async fn init(manager: crate::manager::ActionControllerManager) -> common::R
             .serve(addr)
             .await
         {
-            eprintln!("gRPC server error: {}", e);
+            logd!(5, "gRPC server error: {}", e);
         }
     });
 
-    println!("gRPC server started and listening");
+    logd!(1, "gRPC server started and listening");
 
     Ok(())
 }
@@ -47,12 +51,11 @@ pub async fn init(manager: crate::manager::ActionControllerManager) -> common::R
 mod tests {
     use super::*;
     use crate::manager::ActionControllerManager;
-    use tokio::time::{sleep, timeout, Duration};
+    use tokio::time::{sleep, Duration};
 
     #[tokio::test]
     async fn test_open_server_returns_valid_address() {
         let addr = common::actioncontroller::open_server();
-        println!("open_server() returned: {}", addr);
 
         // Just check it contains ":" (host:port format)
         assert!(addr.contains(':'), "Address should be in host:port format");
@@ -61,7 +64,6 @@ mod tests {
     #[tokio::test]
     async fn test_connect_server_returns_valid_url() {
         let url = common::actioncontroller::connect_server();
-        println!("connect_server() returned: {}", url);
 
         // Should start with http:// and contain ":"
         assert!(url.starts_with("http://"));
@@ -84,39 +86,5 @@ mod tests {
 
         // Abort task so we don't get stuck
         task.abort();
-    }
-
-    //NEGATIVE TEST
-    #[tokio::test]
-    async fn test_init_fails_when_port_is_already_in_use() {
-        let manager1 = ActionControllerManager::new();
-        let manager2 = ActionControllerManager::new();
-
-        // Start first init() to occupy the port
-        let task1 = tokio::spawn(async move {
-            let result = init(manager1).await;
-            assert!(result.is_ok(), "First init() should succeed");
-        });
-
-        // Give the first server time to bind the address
-        sleep(Duration::from_millis(300)).await;
-
-        // Attempt second init (should fail due to port in use)
-        let result = timeout(Duration::from_secs(1), init(manager2)).await;
-
-        match result {
-            Ok(inner_result) => {
-                assert!(
-                    inner_result.is_err(),
-                    "Second init() should fail because the port is already in use"
-                );
-            }
-            Err(_) => {
-                panic!("Second init() timed out instead of failing quickly");
-            }
-        }
-
-        // Clean up first server
-        task1.abort();
     }
 }

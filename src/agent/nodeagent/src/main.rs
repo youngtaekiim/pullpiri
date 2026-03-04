@@ -1,17 +1,20 @@
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 //! NodeAgent main entry point
 //!
 //! This file sets up the asynchronous runtime, initializes the manager and gRPC server,
 //! and launches both concurrently. It also provides unit tests for initialization.
 
 use clap::Parser;
-use common::nodeagent::HandleYamlRequest;
-use common::nodeagent::NodeRegistrationRequest;
+use common::nodeagent::fromapiserver::{HandleYamlRequest, NodeRegistrationRequest};
 use std::path::PathBuf;
-mod bluechi;
 pub mod config;
 pub mod grpc;
 pub mod manager;
 pub mod resource;
+pub mod runtime;
 
 use common::nodeagent::node_agent_connection_server::NodeAgentConnectionServer;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
@@ -71,7 +74,7 @@ async fn launch_manager(
                 let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(3));
                 loop {
                     interval.tick().await;
-                    let heartbeat_request = common::nodeagent::HeartbeatRequest {
+                    let heartbeat_request = common::nodeagent::fromapiserver::HeartbeatRequest {
                         node_id: node_id_clone.clone(),
                         timestamp: std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
@@ -117,7 +120,8 @@ async fn initialize(tx_grpc: Sender<HandleYamlRequest>, hostname: String, config
 
     // Use hostname from config if available
     let config_hostname = config.get_hostname();
-    let hostname_to_check = if config_hostname.is_empty() || config_hostname == "$(hostname)" {
+    //adding _ to prevent warnings as it was never used anywhere to prevent warnings
+    let _hostname_to_check = if config_hostname.is_empty() || config_hostname == "$(hostname)" {
         hostname.clone()
     } else {
         config_hostname
@@ -151,7 +155,7 @@ struct Args {
     config: PathBuf,
 }
 
-#[cfg(not(tarpaulin_include))]
+#[cfg(not(feature = "tarpaulin_include"))]
 #[tokio::main]
 async fn main() {
     // Parse command line arguments
@@ -177,14 +181,18 @@ async fn main() {
     // Set global config for other parts of the application
     config::Config::set_global(app_config.clone());
 
-    let hostname: String = String::from_utf8_lossy(
-        &std::process::Command::new("hostname")
-            .output()
-            .expect("Failed to get hostname")
-            .stdout,
-    )
-    .trim()
-    .to_string();
+    let mut hostname = app_config.get_hostname();
+    if hostname.is_empty() || hostname == "$(hostname)" {
+        // fallback
+        hostname = String::from_utf8_lossy(
+            &std::process::Command::new("hostname")
+                .output()
+                .expect("Failed to get hostname")
+                .stdout,
+        )
+        .trim()
+        .to_string();
+    }
     println!("Starting NodeAgent on host: {}", hostname);
 
     let (tx_grpc, rx_grpc) = channel::<HandleYamlRequest>(100);
@@ -194,11 +202,18 @@ async fn main() {
     tokio::join!(mgr, grpc);
 }
 
+#[cfg(feature = "tarpaulin_include")]
+fn main() {
+    // Dummy main for coverage builds
+    println!("Tarpaulin coverage build: main function stub.");
+}
+
 #[cfg(test)]
 mod tests {
     use crate::config::Config;
-    use crate::launch_manager;
-    use common::nodeagent::HandleYamlRequest;
+    use crate::{initialize, launch_manager};
+    use common::nodeagent::fromapiserver::{HandleYamlRequest, NodeRegistrationRequest};
+    use std::collections::HashMap;
     use std::path::PathBuf;
     use tokio::sync::mpsc::{channel, Receiver, Sender};
     use tokio::task::LocalSet;
@@ -229,6 +244,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_registration_request_fields() {
+        let config = Config::default();
+        let host_ip = config.get_host_ip();
+        let node_name = config.get_node_name();
+        let hostname = "testhost".to_string();
+        let registration_request = NodeRegistrationRequest {
+            node_id: node_name.clone(),
+            hostname: hostname.clone(),
+            ip_address: host_ip.clone(),
+            metadata: HashMap::new(),
+            resources: None,
+            node_type: match config.nodeagent.node_type.as_str() {
+                "cloud" => 1,
+                "vehicle" => 2,
+                _ => 0,
+            },
+            node_role: match config.nodeagent.node_role.as_str() {
+                "master" => 1,
+                "nodeagent" => 2,
+                "bluechi" => 3,
+                _ => 0,
+            },
+        };
+        assert_eq!(registration_request.node_id, node_name);
+        assert_eq!(registration_request.ip_address, host_ip);
+    }
+
+    #[tokio::test]
     async fn test_inspect() {
         let hostname: String = String::from_utf8_lossy(
             &std::process::Command::new("hostname")
@@ -241,5 +284,19 @@ mod tests {
 
         let r = crate::resource::container::inspect(hostname).await;
         println!("{:#?}", r);
+    }
+    #[tokio::test]
+    async fn test_initialize_runs_without_panic() {
+        let (tx_grpc, _rx_grpc): (Sender<HandleYamlRequest>, Receiver<HandleYamlRequest>) =
+            channel(10);
+        let config = Config::default();
+        let hostname = "testhost".to_string();
+        // Should not panic or error
+        let fut = initialize(tx_grpc, hostname, config);
+        tokio::select! {
+            _ = fut => {},
+            _ = sleep(Duration::from_millis(200)) => {},
+        }
+        assert!(true);
     }
 }

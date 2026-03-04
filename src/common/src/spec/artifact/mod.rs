@@ -1,9 +1,13 @@
-mod model;
-mod network;
-mod node;
-mod package;
-mod scenario;
-mod volume;
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
+pub mod model;
+pub mod network;
+pub mod node;
+pub mod package;
+pub mod scenario;
+pub mod volume;
 
 use super::MetaData;
 use serde::{Deserialize, Serialize};

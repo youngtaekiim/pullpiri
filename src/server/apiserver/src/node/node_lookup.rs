@@ -1,32 +1,35 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 
 //! Node lookup utilities for finding nodes in the cluster
 
-use base64::Engine;
 use common::apiserver::NodeInfo;
 use common::etcd;
-use prost::Message;
+use common::logd;
+use serde_json;
 use std::error::Error;
 
 /// Find a node by IP address from simplified node keys
 pub async fn find_node_by_simple_key() -> Option<String> {
-    println!("Checking simplified node keys in etcd...");
+    logd!(1, "Checking simplified node keys in etcd...");
     match etcd::get_all_with_prefix("nodes/").await {
         Ok(kvs) => {
-            println!("Found {} simplified node keys", kvs.len());
-            if let Some(kv) = kvs.iter().next() {
-                println!("Node key: {}", kv.key);
-                let ip_address = kv.key.trim_start_matches("nodes/");
-                println!("Found node IP directly from key: {}", ip_address);
-                return Some(ip_address.to_string());
+            logd!(2, "Found {} simplified node keys", kvs.len());
+            // Find first non-empty key
+            for kv in kvs {
+                logd!(1, "Node key: {}", kv.0);
+                let ip_address = kv.0.trim_start_matches("nodes/");
+                if !ip_address.is_empty() {
+                    logd!(1, "Found node IP directly from key: {}", ip_address);
+                    return Some(ip_address.to_string());
+                }
             }
             None
         }
         Err(e) => {
-            println!("Error checking simplified nodes: {}", e);
+            logd!(5, "Error checking simplified nodes: {}", e);
             None
         }
     }
@@ -34,33 +37,37 @@ pub async fn find_node_by_simple_key() -> Option<String> {
 
 /// Find a node directly from etcd using cluster/nodes/ prefix
 pub async fn find_node_from_etcd() -> Option<String> {
-    println!("Checking cluster/nodes/ prefix in etcd...");
-    match etcd::get_all_with_prefix("cluster/nodes/").await {
-        Ok(kvs) => {
-            println!("Found {} node entries", kvs.len());
-            for kv in &kvs {
-                println!("Node entry: {}", kv.key);
-            }
+    logd!(1, "Checking cluster/nodes/ prefix in etcd...");
+    let kvs = match etcd::get_all_with_prefix("cluster/nodes/").await {
+        Ok(kvs) => kvs,
+        Err(e) => {
+            logd!(5, "Error getting nodes: {}", e);
+            return None;
+        }
+    };
 
-            if !kvs.is_empty() {
-                match base64::engine::general_purpose::STANDARD.decode(&kvs[0].value) {
-                    Ok(buf) => match NodeInfo::decode(&buf[..]) {
-                        Ok(node) => {
-                            println!(
-                                "Decoded node: {} ({}), status: {}",
-                                node.node_id, node.ip_address, node.status
-                            );
-                            return Some(node.ip_address);
-                        }
-                        Err(e) => println!("Failed to decode node data: {}", e),
-                    },
-                    Err(e) => println!("Failed to decode base64: {}", e),
-                }
-            }
-            None
+    logd!(2, "Found {} node entries", kvs.len());
+    for kv in &kvs {
+        logd!(1, "Node entry: {}", kv.0);
+    }
+
+    if kvs.is_empty() {
+        return None;
+    }
+
+    match serde_json::from_str::<NodeInfo>(&kvs[0].1) {
+        Ok(node) => {
+            logd!(
+                2,
+                "Decoded node: {} ({}), status: {}",
+                node.node_id,
+                node.ip_address,
+                node.status
+            );
+            Some(node.ip_address)
         }
         Err(e) => {
-            println!("Error getting nodes: {}", e);
+            logd!(5, "Failed to parse JSON: {} for value: {}", e, &kvs[0].1);
             None
         }
     }
@@ -71,29 +78,32 @@ pub async fn find_node_from_manager() -> Option<String> {
     let node_manager = match crate::node::NodeManager::new() {
         Ok(manager) => manager,
         Err(e) => {
-            eprintln!("Failed to create NodeManager: {}", e);
+            logd!(5, "Failed to create NodeManager: {}", e);
             return None;
         }
     };
 
     match node_manager.get_nodes().await {
         Ok(nodes) => {
-            println!("Node manager found {} nodes", nodes.len());
+            logd!(2, "Node manager found {} nodes", nodes.len());
 
             if !nodes.is_empty() {
                 let node = &nodes[0];
-                println!(
+                logd!(
+                    2,
                     "Node manager found: {} ({}), status: {}",
-                    node.node_id, node.ip_address, node.status
+                    node.node_id,
+                    node.ip_address,
+                    node.status
                 );
-                return Some(node.ip_address.clone());
+                Some(node.ip_address.clone())
             } else {
-                println!("Node manager found no nodes");
+                logd!(4, "Node manager found no nodes");
                 None
             }
         }
         Err(e) => {
-            eprintln!("Node manager error: {}", e);
+            logd!(5, "Node manager error: {}", e);
             None
         }
     }
@@ -101,30 +111,42 @@ pub async fn find_node_from_manager() -> Option<String> {
 
 /// Find a node by hostname
 pub async fn find_node_by_hostname(hostname: &str) -> Option<common::apiserver::NodeInfo> {
-    println!("Looking for node with hostname: {}", hostname);
-    match common::etcd::get_all_with_prefix("cluster/nodes/").await {
-        Ok(kvs) => {
-            for kv in kvs {
-                if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(&kv.value) {
-                    if let Ok(node_info) = common::apiserver::NodeInfo::decode(&decoded[..]) {
-                        if node_info.hostname == hostname {
-                            println!(
-                                "Found node with hostname {}: {}",
-                                hostname, node_info.ip_address
-                            );
-                            return Some(node_info);
-                        }
-                    }
+    logd!(1, "Looking for node with hostname: {}", hostname);
+    let kvs = match common::etcd::get_all_with_prefix("cluster/nodes/").await {
+        Ok(kvs) => kvs,
+        Err(e) => {
+            logd!(5, "Error searching for hostname {}: {}", hostname, e);
+            return None;
+        }
+    };
+
+    logd!(2, "Found {} entries in etcd", kvs.len());
+    for kv in kvs {
+        logd!(
+            1,
+            "Processing key: {}",
+            String::from_utf8_lossy(kv.0.as_bytes())
+        );
+
+        match serde_json::from_str::<common::apiserver::NodeInfo>(&kv.1) {
+            Ok(node_info) => {
+                logd!(1, "Successfully parsed node info: {}", node_info.hostname);
+                if node_info.hostname == hostname {
+                    logd!(
+                        1,
+                        "Found node with hostname {}: {}",
+                        hostname,
+                        node_info.ip_address
+                    );
+                    return Some(node_info);
                 }
             }
-            println!("No node found with hostname: {}", hostname);
-            None
-        }
-        Err(e) => {
-            println!("Error searching for hostname {}: {}", hostname, e);
-            None
+            Err(e) => logd!(5, "Failed to parse JSON: {} for value: {}", e, kv.1),
         }
     }
+
+    logd!(4, "No node found with hostname: {}", hostname);
+    None
 }
 
 /// Get node IP using all available methods
@@ -145,7 +167,8 @@ pub async fn get_node_ip() -> String {
     // Fallback to settings file if no nodes are found
     let config = common::setting::get_config();
     let node_ip = config.host.ip.clone();
-    println!(
+    logd!(
+        4,
         "All node lookups failed. Falling back to settings IP: {}",
         node_ip
     );
@@ -154,42 +177,147 @@ pub async fn get_node_ip() -> String {
 }
 
 /// Add a node IP to the simplified keys for quick lookup
+#[allow(dead_code)]
 pub async fn add_node_to_simple_keys(ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
     let key = format!("nodes/{}", ip_address);
     etcd::put(&key, ip_address).await?;
-    println!("Added node IP to simple keys: {}", ip_address);
+    logd!(2, "Added node IP to simple keys: {}", ip_address);
     Ok(())
 }
 
 /// 게스트 노드 정보를 etcd에서 검색하는 함수
 pub async fn find_guest_nodes() -> Vec<NodeInfo> {
-    println!("Finding guest nodes from etcd...");
-    match etcd::get_all_with_prefix("cluster/nodes/").await {
-        Ok(kvs) => {
-            println!("Found {} node entries for guest search", kvs.len());
-            let mut guest_nodes = Vec::new();
+    logd!(1, "Finding guest nodes from etcd...");
+    let kvs = match etcd::get_all_with_prefix("cluster/nodes/").await {
+        Ok(kvs) => kvs,
+        Err(e) => {
+            logd!(5, "Error searching for guest nodes: {}", e);
+            return Vec::new();
+        }
+    };
 
-            for kv in kvs {
-                if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(&kv.value) {
-                    if let Ok(node_info) = NodeInfo::decode(&decoded[..]) {
-                        // 마스터 노드가 아닌 경우에만 게스트 노드로 간주
-                        if node_info.node_role != common::nodeagent::NodeRole::Master as i32 {
-                            println!(
-                                "Found guest node: {} ({}) with role: {}",
-                                node_info.node_id, node_info.ip_address, node_info.node_role
-                            );
-                            guest_nodes.push(node_info);
-                        }
-                    }
+    logd!(2, "Found {} node entries for guest search", kvs.len());
+    let mut guest_nodes = Vec::new();
+
+    for kv in kvs {
+        match serde_json::from_str::<NodeInfo>(&kv.1) {
+            Ok(node_info) => {
+                // 마스터 노드가 아닌 경우에만 게스트 노드로 간주
+                if node_info.node_role != common::nodeagent::fromapiserver::NodeRole::Master as i32
+                {
+                    logd!(
+                        1,
+                        "Found guest node: {} ({}) with role: {}",
+                        node_info.node_id,
+                        node_info.ip_address,
+                        node_info.node_role
+                    );
+                    guest_nodes.push(node_info);
                 }
             }
+            Err(e) => logd!(5, "Failed to parse JSON: {} for value: {}", e, kv.1),
+        }
+    }
 
-            println!("Found {} guest nodes", guest_nodes.len());
-            guest_nodes
+    logd!(2, "Found {} guest nodes", guest_nodes.len());
+    guest_nodes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::nodeagent::fromapiserver::{NodeRole, NodeStatus, NodeType, ResourceInfo};
+    use std::collections::HashMap;
+
+    fn create_test_node_info(
+        node_id: &str,
+        hostname: &str,
+        ip_address: &str,
+        node_role: NodeRole,
+        status: NodeStatus,
+    ) -> NodeInfo {
+        NodeInfo {
+            node_id: node_id.to_string(),
+            hostname: hostname.to_string(),
+            ip_address: ip_address.to_string(),
+            node_type: NodeType::Vehicle as i32,
+            node_role: node_role as i32,
+            status: status as i32,
+            resources: Some(ResourceInfo {
+                cpu_cores: 4,
+                memory_mb: 8192,
+                disk_gb: 100,
+                architecture: "x86_64".to_string(),
+                os_version: "Ubuntu 20.04".to_string(),
+            }),
+            last_heartbeat: chrono::Utc::now().timestamp(),
+            created_at: chrono::Utc::now().timestamp(),
+            metadata: HashMap::new(),
         }
-        Err(e) => {
-            println!("Error searching for guest nodes: {}", e);
-            Vec::new()
+    }
+
+    #[tokio::test]
+    async fn test_find_node_by_simple_key_success() {
+        let result = find_node_by_simple_key().await;
+        match result {
+            Some(ip) => {
+                assert!(!ip.is_empty(), "IP should not be empty if returned");
+                println!("Found IP via simple key: {}", ip);
+            }
+            None => {
+                println!("No nodes found via simple key (acceptable if no valid keys exist)")
+            }
         }
+        // Test passes in both cases - we're just verifying the function works
+    }
+
+    #[tokio::test]
+    async fn test_find_node_from_etcd_success() {
+        let result = find_node_from_etcd().await;
+        match result {
+            Some(ip) => {
+                assert!(!ip.is_empty());
+                println!("Found IP via etcd: {}", ip);
+            }
+            None => println!("No nodes found via etcd (expected if etcd unavailable or empty)"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_find_node_by_hostname() {
+        // Test with a hostname that definitely doesn't exist
+        let result = find_node_by_hostname("non-existent-hostname-12345").await;
+        assert!(result.is_none(), "Should not find non-existent hostname");
+
+        // If test-hostname exists from other tests, verify we can find it
+        let result2 = find_node_by_hostname("test-hostname").await;
+        if let Some(node) = result2 {
+            println!(
+                "Found test-hostname node: {} ({})",
+                node.hostname, node.ip_address
+            );
+            assert_eq!(node.hostname, "test-hostname");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_find_guest_nodes() {
+        let guest_nodes = find_guest_nodes().await;
+
+        // Test passes if function returns successfully
+        // If nodes exist from other tests, verify they're all non-master nodes
+        for node in &guest_nodes {
+            assert_ne!(
+                node.node_role,
+                NodeRole::Master as i32,
+                "Guest nodes should not have Master role"
+            );
+            println!(
+                "Guest node verified: {} with role {}",
+                node.node_id, node.node_role
+            );
+        }
+
+        println!("Total guest nodes found: {}", guest_nodes.len());
     }
 }

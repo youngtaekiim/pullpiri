@@ -1,29 +1,13 @@
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 pub mod container;
 pub mod nodeinfo;
 
-use hyper::{Body, Client, Uri};
-use hyperlocal::{UnixConnector, Uri as UnixUri};
 use serde::Deserialize;
 use std::collections::HashMap;
 use thiserror::Error;
-
-async fn get(path: &str) -> Result<hyper::body::Bytes, hyper::Error> {
-    let connector = UnixConnector;
-    let client = Client::builder().build::<_, Body>(connector);
-
-    // Modify this if you want to run without root authorization
-    // or if you have a different socket path.
-    // For example, if you run Podman as root, you might use:
-    // let socket = "/var/run/podman/podman.sock";
-    // Or if you run it as a user, you might use:
-    // let socket = "/run/user/1000/podman/podman.sock
-    let socket = "/var/run/podman/podman.sock";
-    // let socket = "/var/run/podman/podman.sock";
-    let uri: Uri = UnixUri::new(socket, path).into();
-
-    let res = client.get(uri).await?;
-    hyper::body::to_bytes(res).await
-}
 
 /// Node information matching the requested DataCache structure.
 #[derive(Deserialize, Debug)]
@@ -99,6 +83,21 @@ pub struct ContainerState {
     pub FinishedAt: String,
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum EntryPoint {
+    String(String),
+    Array(Vec<String>),
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum Command {
+    String(String),
+    Array(Vec<String>),
+}
+
+// Update ContainerConfig to use Option<Command> for Cmd
 #[allow(non_snake_case, unused)]
 #[derive(Deserialize, Debug)]
 pub struct ContainerConfig {
@@ -113,11 +112,11 @@ pub struct ContainerConfig {
     pub OpenStdin: bool,
     pub StdinOnce: bool,
     pub Env: Option<Vec<String>>,
-    pub Cmd: Option<Vec<String>>,
+    pub Cmd: Option<Command>,
     pub Image: String,
     pub Volumes: Option<HashMap<String, serde_json::Value>>,
     pub WorkingDir: String,
-    pub Entrypoint: String,
+    pub Entrypoint: Option<EntryPoint>,
     pub OnBuild: Option<Vec<String>>,
     pub Labels: Option<HashMap<String, String>>,
     pub Annotations: Option<HashMap<String, String>>,
@@ -190,7 +189,7 @@ impl fmt::Display for ContainerNetworkStats {
 //Unit tets cases
 #[cfg(test)]
 mod tests {
-    use super::get;
+    use crate::runtime::podman::get;
     use hyper::body::Bytes;
     use hyper::Error;
     use tokio;

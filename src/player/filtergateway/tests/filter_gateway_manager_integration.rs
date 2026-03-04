@@ -1,3 +1,7 @@
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 use common::spec::artifact::{Artifact, Scenario};
 use filtergateway::manager::{FilterGatewayManager, ScenarioParameter};
 use filtergateway::vehicle::dds::DdsData;
@@ -139,7 +143,27 @@ metadata:
   name: helloworld_dds1
 "#;
 
+static VALID_MODEL_YAML_SINGLE1: &str = r#"
+apiVersion: v1
+kind: Model
+metadata:
+  name: helloworld_dds-core1
+  annotations:
+    io.piccolo.annotations.package-type: helloworld_dds-core1
+    io.piccolo.annotations.package-name: helloworld_dds1
+    io.piccolo.annotations.package-network: default
+  labels:
+    app: helloworld_dds-core1
+spec:
+  hostNetwork: true
+  containers:
+    - name: helloworld_dds1
+      image: helloworld
+  terminationGracePeriodSeconds: 0
+"#;
+
 #[tokio::test]
+#[ignore = "Requires nodeagent service to be running"]
 async fn test_run_manager_with_withdraw_action() {
     let (tx, rx) = mpsc::channel(10);
     let manager = FilterGatewayManager::new(rx).await;
@@ -154,6 +178,9 @@ async fn test_run_manager_with_withdraw_action() {
         .await
         .unwrap();
     common::etcd::put("Node/helloworld_dds1", VALID_NETWORK_YAML_SINGLE1)
+        .await
+        .unwrap();
+    common::etcd::put("Pod/helloworld_dds-core1", VALID_MODEL_YAML_SINGLE1)
         .await
         .unwrap();
     let scenario: Scenario = serde_yaml::from_str(VALID_SCENARIO_YAML1).unwrap();
@@ -173,6 +200,9 @@ async fn test_run_manager_with_withdraw_action() {
         let _ = manager.run().await;
     });
 
+    tokio::time::sleep(Duration::from_millis(200)).await;
+    handle.abort();
+
     common::etcd::delete("Scenario/helloworld_dds1")
         .await
         .unwrap();
@@ -183,6 +213,9 @@ async fn test_run_manager_with_withdraw_action() {
         .await
         .unwrap();
     common::etcd::delete("Node/helloworld_dds1").await.unwrap();
+    common::etcd::delete("Pod/helloworld_dds-core1")
+        .await
+        .unwrap();
     handle.abort();
 }
 
@@ -221,7 +254,27 @@ metadata:
   name: helloworld_dds2
 "#;
 
+static VALID_MODEL_YAML_SINGLE2: &str = r#"
+apiVersion: v1
+kind: Model
+metadata:
+  name: helloworld_dds-core2
+  annotations:
+    io.piccolo.annotations.package-type: helloworld_dds-core2
+    io.piccolo.annotations.package-name: helloworld_dds2
+    io.piccolo.annotations.package-network: default
+  labels:
+    app: helloworld_dds-core2
+spec:
+  hostNetwork: true
+  containers:
+    - name: helloworld_dds2
+      image: helloworld
+  terminationGracePeriodSeconds: 0
+"#;
+
 #[tokio::test]
+#[ignore = "Requires nodeagent service to be running"]
 async fn test_run_manager_with_withdraw_action_none() {
     let (tx, rx) = mpsc::channel(10);
     let manager = FilterGatewayManager::new(rx).await;
@@ -236,6 +289,9 @@ async fn test_run_manager_with_withdraw_action_none() {
         .await
         .unwrap();
     common::etcd::put("Network/helloworld_dds2", VALID_NETWORK_YAML_SINGLE2)
+        .await
+        .unwrap();
+    common::etcd::put("Pod/helloworld_dds-core2", VALID_MODEL_YAML_SINGLE2)
         .await
         .unwrap();
     let scenario: Scenario = serde_yaml::from_str(VALID_SCENARIO_YAML2).unwrap();
@@ -265,6 +321,9 @@ async fn test_run_manager_with_withdraw_action_none() {
         .await
         .unwrap();
     common::etcd::delete("Node/helloworld_dds2").await.unwrap();
+    common::etcd::delete("Pod/helloworld_dds-core2")
+        .await
+        .unwrap();
 }
 
 #[tokio::test]

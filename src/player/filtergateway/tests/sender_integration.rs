@@ -1,3 +1,7 @@
+/*
+* SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
 use common::Result;
 use filtergateway::FilterGatewaySender;
 use tokio::time::{sleep, Duration};
@@ -18,7 +22,7 @@ metadata:
   name: antipinch-enable
 spec:
   condition:
-  action: update
+  action: start
   target: antipinch-enable
 "#,
     )
