@@ -235,6 +235,10 @@ impl ActionControllerManager {
                         format!("Failed to request network pod for '{}': {}", model_name, e)
                     })?;
                 }
+
+                if model_info.get_resources().get_realtime().unwrap_or(false) {
+                    self.handle_realtime_sched(model_info, &model_node).await?;
+                }
             }
             "terminate" => {
                 self.stop_workload(&pod, &model_node, node_type).await?;
