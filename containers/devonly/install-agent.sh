@@ -53,11 +53,27 @@ else
 fi
 
 # Make directory and binary
+#AGENT_BINARY_PATH="/opt/piccolo/nodeagent"
+#sudo mkdir -p /opt/piccolo
+#if [ ! -f "$AGENT_BINARY_PATH" ]; then
+#sudo cp "${SCRIPT_DIR}/../../src/agent/nodeagent/target/x86_64-unknown-linux-musl/release/nodeagent" /opt/piccolo/nodeagent
+#fi
+#sudo chmod +x /opt/piccolo/nodeagent
+#echo "Binary installed to /opt/piccolo/nodeagent"
+
+# Make directory and binary
 AGENT_BINARY_PATH="/opt/piccolo/nodeagent"
 sudo mkdir -p /opt/piccolo
-#if [ ! -f "$AGENT_BINARY_PATH" ]; then
-sudo cp "${SCRIPT_DIR}/../../src/agent/nodeagent/target/x86_64-unknown-linux-musl/release/nodeagent" /opt/piccolo/nodeagent
-#fi
+if [ ! -f "$AGENT_BINARY_PATH" ]; then
+	BINARY_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/latest/download/nodeagent-linux-${SUFFIX}"
+	echo "Downloading binary from ${BINARY_URL}..."
+	curl -L -o nodeagent "${BINARY_URL}"
+	if [ $? -ne 0 ]; then
+		echo "Error: Failed to download binary from ${BINARY_URL}"
+		exit 1
+	fi
+	sudo mv -f nodeagent /opt/piccolo/nodeagent
+fi
 sudo chmod +x /opt/piccolo/nodeagent
 echo "Binary installed to /opt/piccolo/nodeagent"
 
