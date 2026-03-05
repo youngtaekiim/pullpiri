@@ -13,7 +13,7 @@ ROCKSDB_VERSION="v11.18.0"
 ROCKSDB_IMAGE="ghcr.io/mco-piccolo/pullpiri-rocksdb:${ROCKSDB_VERSION}"
 
 #CONTAINER_IMAGE="localhost/pullpiri:latest"
-CONTAINER_IMAGE="sdv.lge.com/package/pullpiri:1.0"
+CONTAINER_IMAGE="ghcr.io/mco-piccolo/pullpiri:0.9"
 echo "Running server with image: ${CONTAINER_IMAGE}"
 
 # Create a pod with host networking
