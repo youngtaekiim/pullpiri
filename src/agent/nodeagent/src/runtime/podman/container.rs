@@ -7,7 +7,8 @@ use super::{get, post};
 use hyper::Body;
 use serde_json::json;
 
-const PODMAN_API_VERSION: &str = "/v4.0.0/libpod";
+//const PODMAN_API_VERSION: &str = "/v4.0.0/libpod";
+const PODMAN_API_VERSION: &str = "/v4.0.0";
 
 /// Parse Pod YAML and extract pod name and spec
 fn parse_pod(pod_yaml: &str) -> Result<(String, serde_json::Value), Box<dyn std::error::Error>> {
@@ -51,40 +52,49 @@ fn build_host_config(
         host_config.insert("NetworkMode".to_string(), json!("host"));
     }
 
-    // Add port bindings
-    if let Some(ports) = container["ports"].as_array() {
-        let mut port_bindings = serde_json::Map::new();
-        for port in ports {
-            if let Some(container_port) = port["containerPort"].as_i64() {
-                let host_port = port["hostPort"].as_i64().unwrap_or(container_port);
-                let key = format!("{}/tcp", container_port);
-                port_bindings.insert(key, json!([{"HostPort": host_port.to_string()}]));
-            }
-        }
-        if !port_bindings.is_empty() {
-            host_config.insert("PortBindings".to_string(), json!(port_bindings));
+    // CapAdd
+    if let Some(cap_add) = container["securityContext"].get("capabilities").and_then(|c| c.get("add")).and_then(|a| a.as_array()) {
+        let caps: Vec<String> = cap_add.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
+        if !caps.is_empty() {
+            host_config.insert("CapAdd".to_string(), json!(caps));
         }
     }
 
-    // Add volume binds
+    // Privileged
+    if let Some(privileged) = container["securityContext"].get("privileged").and_then(|p| p.as_bool()) {
+        host_config.insert("Privileged".to_string(), json!(privileged));
+    }
+
+    // NanoCpus (CPU 제한)
+    if let Some(cpu) = container["resources"].get("limits").and_then(|l| l.get("cpu")).and_then(|c| c.as_str()) {
+        if let Ok(cpu_num) = cpu.parse::<f64>() {
+            let nano_cpus = (cpu_num * 1_000_000_000.0) as i64;
+            host_config.insert("NanoCpus".to_string(), json!(nano_cpus));
+        }
+    }
+
+    // Mounts (volumeMounts → Mounts)
     if let Some(volume_mounts) = container["volumeMounts"].as_array() {
         if let Some(volumes) = spec["volumes"].as_array() {
-            let mut binds = Vec::new();
+            let mut mounts = Vec::new();
             for mount in volume_mounts {
                 let mount_name = mount["name"].as_str().unwrap_or("");
                 let mount_path = mount["mountPath"].as_str().unwrap_or("");
-
                 for volume in volumes {
                     if volume["name"].as_str() == Some(mount_name) {
                         if let Some(host_path) = volume["hostPath"]["path"].as_str() {
-                            binds.push(format!("{}:{}", host_path, mount_path));
+                            mounts.push(json!({
+                                "Type": "bind",
+                                "Source": host_path,
+                                "Target": mount_path
+                            }));
                         }
                         break;
                     }
                 }
             }
-            if !binds.is_empty() {
-                host_config.insert("Binds".to_string(), json!(binds));
+            if !mounts.is_empty() {
+                host_config.insert("Mounts".to_string(), json!(mounts));
             }
         }
     }
@@ -142,10 +152,12 @@ async fn create_container(
         println!("Image {} pulled successfully", image);
     }
 
+    let name = format!("{}_{}", pod_name, container_name);
+
     // Build container creation request
     let mut create_body = json!({
         "Image": image,
-        "Name": format!("{}_{}", pod_name, container_name),
+        "Name": name,
     });
 
     // Add HostConfig
@@ -166,9 +178,10 @@ async fn create_container(
         create_body["Cmd"] = json!(cmd);
     }
 
+    println!("{}", create_body.to_string());
     // Create the container
     println!("Creating container from image: {}", image);
-    let create_path = format!("{}/containers/create", PODMAN_API_VERSION);
+    let create_path = format!("{}/containers/create?name={}", PODMAN_API_VERSION, name);
     let create_response = post(&create_path, Body::from(create_body.to_string())).await?;
 
     let create_result: serde_json::Value = serde_json::from_slice(&create_response)?;
