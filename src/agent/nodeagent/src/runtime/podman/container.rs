@@ -53,20 +53,34 @@ fn build_host_config(
     }
 
     // CapAdd
-    if let Some(cap_add) = container["securityContext"].get("capabilities").and_then(|c| c.get("add")).and_then(|a| a.as_array()) {
-        let caps: Vec<String> = cap_add.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
+    if let Some(cap_add) = container["securityContext"]
+        .get("capabilities")
+        .and_then(|c| c.get("add"))
+        .and_then(|a| a.as_array())
+    {
+        let caps: Vec<String> = cap_add
+            .iter()
+            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+            .collect();
         if !caps.is_empty() {
             host_config.insert("CapAdd".to_string(), json!(caps));
         }
     }
 
     // Privileged
-    if let Some(privileged) = container["securityContext"].get("privileged").and_then(|p| p.as_bool()) {
+    if let Some(privileged) = container["securityContext"]
+        .get("privileged")
+        .and_then(|p| p.as_bool())
+    {
         host_config.insert("Privileged".to_string(), json!(privileged));
     }
 
     // NanoCpus (CPU 제한)
-    if let Some(cpu) = container["resources"].get("limits").and_then(|l| l.get("cpu")).and_then(|c| c.as_str()) {
+    if let Some(cpu) = container["resources"]
+        .get("limits")
+        .and_then(|l| l.get("cpu"))
+        .and_then(|c| c.as_str())
+    {
         if let Ok(cpu_num) = cpu.parse::<f64>() {
             let nano_cpus = (cpu_num * 1_000_000_000.0) as i64;
             host_config.insert("NanoCpus".to_string(), json!(nano_cpus));
