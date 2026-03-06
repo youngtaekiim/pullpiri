@@ -158,6 +158,8 @@ async fn create_container(
     let mut create_body = json!({
         "Image": image,
         "Name": name,
+        "Tty": true,
+        "OpenStdin": true
     });
 
     // Add HostConfig
