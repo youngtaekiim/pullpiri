@@ -15,8 +15,10 @@ pub async fn add_sched_info(sched_info: SchedInfo) {
         .await
         .unwrap();
 
-    let response: Result<Response, tonic::Status> =
-        client.add_sched_info(sched_info).await.map(|r| r.into_inner());
+    let response: Result<Response, tonic::Status> = client
+        .add_sched_info(sched_info)
+        .await
+        .map(|r| r.into_inner());
 
     match response {
         Ok(res) => {
@@ -30,7 +32,7 @@ pub async fn add_sched_info(sched_info: SchedInfo) {
 
 #[cfg(test)]
 mod tests {
-    use common::external::timpani::{SchedPolicy, SchedInfo, TaskInfo};
+    use common::external::timpani::{SchedInfo, SchedPolicy, TaskInfo};
 
     // ==================== Direct Function Call Tests ====================
 
