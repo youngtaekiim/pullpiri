@@ -260,16 +260,31 @@ impl ActionControllerManager {
 
     /// Handle realtime scheduling for a model
     async fn handle_realtime_sched(&self, model_info: &ModelInfo, model_node: &str) -> Result<()> {
+        use common::external::timpani::{SchedInfo, TaskInfo, SchedPolicy};
         let model_str =
             common::etcd::get(&format!("{}/{}", ETCD_MODEL_PREFIX, model_info.get_name())).await?;
         let model: Model = serde_yaml::from_str(&model_str)?;
 
+        let annotations = model.get_annotations();
         if let Some(command) = model.get_podspec().containers[0].command.clone() {
             if let Some(task_name) = command.last() {
+                let sched_info = SchedInfo {
+                    workload_id: model_info.get_name(),
+                    tasks: vec![TaskInfo {
+                        name: task_name.to_string(),
+                        priority: annotations.get("timpani.annotations.priority").and_then(|v| v.parse().ok()).unwrap_or(50),
+                        policy: annotations.get("timpani.annotations.policy").and_then(|v| v.parse().ok()).unwrap_or(SchedPolicy::Fifo as i32),
+                        cpu_affinity: annotations.get("timpani.annotations.cpu_affinity").and_then(|v| v.parse().ok()).unwrap_or(0),
+                        period: annotations.get("timpani.annotations.period").and_then(|v| v.parse().ok()).unwrap_or(10000),
+                        release_time: annotations.get("timpani.annotations.release_time").and_then(|v| v.parse().ok()).unwrap_or(0),
+                        runtime: annotations.get("timpani.annotations.runtime").and_then(|v| v.parse().ok()).unwrap_or(5000),
+                        deadline: annotations.get("timpani.annotations.deadline").and_then(|v| v.parse().ok()).unwrap_or(10000),
+                        node_id: model_node.to_string(),
+                        max_dmiss: annotations.get("timpani.annotations.max_dmiss").and_then(|v| v.parse().ok()).unwrap_or(3),
+                    }],
+                };
                 crate::grpc::sender::timpani::add_sched_info(
-                    model_info.get_name(),
-                    task_name,
-                    model_node,
+                    sched_info
                 )
                 .await;
             }
