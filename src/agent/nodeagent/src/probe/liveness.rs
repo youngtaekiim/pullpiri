@@ -13,8 +13,8 @@ use crate::desired_state::{LivenessProbe, ProbeType};
 /// Execute a liveness probe for the given container and return whether it succeeded.
 ///
 /// Dispatches to the appropriate checker based on `probe.probe_type`:
-/// - `ProbeType::Http` → HTTP GET to `127.0.0.1:port/path`
-/// - `ProbeType::Tcp`  → TCP connection attempt to `127.0.0.1:port`
+/// - `ProbeType::Http` → HTTP GET to container's target IP (host network: localhost, bridge: container IP)
+/// - `ProbeType::Tcp`  → TCP connection attempt to container's target IP
 /// - `ProbeType::Exec` → `podman exec <container_id> <command>`
 pub async fn check_liveness_probe(container_id: &str, probe: &LivenessProbe) -> bool {
     match &probe.probe_type {
@@ -23,14 +23,14 @@ pub async fn check_liveness_probe(container_id: &str, probe: &LivenessProbe) -> 
                 "[Probe] Checking liveness probe for container {}: HTTP GET {} on port {}",
                 container_id, path, port
             );
-            super::checker::check_http(path, *port, probe.timeout_seconds).await
+            super::checker::check_http(container_id, path, *port, probe.timeout_seconds).await
         }
         ProbeType::Tcp { port } => {
             println!(
                 "[Probe] Checking liveness probe for container {}: TCP on port {}",
                 container_id, port
             );
-            super::checker::check_tcp(*port, probe.timeout_seconds).await
+            super::checker::check_tcp(container_id, *port, probe.timeout_seconds).await
         }
         ProbeType::Exec { command } => {
             println!(

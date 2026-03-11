@@ -7,14 +7,63 @@
 
 use tokio::time::{timeout, Duration};
 
-/// Perform an HTTP GET probe against `http://127.0.0.1:{port}{path}`.
+/// Get the target IP address for probing a container.
+///
+/// - If the container uses host network mode, returns "127.0.0.1"
+/// - If the container uses bridge network, returns the container's IP address
+/// - Returns "127.0.0.1" as fallback if inspection fails
+async fn get_container_target_ip(container_id: &str) -> String {
+    let inspect_path = format!("/v4.0.0/libpod/containers/{}/json", container_id);
+    
+    match crate::runtime::podman::get(&inspect_path).await {
+        Ok(body) => {
+            match serde_json::from_slice::<serde_json::Value>(&body) {
+                Ok(json) => {
+                    // Check HostConfig.NetworkMode
+                    if let Some(network_mode) = json["HostConfig"]["NetworkMode"].as_str() {
+                        if network_mode == "host" {
+                            println!("[Probe] Container {} uses host network, targeting localhost", container_id);
+                            return "127.0.0.1".to_string();
+                        }
+                    }
+                    
+                    // For bridge/other modes, get container IP
+                    if let Some(ip) = json["NetworkSettings"]["IPAddress"].as_str() {
+                        if !ip.is_empty() {
+                            println!("[Probe] Container {} uses bridge network, targeting {}", container_id, ip);
+                            return ip.to_string();
+                        }
+                    }
+                    
+                    eprintln!("[Probe] Could not determine IP for container {}, using localhost", container_id);
+                    "127.0.0.1".to_string()
+                }
+                Err(e) => {
+                    eprintln!("[Probe] Failed to parse container inspect JSON: {}", e);
+                    "127.0.0.1".to_string()
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("[Probe] Failed to inspect container {}: {}", container_id, e);
+            "127.0.0.1".to_string()
+        }
+    }
+}
+
+/// Perform an HTTP GET probe against the container.
+///
+/// Automatically detects the correct target IP based on container network mode:
+/// - Host network: `http://127.0.0.1:{port}{path}`
+/// - Bridge network: `http://{container_ip}:{port}{path}`
 ///
 /// Returns `true` if the response status code is in the range 200–399.
 /// Returns `false` on connection error, timeout, or non-2xx/3xx response.
-pub async fn check_http(path: &str, port: u16, timeout_secs: u32) -> bool {
+pub async fn check_http(container_id: &str, path: &str, port: u16, timeout_secs: u32) -> bool {
     use hyper::{Client, Uri};
 
-    let uri_str = format!("http://127.0.0.1:{}{}", port, path);
+    let target_ip = get_container_target_ip(container_id).await;
+    let uri_str = format!("http://{}:{}{}", target_ip, port, path);
     let uri: Uri = match uri_str.parse() {
         Ok(u) => u,
         Err(e) => {
@@ -45,13 +94,18 @@ pub async fn check_http(path: &str, port: u16, timeout_secs: u32) -> bool {
     }
 }
 
-/// Perform a TCP connection probe against `127.0.0.1:{port}`.
+/// Perform a TCP connection probe against the container.
+///
+/// Automatically detects the correct target IP based on container network mode:
+/// - Host network: `127.0.0.1:{port}`
+/// - Bridge network: `{container_ip}:{port}`
 ///
 /// Returns `true` if a TCP connection can be established within `timeout_secs`.
-pub async fn check_tcp(port: u16, timeout_secs: u32) -> bool {
+pub async fn check_tcp(container_id: &str, port: u16, timeout_secs: u32) -> bool {
     use tokio::net::TcpStream;
 
-    let addr = format!("127.0.0.1:{}", port);
+    let target_ip = get_container_target_ip(container_id).await;
+    let addr = format!("{}:{}", target_ip, port);
     let duration = Duration::from_secs(timeout_secs as u64);
 
     match timeout(duration, TcpStream::connect(&addr)).await {
@@ -119,14 +173,14 @@ mod tests {
     #[tokio::test]
     async fn test_check_http_invalid_port_returns_false() {
         // Port 1 is privileged and should not have an HTTP server
-        let result = check_http("/", 1, 1).await;
+        let result = check_http("test-container", "/", 1, 1).await;
         assert!(!result);
     }
 
     #[tokio::test]
     async fn test_check_tcp_closed_port_returns_false() {
         // Port 19999 is very unlikely to be open in the test environment
-        let result = check_tcp(19999, 1).await;
+        let result = check_tcp("test-container", 19999, 1).await;
         assert!(!result);
     }
 
