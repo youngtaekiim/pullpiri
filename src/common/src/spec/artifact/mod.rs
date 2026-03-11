@@ -39,7 +39,7 @@ pub struct Volume {
     apiVersion: String,
     kind: String,
     metadata: MetaData,
-    spec: Option<volume::VolumeSpec>,
+    spec: volume::VolumeSpec,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -47,7 +47,7 @@ pub struct Network {
     apiVersion: String,
     kind: String,
     metadata: MetaData,
-    spec: Option<network::NetworkSpec>,
+    spec: network::NetworkSpec,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
