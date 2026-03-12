@@ -13,8 +13,8 @@ use colored::Colorize;
 pub enum BoardAction {
     /// List all boards
     List,
-    /// Get specific board by ID
-    Get {
+    /// Describe specific board by ID
+    Describe {
         /// Board ID
         id: String,
     },
@@ -29,7 +29,7 @@ pub enum BoardAction {
 pub async fn handle(client: &SettingsClient, action: BoardAction) -> Result<()> {
     match action {
         BoardAction::List => list_boards(client).await,
-        BoardAction::Get { id } => get_board(client, &id).await,
+        BoardAction::Describe { id } => describe_board(client, &id).await,
         BoardAction::Raw { id } => {
             if let Some(board_id) = id {
                 get_board_raw(client, &board_id).await
@@ -90,8 +90,8 @@ async fn list_boards(client: &SettingsClient) -> Result<()> {
     Ok(())
 }
 
-/// Get specific board information
-async fn get_board(client: &SettingsClient, board_id: &str) -> Result<()> {
+/// Describe specific board information
+async fn describe_board(client: &SettingsClient, board_id: &str) -> Result<()> {
     print_info(&format!("Fetching board information for ID: {}", board_id));
 
     let endpoint = format!("/api/v1/boards/{}", board_id);

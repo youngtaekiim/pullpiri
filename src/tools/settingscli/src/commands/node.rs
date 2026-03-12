@@ -13,8 +13,8 @@ use colored::Colorize;
 pub enum NodeAction {
     /// List all nodes
     List,
-    /// Get specific node by ID
-    Get {
+    /// Describe specific node by ID
+    Describe {
         /// Node ID
         id: String,
     },
@@ -29,7 +29,7 @@ pub enum NodeAction {
 pub async fn handle(client: &SettingsClient, action: NodeAction) -> Result<()> {
     match action {
         NodeAction::List => list_nodes(client).await,
-        NodeAction::Get { id } => get_node(client, &id).await,
+        NodeAction::Describe { id } => describe_node(client, &id).await,
         NodeAction::Raw { id } => {
             if let Some(node_id) = id {
                 get_node_raw(client, &node_id).await
@@ -101,8 +101,8 @@ async fn list_nodes(client: &SettingsClient) -> Result<()> {
     Ok(())
 }
 
-/// Get specific node information
-async fn get_node(client: &SettingsClient, node_id: &str) -> Result<()> {
+/// Describe specific node information
+async fn describe_node(client: &SettingsClient, node_id: &str) -> Result<()> {
     print_info(&format!("Fetching node information for ID: {}", node_id));
 
     let endpoint = format!("/api/v1/nodes/{}", node_id);

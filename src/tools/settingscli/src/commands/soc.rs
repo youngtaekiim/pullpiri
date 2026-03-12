@@ -13,8 +13,8 @@ use colored::Colorize;
 pub enum SocAction {
     /// List all SoCs
     List,
-    /// Get specific SoC by ID
-    Get {
+    /// Describe specific SoC by ID
+    Describe {
         /// SoC ID
         id: String,
     },
@@ -29,7 +29,7 @@ pub enum SocAction {
 pub async fn handle(client: &SettingsClient, action: SocAction) -> Result<()> {
     match action {
         SocAction::List => list_socs(client).await,
-        SocAction::Get { id } => get_soc(client, &id).await,
+        SocAction::Describe { id } => describe_soc(client, &id).await,
         SocAction::Raw { id } => {
             if let Some(soc_id) = id {
                 get_soc_raw(client, &soc_id).await
@@ -104,8 +104,8 @@ async fn list_socs(client: &SettingsClient) -> Result<()> {
     Ok(())
 }
 
-/// Get specific SoC information
-async fn get_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
+/// Describe specific SoC information
+async fn describe_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
     print_info(&format!("Fetching SoC information for ID: {}", soc_id));
 
     let endpoint = format!("/api/v1/socs/{}", soc_id);
