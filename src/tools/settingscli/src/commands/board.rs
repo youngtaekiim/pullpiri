@@ -4,6 +4,7 @@
 */
 //! Board command implementation
 
+use crate::commands::format::{format_bytes, format_duration_ago, format_memory};
 use crate::commands::{print_error, print_info, print_json, print_success};
 use crate::{Result, SettingsClient};
 use clap::Subcommand;
@@ -97,36 +98,99 @@ async fn describe_board(client: &SettingsClient, board_id: &str) -> Result<()> {
     let endpoint = format!("/api/v1/boards/{}", board_id);
     match client.get(&endpoint).await {
         Ok(board) => {
-            println!("\n{}", format!("Board: {}", board_id).bold());
-            println!("{}", "=".repeat(50));
+            // Board name
+            let board_name = board
+                .get("board_id")
+                .and_then(|id| id.as_str())
+                .unwrap_or(board_id);
+            println!("\n{:<24}{}", format!("{}:", "Name".bold()), board_name);
 
-            if let Some(id) = board.get("id") {
-                println!("ID: {}", id.as_str().unwrap_or("Unknown"));
+            // Aggregated Resources
+            println!("{}", "Aggregated Resources:".bold());
+            
+            if let (Some(cpu_count), Some(cpu_usage)) = (
+                board.get("total_cpu_count").and_then(|c| c.as_u64()),
+                board.get("total_cpu_usage").and_then(|u| u.as_f64()),
+            ) {
+                println!("  {:<22}{} ({:.2}% used)", "cpu:", cpu_count, cpu_usage);
             }
 
-            if let Some(name) = board.get("name") {
-                println!("Name: {}", name.as_str().unwrap_or("Unknown"));
+            if let Some(gpu_count) = board.get("total_gpu_count").and_then(|g| g.as_u64()) {
+                println!("  {:<22}{}", "gpu:", gpu_count);
             }
 
-            if let Some(status) = board.get("status") {
-                println!("Status: {}", status.as_str().unwrap_or("Unknown"));
+            if let (Some(_total_mem), Some(used_mem), Some(mem_usage)) = (
+                board.get("total_memory").and_then(|m| m.as_u64()),
+                board.get("total_used_memory").and_then(|m| m.as_u64()),
+                board.get("total_mem_usage").and_then(|u| u.as_f64()),
+            ) {
+                println!(
+                    "  {:<22}{} ({:.2}% used)",
+                    "memory:",
+                    format_memory(used_mem),
+                    mem_usage
+                );
             }
 
-            if let Some(nodes) = board.get("nodes").and_then(|n| n.as_array()) {
-                println!("\nNodes ({}):", nodes.len());
-                for (i, node) in nodes.iter().enumerate() {
-                    if let Some(node_name) = node.get("node_name") {
-                        println!("  {}. {}", i + 1, node_name.as_str().unwrap_or("Unknown"));
-                    }
+            // Network I/O
+            println!("{}", "Network I/O:".bold());
+            if let Some(rx_bytes) = board.get("total_rx_bytes").and_then(|r| r.as_u64()) {
+                println!("  {:<22}{}", "RX:", format_bytes(rx_bytes));
+            }
+            if let Some(tx_bytes) = board.get("total_tx_bytes").and_then(|t| t.as_u64()) {
+                println!("  {:<22}{}", "TX:", format_bytes(tx_bytes));
+            }
+
+            // Disk I/O
+            println!("{}", "Disk I/O:".bold());
+            if let Some(read_bytes) = board.get("total_read_bytes").and_then(|r| r.as_u64()) {
+                println!("  {:<22}{}", "Read:", format_bytes(read_bytes));
+            }
+            if let Some(write_bytes) = board.get("total_write_bytes").and_then(|w| w.as_u64()) {
+                println!("  {:<22}{}", "Write:", format_bytes(write_bytes));
+            }
+
+            // SoCs
+            if let Some(socs) = board.get("socs").and_then(|s| s.as_array()) {
+                let soc_count = socs.len();
+                println!("{} ({})", "SoCs:".bold(), soc_count);
+                for soc in socs.iter() {
+                    let soc_id = soc
+                        .get("soc_id")
+                        .and_then(|id| id.as_str())
+                        .unwrap_or("Unknown");
+                    let node_count = soc
+                        .get("nodes")
+                        .and_then(|n| n.as_array())
+                        .map(|n| n.len())
+                        .unwrap_or(0);
+                    println!("  {:<22}({} node{})", soc_id, node_count, if node_count == 1 { "" } else { "s" });
                 }
             }
 
-            if let Some(socs) = board.get("socs").and_then(|s| s.as_array()) {
-                println!("\nSoCs ({}):", socs.len());
-                for (i, soc) in socs.iter().enumerate() {
-                    if let Some(soc_id) = soc.get("soc_id") {
-                        println!("  {}. {}", i + 1, soc_id.as_str().unwrap_or("Unknown"));
-                    }
+            // Nodes
+            if let Some(nodes) = board.get("nodes").and_then(|n| n.as_array()) {
+                let node_count = nodes.len();
+                println!("{} ({})", "Nodes:".bold(), node_count);
+                for node in nodes.iter() {
+                    let node_name = node
+                        .get("node_name")
+                        .and_then(|n| n.as_str())
+                        .unwrap_or("Unknown");
+                    let node_ip = node.get("ip").and_then(|ip| ip.as_str()).unwrap_or("N/A");
+                    println!("  {:<22}{}", node_name, node_ip);
+                }
+            }
+
+            // Last Updated
+            if let Some(last_updated) = board.get("last_updated") {
+                if let Some(secs) = last_updated.get("secs_since_epoch").and_then(|s| s.as_u64()) {
+                    let now = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs();
+                    let elapsed = now.saturating_sub(secs);
+                    println!("{:<24}{}", format!("{}:", "Last Updated".bold()), format_duration_ago(elapsed));
                 }
             }
 

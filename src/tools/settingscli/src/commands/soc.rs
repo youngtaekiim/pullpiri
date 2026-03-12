@@ -4,6 +4,7 @@
 */
 //! SoC command implementation
 
+use crate::commands::format::{format_bytes, format_duration_ago, format_memory};
 use crate::commands::{print_error, print_info, print_json, print_success};
 use crate::{Result, SettingsClient};
 use clap::Subcommand;
@@ -111,119 +112,90 @@ async fn describe_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
     let endpoint = format!("/api/v1/socs/{}", soc_id);
     match client.get(&endpoint).await {
         Ok(soc) => {
-            println!("\n{}", format!("SoC: {}", soc_id).bold());
-            println!("{}", "=".repeat(50));
+            // SoC name
+            let soc_name = soc.get("soc_id").and_then(|id| id.as_str()).unwrap_or(soc_id);
+            println!("\n{:<24}{}", format!("{}:", "Name".bold()), soc_name);
 
-            if let Some(id) = soc.get("soc_id") {
-                println!("ID: {}", id.as_str().unwrap_or("Unknown"));
+            // Status (default to Active if not provided)
+            let status = soc
+                .get("status")
+                .and_then(|s| s.as_str())
+                .unwrap_or("Active");
+            println!("{:<24}{}", format!("{}:", "Status".bold()), status);
+
+            // Aggregated Resources
+            println!("{}", "Aggregated Resources:".bold());
+            
+            if let (Some(cpu_count), Some(cpu_usage)) = (
+                soc.get("total_cpu_count").and_then(|c| c.as_u64()),
+                soc.get("total_cpu_usage").and_then(|u| u.as_f64()),
+            ) {
+                println!("  {:<22}{} ({:.2}% used)", "cpu:", cpu_count, cpu_usage);
             }
 
-            if let Some(status) = soc.get("status") {
-                println!("Status: {}", status.as_str().unwrap_or("Unknown"));
+            if let Some(gpu_count) = soc.get("total_gpu_count").and_then(|g| g.as_u64()) {
+                println!("  {:<22}{}", "gpu:", gpu_count);
             }
 
-            // Aggregated resource information
-            println!("\nAggregated Resources:");
-            if let Some(total_cpu_usage) = soc.get("total_cpu_usage") {
+            if let (Some(used_memory), Some(mem_usage)) = (
+                soc.get("total_used_memory").and_then(|m| m.as_u64()),
+                soc.get("total_mem_usage").and_then(|u| u.as_f64()),
+            ) {
                 println!(
-                    "  Total CPU Usage: {:.2}%",
-                    total_cpu_usage.as_f64().unwrap_or(0.0)
+                    "  {:<22}{} ({:.2}% used)",
+                    "memory:",
+                    format_memory(used_memory),
+                    mem_usage
                 );
             }
 
-            if let Some(total_cpu_count) = soc.get("total_cpu_count") {
-                println!(
-                    "  Total CPU Count: {}",
-                    total_cpu_count.as_u64().unwrap_or(0)
-                );
+            // Network I/O
+            println!("{}", "Network I/O:".bold());
+            if let Some(rx_bytes) = soc.get("total_rx_bytes").and_then(|r| r.as_u64()) {
+                println!("  {:<22}{}", "RX:", format_bytes(rx_bytes));
+            }
+            if let Some(tx_bytes) = soc.get("total_tx_bytes").and_then(|t| t.as_u64()) {
+                println!("  {:<22}{}", "TX:", format_bytes(tx_bytes));
             }
 
-            if let Some(total_gpu_count) = soc.get("total_gpu_count") {
-                println!(
-                    "  Total GPU Count: {}",
-                    total_gpu_count.as_u64().unwrap_or(0)
-                );
+            // Disk I/O
+            println!("{}", "Disk I/O:".bold());
+            if let Some(read_bytes) = soc.get("total_read_bytes").and_then(|r| r.as_u64()) {
+                println!("  {:<22}{}", "Read:", format_bytes(read_bytes));
+            }
+            if let Some(write_bytes) = soc.get("total_write_bytes").and_then(|w| w.as_u64()) {
+                println!("  {:<22}{}", "Write:", format_bytes(write_bytes));
             }
 
-            if let Some(total_mem_usage) = soc.get("total_mem_usage") {
-                println!(
-                    "  Total Memory Usage: {:.2}%",
-                    total_mem_usage.as_f64().unwrap_or(0.0)
-                );
-            }
-
-            if let Some(total_used_memory) = soc.get("total_used_memory") {
-                let used_gb =
-                    total_used_memory.as_u64().unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
-                println!("  Total Used Memory: {:.2} GB", used_gb);
-            }
-
-            if let Some(total_memory) = soc.get("total_memory") {
-                let total_gb =
-                    total_memory.as_u64().unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
-                println!("  Total Memory: {:.2} GB", total_gb);
-            }
-
-            // Network information
-            println!("\nTotal Network Usage:");
-            if let Some(total_rx_bytes) = soc.get("total_rx_bytes") {
-                println!("  Total RX Bytes: {}", total_rx_bytes.as_u64().unwrap_or(0));
-            }
-
-            if let Some(total_tx_bytes) = soc.get("total_tx_bytes") {
-                println!("  Total TX Bytes: {}", total_tx_bytes.as_u64().unwrap_or(0));
-            }
-
-            // Disk information
-            println!("\nTotal Disk Usage:");
-            if let Some(total_read_bytes) = soc.get("total_read_bytes") {
-                println!(
-                    "  Total Read Bytes: {}",
-                    total_read_bytes.as_u64().unwrap_or(0)
-                );
-            }
-
-            if let Some(total_write_bytes) = soc.get("total_write_bytes") {
-                println!(
-                    "  Total Write Bytes: {}",
-                    total_write_bytes.as_u64().unwrap_or(0)
-                );
-            }
-
-            // Nodes information
+            // Nodes
             if let Some(nodes) = soc.get("nodes").and_then(|n| n.as_array()) {
-                println!("\nNodes ({}):", nodes.len());
-                for (i, node) in nodes.iter().enumerate() {
-                    if let Some(node_name) = node.get("node_name") {
-                        println!("  {}. {}", i + 1, node_name.as_str().unwrap_or("Unknown"));
-
-                        if let Some(ip) = node.get("ip") {
-                            println!("     IP: {}", ip.as_str().unwrap_or("Unknown"));
-                        }
-
-                        if let Some(cpu_usage) = node.get("cpu_usage") {
-                            println!("     CPU Usage: {:.2}%", cpu_usage.as_f64().unwrap_or(0.0));
-                        }
-
-                        if let Some(mem_usage) = node.get("mem_usage") {
-                            println!(
-                                "     Memory Usage: {:.2}%",
-                                mem_usage.as_f64().unwrap_or(0.0)
-                            );
-                        }
-                    }
+                let node_count = nodes.len();
+                println!("{} ({})", "Nodes:".bold(), node_count);
+                for node in nodes.iter() {
+                    let node_name = node
+                        .get("node_name")
+                        .and_then(|n| n.as_str())
+                        .unwrap_or("Unknown");
+                    let node_ip = node.get("ip").and_then(|ip| ip.as_str()).unwrap_or("N/A");
+                    println!("  {:<22}{}", node_name, node_ip);
                 }
             }
 
-            // Last updated information
+            // Last Updated
             if let Some(last_updated) = soc.get("last_updated") {
-                if let Some(secs) = last_updated.get("secs_since_epoch") {
-                    println!(
-                        "\nLast Updated: {} seconds since epoch",
-                        secs.as_u64().unwrap_or(0)
-                    );
+                if let Some(secs) = last_updated.get("secs_since_epoch").and_then(|s| s.as_u64()) {
+                    let now = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs();
+                    let elapsed = now.saturating_sub(secs);
+                    println!("{:<24}{}", format!("{}:", "Last Updated".bold()), format_duration_ago(elapsed));
                 }
             }
+
+            // Hint
+            println!("\n{}", "For more details:".dimmed());
+            println!("  {}", "settingscli describe node <node_name>".dimmed());
 
             print_success("SoC information retrieved successfully");
         }
