@@ -45,7 +45,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Get system metrics
+    /// Describe system metrics
     Metrics {
         #[command(subcommand)]
         action: metrics::MetricsAction,

@@ -11,8 +11,8 @@ use colored::Colorize;
 
 #[derive(Subcommand)]
 pub enum MetricsAction {
-    /// Get all system metrics
-    Get,
+    /// Describe all system metrics
+    Describe,
     /// Get metrics in raw JSON format
     Raw,
 }
@@ -20,13 +20,13 @@ pub enum MetricsAction {
 /// Handle metrics commands
 pub async fn handle(client: &SettingsClient, action: MetricsAction) -> Result<()> {
     match action {
-        MetricsAction::Get => get_metrics(client).await,
+        MetricsAction::Describe => describe_metrics(client).await,
         MetricsAction::Raw => get_metrics_raw(client).await,
     }
 }
 
-/// Get and display formatted metrics
-async fn get_metrics(client: &SettingsClient) -> Result<()> {
+/// Describe and display formatted metrics
+async fn describe_metrics(client: &SettingsClient) -> Result<()> {
     print_success("Fetching system metrics...");
 
     match client.get("/api/v1/metrics").await {

@@ -11,8 +11,8 @@ use colored::Colorize;
 pub enum ContainerAction {
     /// List all containers
     List,
-    /// Get specific container by ID
-    Get { id: String },
+    /// Describe specific container by ID
+    Describe { id: String },
     /// Get container information in raw JSON format
     Raw,
 }
@@ -20,7 +20,7 @@ pub enum ContainerAction {
 pub async fn handle(client: &SettingsClient, action: ContainerAction) -> Result<()> {
     match action {
         ContainerAction::List => list_containers(client).await,
-        ContainerAction::Get { id } => get_container(client, &id).await,
+        ContainerAction::Describe { id } => describe_container(client, &id).await,
         ContainerAction::Raw => raw_containers(client).await,
     }
 }
@@ -113,8 +113,8 @@ async fn list_containers(client: &SettingsClient) -> Result<()> {
     Ok(())
 }
 
-/// Get specific container information
-async fn get_container(client: &SettingsClient, container_id: &str) -> Result<()> {
+/// Describe specific container information
+async fn describe_container(client: &SettingsClient, container_id: &str) -> Result<()> {
     print_info(&format!(
         "Fetching container information for ID: {}",
         container_id
