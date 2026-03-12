@@ -9,7 +9,7 @@
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
-use settingscli::commands::{board, container, metrics, node, soc, yaml};
+use settingscli::commands::{board, container, metrics, node, soc, top, yaml};
 use settingscli::{Result, SettingsClient};
 use url::Url;
 
@@ -45,30 +45,25 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Describe system metrics
-    Metrics {
+    /// Get all resources
+    Get {
         #[command(subcommand)]
-        action: metrics::MetricsAction,
+        resource: ResourceType,
     },
-    /// Board-related operations
-    Board {
+    /// Describe specific resource by ID
+    Describe {
         #[command(subcommand)]
-        action: board::BoardAction,
+        resource: ResourceTypeWithId,
     },
-    /// Node-related operations
-    Node {
+    /// Get resource data in raw JSON format
+    Raw {
         #[command(subcommand)]
-        action: node::NodeAction,
+        resource: ResourceTypeRaw,
     },
-    /// SoC-related operations
-    Soc {
+    /// Display live system information
+    Top {
         #[command(subcommand)]
-        action: soc::SocAction,
-    },
-    /// Container-related operations
-    Container {
-        #[command(subcommand)]
-        action: container::ContainerAction,
+        resource: top::TopResource,
     },
     /// YAML artifact management
     Yaml {
@@ -77,6 +72,65 @@ enum Commands {
     },
     /// Test connection to SettingsService
     Health,
+}
+
+#[derive(Subcommand)]
+enum ResourceType {
+    /// Get all boards
+    Boards,
+    /// Get all nodes
+    Nodes,
+    /// Get all SoCs
+    Socs,
+    /// Get all containers
+    Containers,
+}
+
+#[derive(Subcommand)]
+enum ResourceTypeWithId {
+    /// Describe specific board by ID
+    Board {
+        /// Board ID
+        id: String,
+    },
+    /// Describe specific node by ID
+    Node {
+        /// Node ID
+        id: String,
+    },
+    /// Describe specific SoC by ID
+    Soc {
+        /// SoC ID
+        id: String,
+    },
+    /// Describe specific container by ID
+    Container {
+        /// Container ID
+        id: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ResourceTypeRaw {
+    /// Get board data in raw JSON format
+    Board {
+        /// Board ID (optional)
+        id: Option<String>,
+    },
+    /// Get node data in raw JSON format
+    Node {
+        /// Node ID (optional)
+        id: Option<String>,
+    },
+    /// Get SoC data in raw JSON format
+    Soc {
+        /// SoC ID (optional)
+        id: Option<String>,
+    },
+    /// Get container data in raw JSON format
+    Container,
+    /// Get metrics in raw JSON format
+    Metrics,
 }
 
 #[tokio::main]
@@ -125,11 +179,47 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Execute command - YAML commands go directly to API Server; others go to SettingsService
     let result = match cli.command {
-        Commands::Metrics { action } => metrics::handle(&settings_client, action).await,
-        Commands::Board { action } => board::handle(&settings_client, action).await,
-        Commands::Node { action } => node::handle(&settings_client, action).await,
-        Commands::Soc { action } => soc::handle(&settings_client, action).await,
-        Commands::Container { action } => container::handle(&settings_client, action).await,
+        Commands::Get { resource } => match resource {
+            ResourceType::Boards => board::handle(&settings_client, board::BoardAction::Get).await,
+            ResourceType::Nodes => node::handle(&settings_client, node::NodeAction::Get).await,
+            ResourceType::Socs => soc::handle(&settings_client, soc::SocAction::Get).await,
+            ResourceType::Containers => {
+                container::handle(&settings_client, container::ContainerAction::Get).await
+            }
+        },
+        Commands::Describe { resource } => match resource {
+            ResourceTypeWithId::Board { id } => {
+                board::handle(&settings_client, board::BoardAction::Describe { id }).await
+            }
+            ResourceTypeWithId::Node { id } => {
+                node::handle(&settings_client, node::NodeAction::Describe { id }).await
+            }
+            ResourceTypeWithId::Soc { id } => {
+                soc::handle(&settings_client, soc::SocAction::Describe { id }).await
+            }
+            ResourceTypeWithId::Container { id } => {
+                container::handle(&settings_client, container::ContainerAction::Describe { id })
+                    .await
+            }
+        },
+        Commands::Raw { resource } => match resource {
+            ResourceTypeRaw::Board { id } => {
+                board::handle(&settings_client, board::BoardAction::Raw { id }).await
+            }
+            ResourceTypeRaw::Node { id } => {
+                node::handle(&settings_client, node::NodeAction::Raw { id }).await
+            }
+            ResourceTypeRaw::Soc { id } => {
+                soc::handle(&settings_client, soc::SocAction::Raw { id }).await
+            }
+            ResourceTypeRaw::Container => {
+                container::handle(&settings_client, container::ContainerAction::Raw).await
+            }
+            ResourceTypeRaw::Metrics => {
+                metrics::handle(&settings_client, metrics::MetricsAction::Raw).await
+            }
+        },
+        Commands::Top { resource } => top::handle(&settings_client, resource).await,
         Commands::Yaml { action } => yaml::handle(&api_client, action).await,
         Commands::Health => health_check(&settings_client).await,
     };
