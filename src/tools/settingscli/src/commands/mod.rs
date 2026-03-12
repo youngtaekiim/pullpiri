@@ -6,6 +6,7 @@
 
 pub mod board;
 pub mod container;
+pub mod format;
 pub mod metrics;
 pub mod node;
 pub mod soc;

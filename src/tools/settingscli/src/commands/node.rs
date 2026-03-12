@@ -4,6 +4,7 @@
 */
 //! Node command implementation
 
+use crate::commands::format::{format_bytes, format_memory};
 use crate::commands::{print_error, print_info, print_json, print_success};
 use crate::{Result, SettingsClient};
 use clap::Subcommand;
@@ -108,76 +109,71 @@ async fn describe_node(client: &SettingsClient, node_id: &str) -> Result<()> {
     let endpoint = format!("/api/v1/nodes/{}", node_id);
     match client.get(&endpoint).await {
         Ok(node) => {
-            println!("\n{}", format!("Node: {}", node_id).bold());
-            println!("{}", "=".repeat(50));
+            // Node name
+            let node_name = node
+                .get("node_name")
+                .and_then(|n| n.as_str())
+                .unwrap_or(node_id);
+            println!("\n{:<24}{}", format!("{}:", "Name".bold()), node_name);
 
-            if let Some(id) = node.get("id") {
-                println!("ID: {}", id.as_str().unwrap_or("Unknown"));
+            // System Info
+            println!("{}", "System Info:".bold());
+            if let Some(os) = node.get("os").and_then(|o| o.as_str()) {
+                println!("  {:<22}{}", "OS Image:", os);
+            }
+            if let Some(arch) = node.get("arch").and_then(|a| a.as_str()) {
+                println!("  {:<22}{}", "Architecture:", arch);
+            }
+            // Container runtime is not provided by API, using default
+            println!("  {:<22}Podman", "Container Runtime:");
+            if let Some(ip) = node.get("ip").and_then(|i| i.as_str()) {
+                println!("  {:<22}{}", "Internal IP:", ip);
             }
 
-            if let Some(name) = node.get("node_name") {
-                println!("Name: {}", name.as_str().unwrap_or("Unknown"));
+            // Capacity
+            println!("{}", "Capacity:".bold());
+            if let Some(cpu_count) = node.get("cpu_count").and_then(|c| c.as_u64()) {
+                println!("  {:<22}{}", "cpu:", cpu_count);
+            }
+            if let Some(gpu_count) = node.get("gpu_count").and_then(|g| g.as_u64()) {
+                println!("  {:<22}{}", "gpu:", gpu_count);
+            }
+            if let Some(total_memory) = node.get("total_memory").and_then(|m| m.as_u64()) {
+                println!("  {:<22}{}", "memory:", format_memory(total_memory));
             }
 
-            if let Some(ip) = node.get("ip") {
-                println!("IP Address: {}", ip.as_str().unwrap_or("Unknown"));
+            // Allocatable (Current Usage)
+            println!("{}", "Allocatable:".bold());
+            if let (Some(cpu_usage), Some(cpu_count)) = (
+                node.get("cpu_usage").and_then(|u| u.as_f64()),
+                node.get("cpu_count").and_then(|c| c.as_u64()),
+            ) {
+                println!("  {:<22}{} ({:.2}% used)", "cpu:", cpu_count, cpu_usage);
+            }
+            if let (Some(_used_memory), Some(total_memory), Some(mem_usage)) = (
+                node.get("used_memory").and_then(|m| m.as_u64()),
+                node.get("total_memory").and_then(|m| m.as_u64()),
+                node.get("mem_usage").and_then(|u| u.as_f64()),
+            ) {
+                println!("  {:<22}{} ({:.2}% used)", "memory:", format_memory(total_memory), mem_usage);
             }
 
-            if let Some(os) = node.get("os") {
-                println!("OS: {}", os.as_str().unwrap_or("Unknown"));
+            // Network I/O
+            println!("{}", "Network I/O:".bold());
+            if let Some(rx_bytes) = node.get("rx_bytes").and_then(|r| r.as_u64()) {
+                println!("  {:<22}{}", "RX:", format_bytes(rx_bytes));
+            }
+            if let Some(tx_bytes) = node.get("tx_bytes").and_then(|t| t.as_u64()) {
+                println!("  {:<22}{}", "TX:", format_bytes(tx_bytes));
             }
 
-            if let Some(arch) = node.get("arch") {
-                println!("Architecture: {}", arch.as_str().unwrap_or("Unknown"));
+            // Disk I/O
+            println!("{}", "Disk I/O:".bold());
+            if let Some(read_bytes) = node.get("read_bytes").and_then(|r| r.as_u64()) {
+                println!("  {:<22}{}", "Read:", format_bytes(read_bytes));
             }
-
-            // Resource information
-            println!("\nResource Usage:");
-            if let Some(cpu_usage) = node.get("cpu_usage") {
-                println!("  CPU Usage: {:.2}%", cpu_usage.as_f64().unwrap_or(0.0));
-            }
-
-            if let Some(cpu_count) = node.get("cpu_count") {
-                println!("  CPU Count: {}", cpu_count.as_u64().unwrap_or(0));
-            }
-
-            if let Some(gpu_count) = node.get("gpu_count") {
-                println!("  GPU Count: {}", gpu_count.as_u64().unwrap_or(0));
-            }
-
-            if let Some(mem_usage) = node.get("mem_usage") {
-                println!("  Memory Usage: {:.2}%", mem_usage.as_f64().unwrap_or(0.0));
-            }
-
-            if let Some(used_memory) = node.get("used_memory") {
-                let used_gb = used_memory.as_u64().unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
-                println!("  Used Memory: {:.2} GB", used_gb);
-            }
-
-            if let Some(total_memory) = node.get("total_memory") {
-                let total_gb =
-                    total_memory.as_u64().unwrap_or(0) as f64 / (1024.0 * 1024.0 * 1024.0);
-                println!("  Total Memory: {:.2} GB", total_gb);
-            }
-
-            // Network information
-            println!("\nNetwork Usage:");
-            if let Some(rx_bytes) = node.get("rx_bytes") {
-                println!("  RX Bytes: {}", rx_bytes.as_u64().unwrap_or(0));
-            }
-
-            if let Some(tx_bytes) = node.get("tx_bytes") {
-                println!("  TX Bytes: {}", tx_bytes.as_u64().unwrap_or(0));
-            }
-
-            // Disk information
-            println!("\nDisk Usage:");
-            if let Some(read_bytes) = node.get("read_bytes") {
-                println!("  Read Bytes: {}", read_bytes.as_u64().unwrap_or(0));
-            }
-
-            if let Some(write_bytes) = node.get("write_bytes") {
-                println!("  Write Bytes: {}", write_bytes.as_u64().unwrap_or(0));
+            if let Some(write_bytes) = node.get("write_bytes").and_then(|w| w.as_u64()) {
+                println!("  {:<22}{}", "Write:", format_bytes(write_bytes));
             }
 
             print_success("Node information retrieved successfully");
