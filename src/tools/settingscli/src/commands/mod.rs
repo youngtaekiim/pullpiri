@@ -9,6 +9,7 @@ pub mod container;
 pub mod metrics;
 pub mod node;
 pub mod soc;
+pub mod top;
 pub mod yaml;
 
 use crate::Result;
