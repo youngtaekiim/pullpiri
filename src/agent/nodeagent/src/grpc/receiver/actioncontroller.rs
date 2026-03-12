@@ -84,7 +84,7 @@ pub async fn handle_workload(
             Some("Always") => RestartPolicy::Always,
             Some("OnFailure") => RestartPolicy::OnFailure,
             Some("Never") => RestartPolicy::Never,
-            _ => RestartPolicy::Always,
+            _ => RestartPolicy::OnFailure,
         };
 
         // Parse probe config from pod spec

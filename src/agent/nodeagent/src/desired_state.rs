@@ -50,7 +50,7 @@ impl DesiredState {
         Self {
             pod_name,
             container_id: String::new(),
-            restart_policy: RestartPolicy::Always,
+            restart_policy: RestartPolicy::OnFailure,
             probe_config: None,
             created_at: SystemTime::now(),
             pod_yaml: String::new(),
