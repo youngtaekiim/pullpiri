@@ -11,8 +11,8 @@ use colored::Colorize;
 
 #[derive(Subcommand)]
 pub enum NodeAction {
-    /// List all nodes
-    List,
+    /// Get all nodes
+    Get,
     /// Describe specific node by ID
     Describe {
         /// Node ID
@@ -28,20 +28,20 @@ pub enum NodeAction {
 /// Handle node commands
 pub async fn handle(client: &SettingsClient, action: NodeAction) -> Result<()> {
     match action {
-        NodeAction::List => list_nodes(client).await,
+        NodeAction::Get => get_nodes(client).await,
         NodeAction::Describe { id } => describe_node(client, &id).await,
         NodeAction::Raw { id } => {
             if let Some(node_id) = id {
                 get_node_raw(client, &node_id).await
             } else {
-                list_nodes_raw(client).await
+                get_nodes_raw(client).await
             }
         }
     }
 }
 
-/// List all nodes
-async fn list_nodes(client: &SettingsClient) -> Result<()> {
+/// Get all nodes
+async fn get_nodes(client: &SettingsClient) -> Result<()> {
     print_info("Fetching nodes list...");
 
     match client.get("/api/v1/nodes").await {
@@ -191,8 +191,8 @@ async fn describe_node(client: &SettingsClient, node_id: &str) -> Result<()> {
     Ok(())
 }
 
-/// Get nodes list in raw JSON format
-async fn list_nodes_raw(client: &SettingsClient) -> Result<()> {
+/// Get nodes in raw JSON format
+async fn get_nodes_raw(client: &SettingsClient) -> Result<()> {
     print_info("Fetching raw nodes data...");
 
     match client.get("/api/v1/nodes").await {

@@ -11,8 +11,8 @@ use colored::Colorize;
 
 #[derive(Subcommand)]
 pub enum SocAction {
-    /// List all SoCs
-    List,
+    /// Get all SoCs
+    Get,
     /// Describe specific SoC by ID
     Describe {
         /// SoC ID
@@ -28,20 +28,20 @@ pub enum SocAction {
 /// Handle SoC commands
 pub async fn handle(client: &SettingsClient, action: SocAction) -> Result<()> {
     match action {
-        SocAction::List => list_socs(client).await,
+        SocAction::Get => get_socs(client).await,
         SocAction::Describe { id } => describe_soc(client, &id).await,
         SocAction::Raw { id } => {
             if let Some(soc_id) = id {
                 get_soc_raw(client, &soc_id).await
             } else {
-                list_socs_raw(client).await
+                get_socs_raw(client).await
             }
         }
     }
 }
 
-/// List all SoCs
-async fn list_socs(client: &SettingsClient) -> Result<()> {
+/// Get all SoCs
+async fn get_socs(client: &SettingsClient) -> Result<()> {
     print_info("Fetching SoCs list...");
 
     match client.get("/api/v1/socs").await {
@@ -236,8 +236,8 @@ async fn describe_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
     Ok(())
 }
 
-/// Get SoCs list in raw JSON format
-async fn list_socs_raw(client: &SettingsClient) -> Result<()> {
+/// Get SoCs in raw JSON format
+async fn get_socs_raw(client: &SettingsClient) -> Result<()> {
     print_info("Fetching raw SoCs data...");
 
     match client.get("/api/v1/socs").await {
