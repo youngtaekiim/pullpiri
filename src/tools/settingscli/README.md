@@ -79,8 +79,8 @@ settingscli metrics raw
 #### Board Operations
 
 ```bash
-# List all boards
-settingscli board list
+# Get all boards
+settingscli board get
 
 # Describe specific board information
 settingscli board describe <BOARD_ID>
@@ -92,8 +92,8 @@ settingscli board raw [BOARD_ID]
 #### Node Operations
 
 ```bash
-# List all nodes
-settingscli node list
+# Get all nodes
+settingscli node get
 
 # Describe specific node information
 settingscli node describe <NODE_ID>
@@ -105,8 +105,8 @@ settingscli node raw [NODE_ID]
 #### SoC Operations
 
 ```bash
-# List all SoCs
-settingscli soc list
+# Get all SoCs
+settingscli soc get
 
 # Describe specific SoC information
 settingscli soc describe <SOC_ID>
@@ -118,8 +118,8 @@ settingscli soc raw [SOC_ID]
 #### Container Operations
 
 ```bash
-# List all containers
-settingscli container list
+# Get all containers
+settingscli container get
 
 # Describe specific container information
 settingscli container describe <CONTAINER_ID>
@@ -153,8 +153,8 @@ settingscli health
 # Describe system metrics with custom URL and timeout
 settingscli -u http://192.168.1.100:8080 -t 60 metrics describe
 
-# List all boards with verbose output
-settingscli -v board list
+# Get all boards with verbose output
+settingscli -v board get
 
 # Describe specific node details
 settingscli node describe lg-OptiPlex-3070
@@ -162,8 +162,8 @@ settingscli node describe lg-OptiPlex-3070
 # Get raw JSON output for a specific SoC
 settingscli soc raw 10.221.40.190
 
-# List all containers
-settingscli container list
+# Get all containers
+settingscli container get
 
 # Describe specific container details by ID
 settingscli container describe 2a465a2ea2d8ce9d35ab5eaae729067267ec09377edf89d02daa6c78d3787d2e
@@ -249,10 +249,10 @@ With all services running, test the CLI:
 ./target/release/settingscli metrics describe
 
 # Test all resource endpoints
-./target/release/settingscli board list
-./target/release/settingscli node list
-./target/release/settingscli soc list
-./target/release/settingscli container list
+./target/release/settingscli board get
+./target/release/settingscli node get
+./target/release/settingscli soc get
+./target/release/settingscli container get
 
 # Test YAML operations (requires valid YAML file)
 ./target/release/settingscli yaml apply examples/helloworld.yaml
@@ -346,16 +346,16 @@ The CLI interacts with the following SettingsService REST API endpoints:
 |---------|-------------|----------|-------------|
 | `metrics describe` | GET | `/api/v1/metrics` | Describe all system metrics |
 | `metrics raw` | GET | `/api/v1/metrics` | Get raw metrics data |
-| `board list` | GET | `/api/v1/boards` | List all boards |
+| `board get` | GET | `/api/v1/boards` | Get all boards |
 | `board describe <id>` | GET | `/api/v1/boards/{id}` | Describe specific board |
 | `board raw` | GET | `/api/v1/boards` | Get raw board data |
-| `node list` | GET | `/api/v1/nodes` | List all nodes |
+| `node get` | GET | `/api/v1/nodes` | Get all nodes |
 | `node describe <name>` | GET | `/api/v1/nodes/{name}` | Describe specific node |
 | `node raw` | GET | `/api/v1/nodes` | Get raw node data |
-| `soc list` | GET | `/api/v1/socs` | List all SoCs |
+| `soc get` | GET | `/api/v1/socs` | Get all SoCs |
 | `soc describe <id>` | GET | `/api/v1/socs/{id}` | Describe specific SoC |
 | `soc raw` | GET | `/api/v1/socs` | Get raw SoC data |
-| `container list` | GET | `/api/v1/containers` | List all containers |
+| `container get` | GET | `/api/v1/containers` | Get all containers |
 | `container describe <id>` | GET | `/api/v1/containers/{id}` | Describe specific container |
 | `container raw` | GET | `/api/v1/containers` | Get raw container data |
 
@@ -447,15 +447,15 @@ settingscli -u http://localhost:8080 health
 $ settingscli container describe <container-id>
 ✗ Failed to fetch container: Request failed with status: 500 Internal Server Error
 
-# Solution: This is a known server-side issue. Use container list or raw instead:
-settingscli container list
+# Solution: This is a known server-side issue. Use container get or raw instead:
+settingscli container get
 settingscli container raw
 ```
 
 #### 3. Empty Results
 ```bash
 # Problem: Commands return empty results
-$ settingscli board list
+$ settingscli board get
 No boards found.
 
 # Solution: Ensure all required services are running:
@@ -545,8 +545,8 @@ settingscli -u http://remote-host:8080 -t 30 metrics describe
 ### Board Commands
 
 ```bash
-# List all boards (formatted)
-settingscli board list
+# Get all boards (formatted)
+settingscli board get
 
 # Describe specific board details
 settingscli board describe 10.221.40.100
@@ -561,8 +561,8 @@ settingscli board raw 10.221.40.100
 ### Node Commands
 
 ```bash
-# List all nodes (formatted)
-settingscli node list
+# Get all nodes (formatted)
+settingscli node get
 
 # Describe specific node details
 settingscli node describe lg-OptiPlex-3070
@@ -577,8 +577,8 @@ settingscli node raw lg-OptiPlex-3070
 ### SoC Commands
 
 ```bash
-# List all SoCs (formatted)
-settingscli soc list
+# Get all SoCs (formatted)
+settingscli soc get
 
 # Describe specific SoC details
 settingscli soc describe 10.221.40.190
@@ -593,8 +593,8 @@ settingscli soc raw 10.221.40.190
 ### Container Commands
 
 ```bash
-# List all containers (formatted)
-settingscli container list
+# Get all containers (formatted)
+settingscli container get
 
 # Describe specific container details (may return 500 error - known issue)
 settingscli container describe 2a465a2ea2d8ce9d35ab5eaae729067267ec09377edf89d02daa6c78d3787d2e
@@ -637,7 +637,7 @@ settingscli container raw | jq '.[] | select(.names[0] | contains("alpine"))'
 settingscli yaml apply deployment.yaml && echo "Success" || echo "Failed"
 
 # Use custom timeout for slow networks
-settingscli -t 120 -u http://remote-vehicle:8080 board list
+settingscli -t 120 -u http://remote-vehicle:8080 board get
 
 # Verbose mode with custom settings
 settingscli -v -u http://192.168.1.100:8080 -t 60 metrics describe

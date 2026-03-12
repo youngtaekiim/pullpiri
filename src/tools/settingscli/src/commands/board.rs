@@ -11,8 +11,8 @@ use colored::Colorize;
 
 #[derive(Subcommand)]
 pub enum BoardAction {
-    /// List all boards
-    List,
+    /// Get all boards
+    Get,
     /// Describe specific board by ID
     Describe {
         /// Board ID
@@ -28,20 +28,20 @@ pub enum BoardAction {
 /// Handle board commands
 pub async fn handle(client: &SettingsClient, action: BoardAction) -> Result<()> {
     match action {
-        BoardAction::List => list_boards(client).await,
+        BoardAction::Get => get_boards(client).await,
         BoardAction::Describe { id } => describe_board(client, &id).await,
         BoardAction::Raw { id } => {
             if let Some(board_id) = id {
                 get_board_raw(client, &board_id).await
             } else {
-                list_boards_raw(client).await
+                get_boards_raw(client).await
             }
         }
     }
 }
 
-/// List all boards
-async fn list_boards(client: &SettingsClient) -> Result<()> {
+/// Get all boards
+async fn get_boards(client: &SettingsClient) -> Result<()> {
     print_info("Fetching boards list...");
 
     match client.get("/api/v1/boards").await {
@@ -141,8 +141,8 @@ async fn describe_board(client: &SettingsClient, board_id: &str) -> Result<()> {
     Ok(())
 }
 
-/// Get boards list in raw JSON format
-async fn list_boards_raw(client: &SettingsClient) -> Result<()> {
+/// Get boards in raw JSON format
+async fn get_boards_raw(client: &SettingsClient) -> Result<()> {
     print_info("Fetching raw boards data...");
 
     match client.get("/api/v1/boards").await {

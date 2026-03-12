@@ -9,8 +9,8 @@ use colored::Colorize;
 
 #[derive(Subcommand)]
 pub enum ContainerAction {
-    /// List all containers
-    List,
+    /// Get all containers
+    Get,
     /// Describe specific container by ID
     Describe { id: String },
     /// Get container information in raw JSON format
@@ -19,14 +19,14 @@ pub enum ContainerAction {
 
 pub async fn handle(client: &SettingsClient, action: ContainerAction) -> Result<()> {
     match action {
-        ContainerAction::List => list_containers(client).await,
+        ContainerAction::Get => get_containers(client).await,
         ContainerAction::Describe { id } => describe_container(client, &id).await,
         ContainerAction::Raw => raw_containers(client).await,
     }
 }
 
-/// List all containers
-async fn list_containers(client: &SettingsClient) -> Result<()> {
+/// Get all containers
+async fn get_containers(client: &SettingsClient) -> Result<()> {
     print_info("Fetching containers list...");
 
     match client.get("/api/v1/containers").await {
