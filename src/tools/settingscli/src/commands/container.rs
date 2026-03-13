@@ -3,10 +3,10 @@
 * SPDX-License-Identifier: Apache-2.0
 */
 use crate::commands::format::{
-    calculate_runtime, calculate_uptime, capitalize, extract_network_value, format_bytes,
-    format_timestamp,
+    calculate_age, calculate_runtime, calculate_uptime, capitalize, extract_network_value,
+    format_bytes, format_timestamp,
 };
-use crate::commands::{print_error, print_info, print_success};
+use crate::commands::{print_error, print_info, print_success, print_table_header};
 use crate::{Result, SettingsClient};
 use clap::Subcommand;
 use colored::Colorize;
@@ -35,77 +35,67 @@ async fn get_containers(client: &SettingsClient) -> Result<()> {
 
     match client.get("/api/v1/containers").await {
         Ok(containers) => {
-            println!("\n{}", "Containers".bold());
-            println!("{}", "=".repeat(50));
-
             // If the response is an array, iterate and print each container
-            if let Some(containers_array) = containers.as_array() {
-                if containers_array.is_empty() {
-                    println!("No containers found.");
-                } else {
-                    for (i, container) in containers_array.iter().enumerate() {
-                        println!("{}. Container:", i + 1);
-                        if let Some(id) = container.get("id") {
-                            println!("   ID: {}", id.as_str().unwrap_or("Unknown"));
-                        }
-                        if let Some(names) = container.get("names").and_then(|n| n.as_array()) {
-                            if let Some(first_name) = names.first().and_then(|n| n.as_str()) {
-                                println!("   Name: {}", first_name);
-                            }
-                        }
-                        if let Some(image) = container.get("image") {
-                            println!("   Image: {}", image.as_str().unwrap_or("Unknown"));
-                        }
-                        if let Some(state) = container.get("state") {
-                            if let Some(status) = state.get("Status") {
-                                println!("   Status: {}", status.as_str().unwrap_or("Unknown"));
-                            }
-                        }
-                        if let Some(config) = container.get("config") {
-                            if let Some(hostname) = config.get("Hostname") {
-                                println!("   Hostname: {}", hostname.as_str().unwrap_or("Unknown"));
-                            }
-                        }
-                        println!();
-                    }
-                }
-            } else if let Some(containers_obj) =
-                containers.get("containers").and_then(|c| c.as_array())
-            {
-                // Handle wrapped response format
-                if containers_obj.is_empty() {
-                    println!("No containers found.");
-                } else {
-                    for (i, container) in containers_obj.iter().enumerate() {
-                        println!("{}. Container:", i + 1);
-                        if let Some(id) = container.get("id") {
-                            println!("   ID: {}", id.as_str().unwrap_or("Unknown"));
-                        }
-                        if let Some(names) = container.get("names").and_then(|n| n.as_array()) {
-                            if let Some(first_name) = names.first().and_then(|n| n.as_str()) {
-                                println!("   Name: {}", first_name);
-                            }
-                        }
-                        if let Some(image) = container.get("image") {
-                            println!("   Image: {}", image.as_str().unwrap_or("Unknown"));
-                        }
-                        if let Some(state) = container.get("state") {
-                            if let Some(status) = state.get("Status") {
-                                println!("   Status: {}", status.as_str().unwrap_or("Unknown"));
-                            }
-                        }
-                        if let Some(config) = container.get("config") {
-                            if let Some(hostname) = config.get("Hostname") {
-                                println!("   Hostname: {}", hostname.as_str().unwrap_or("Unknown"));
-                            }
-                        }
-                        println!();
-                    }
-                }
+            let containers_array = if let Some(array) = containers.as_array() {
+                array
+            } else if let Some(array) = containers.get("containers").and_then(|c| c.as_array()) {
+                array
             } else {
                 println!("No containers found.");
+                print_success("Containers list retrieved successfully");
+                return Ok(());
+            };
+
+            if containers_array.is_empty() {
+                println!("No containers found.");
+            } else {
+                print_table_header("Containers", &[
+                    ("NAME", 32),
+                    ("STATUS", 12),
+                    ("ID", 14),
+                    ("AGE", 8),
+                ]);
+
+                // Print each container
+                for container in containers_array.iter() {
+                    let name = container
+                        .get("names")
+                        .and_then(|n| n.as_array())
+                        .and_then(|arr| arr.first())
+                        .and_then(|n| n.as_str())
+                        .unwrap_or("Unknown");
+
+                    let status = container
+                        .get("state")
+                        .and_then(|s| s.get("Status"))
+                        .and_then(|st| st.as_str())
+                        .unwrap_or("Unknown");
+
+                    let id = container
+                        .get("id")
+                        .and_then(|i| i.as_str())
+                        .unwrap_or("Unknown");
+                    let short_id = if id.len() >= 12 {
+                        &id[0..12]
+                    } else {
+                        id
+                    };
+
+                    let age = container
+                        .get("state")
+                        .and_then(|s| s.get("StartedAt"))
+                        .and_then(|t| t.as_str())
+                        .and_then(|t| calculate_age(t).ok())
+                        .unwrap_or_else(|| "N/A".to_string());
+
+                    println!(
+                        "{:<32} {:<12} {:<14} {:<8}",
+                        name, status, short_id, age
+                    );
+                }
             }
 
+            println!();
             print_success("Containers list retrieved successfully");
         }
         Err(e) => {

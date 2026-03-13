@@ -70,7 +70,7 @@ async fn top_metrics(client: &SettingsClient) -> Result<()> {
     // Print table header
     println!();
     println!(
-        "{:<6} {:<16} {:<5} {:<6} {:<18} {:<6} {:<4} {:<8} {:<14} {:<14}",
+        "{:<6} {:<15} {:<3} {:<5} {:<19} {:<5} {:<3} {:<7} {:<17} {:<21}",
         "LEVEL".bold(),
         "NAME/ID".bold(),
         "CPU".bold(),
@@ -86,7 +86,7 @@ async fn top_metrics(client: &SettingsClient) -> Result<()> {
     // Print each metric row
     for metric in metrics_data {
         println!(
-            "{:<6} {:<16} {:<5} {:<6} {:<18} {:<6} {:<4} {:<8} {:<14} {:<14}",
+            "{:<6} {:<15} {:<3} {:<5} {:<19} {:<5} {:<3} {:<7} {:<17} {:<21}",
             metric.level,
             metric.name,
             metric.cpu,
@@ -310,22 +310,22 @@ impl MetricRow {
             .to_string();
 
         let network_rx = node
-            .get("network_rx")
+            .get("rx_bytes")
             .and_then(|v| v.as_u64())
             .unwrap_or(0);
 
         let network_tx = node
-            .get("network_tx")
+            .get("tx_bytes")
             .and_then(|v| v.as_u64())
             .unwrap_or(0);
 
         let disk_read = node
-            .get("disk_read")
+            .get("read_bytes")
             .and_then(|v| v.as_u64())
             .unwrap_or(0);
 
         let disk_write = node
-            .get("disk_write")
+            .get("write_bytes")
             .and_then(|v| v.as_u64())
             .unwrap_or(0);
 

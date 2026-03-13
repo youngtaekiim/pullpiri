@@ -100,6 +100,36 @@ pub fn calculate_uptime(started_at: &str) -> std::result::Result<String, Box<dyn
     }
 }
 
+/// Calculate age from start timestamp in kubectl style
+/// Returns format like "6d", "5h", "30m", "45s"
+pub fn calculate_age(started_at: &str) -> std::result::Result<String, Box<dyn std::error::Error>> {
+    use chrono::{DateTime, Utc};
+    
+    // Check for invalid timestamps
+    if started_at.starts_with("0001-") {
+        return Ok("N/A".to_string());
+    }
+    
+    let started = DateTime::parse_from_rfc3339(started_at)?;
+    let now = Utc::now();
+    let duration = now.signed_duration_since(started);
+    
+    let days = duration.num_days();
+    let hours = duration.num_hours();
+    let minutes = duration.num_minutes();
+    let seconds = duration.num_seconds();
+    
+    if days > 0 {
+        Ok(format!("{}d", days))
+    } else if hours > 0 {
+        Ok(format!("{}h", hours))
+    } else if minutes > 0 {
+        Ok(format!("{}m", minutes))
+    } else {
+        Ok(format!("{}s", seconds))
+    }
+}
+
 /// Calculate runtime between two timestamps
 /// Returns format like "1.234s" or "0.005s"
 pub fn calculate_runtime(started_at: &str, finished_at: &str) -> std::result::Result<String, Box<dyn std::error::Error>> {

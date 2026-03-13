@@ -5,7 +5,7 @@
 //! SoC command implementation
 
 use crate::commands::format::{format_bytes, format_duration_ago, format_memory};
-use crate::commands::{print_error, print_info, print_json, print_success};
+use crate::commands::{print_error, print_info, print_json, print_success, print_table_header};
 use crate::{Result, SettingsClient};
 use clap::Subcommand;
 use colored::Colorize;
@@ -47,53 +47,45 @@ async fn get_socs(client: &SettingsClient) -> Result<()> {
 
     match client.get("/api/v1/socs").await {
         Ok(socs) => {
-            println!("\n{}", "SoCs".bold());
-            println!("{}", "=".repeat(50));
+            print_table_header("SoCs", &[
+                ("ID", 24),
+                ("NODES", 10),
+            ]);
 
             // Look for "socs" array in the response
             if let Some(socs_array) = socs.get("socs").and_then(|s| s.as_array()) {
                 if socs_array.is_empty() {
                     println!("No SoCs found.");
                 } else {
-                    for (i, soc) in socs_array.iter().enumerate() {
-                        println!("{}. SoC:", i + 1);
-                        if let Some(id) = soc.get("soc_id") {
-                            println!("   ID: {}", id.as_str().unwrap_or("Unknown"));
-                        }
-                        if let Some(status) = soc.get("status") {
-                            println!("   Status: {}", status.as_str().unwrap_or("Unknown"));
-                        }
+                    // Print each SoC
+                    for soc in socs_array.iter() {
+                        let id = soc.get("soc_id").and_then(|i| i.as_str()).unwrap_or("Unknown");
+                        let node_count = soc.get("nodes")
+                            .and_then(|n| n.as_array())
+                            .map(|arr| arr.len())
+                            .unwrap_or(0);
 
-                        // Show aggregated resource info
-                        if let Some(total_cpu_usage) = soc.get("total_cpu_usage") {
-                            println!(
-                                "   Total CPU Usage: {:.2}%",
-                                total_cpu_usage.as_f64().unwrap_or(0.0)
-                            );
-                        }
-
-                        if let Some(total_mem_usage) = soc.get("total_mem_usage") {
-                            println!(
-                                "   Total Memory Usage: {:.2}%",
-                                total_mem_usage.as_f64().unwrap_or(0.0)
-                            );
-                        }
-
-                        if let Some(nodes) = soc.get("nodes").and_then(|n| n.as_array()) {
-                            println!("   Nodes: {}", nodes.len());
-                        }
-
-                        println!();
+                        println!(
+                            "{:<24} {:<10}",
+                            id, node_count
+                        );
                     }
                 }
             } else if let Some(id) = socs.get("soc_id") {
                 // Single SoC response
-                println!("SoC ID: {}", id.as_str().unwrap_or("Unknown"));
-                if let Some(status) = socs.get("status") {
-                    println!("Status: {}", status.as_str().unwrap_or("Unknown"));
-                }
+                let node_count = socs.get("nodes")
+                    .and_then(|n| n.as_array())
+                    .map(|arr| arr.len())
+                    .unwrap_or(0);
+                println!(
+                    "{:<24} {:<10}",
+                    id.as_str().unwrap_or("Unknown"), node_count
+                );
+            } else {
+                println!("No SoCs found.");
             }
 
+            println!();
             print_success("SoCs list retrieved successfully");
         }
         Err(e) => {

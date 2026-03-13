@@ -38,3 +38,17 @@ pub fn print_error(message: &str) {
 pub fn print_info(message: &str) {
     println!("{} {}", "ℹ".blue().bold(), message);
 }
+
+/// Print table header with title and columns
+/// 
+/// # Arguments
+/// * `title` - Table title (e.g., "Boards", "Nodes")
+/// * `columns` - Array of (column_name, width) tuples
+pub fn print_table_header(_title: &str, columns: &[(&str, usize)]) {
+    // Print column headers only (kubectl style - simple and clean)
+    println!();
+    for (name, width) in columns {
+        print!("{:<width$} ", name, width = width);
+    }
+    println!();
+}
