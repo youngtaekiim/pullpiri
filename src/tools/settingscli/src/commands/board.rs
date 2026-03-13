@@ -5,7 +5,7 @@
 //! Board command implementation
 
 use crate::commands::format::{format_bytes, format_duration_ago, format_memory};
-use crate::commands::{print_error, print_info, print_json, print_success};
+use crate::commands::{print_error, print_info, print_json, print_success, print_table_header};
 use crate::{Result, SettingsClient};
 use clap::Subcommand;
 use colored::Colorize;
@@ -47,39 +47,54 @@ async fn get_boards(client: &SettingsClient) -> Result<()> {
 
     match client.get("/api/v1/boards").await {
         Ok(boards) => {
-            println!("\n{}", "Boards".bold());
-            println!("{}", "=".repeat(50));
+            print_table_header("Boards", &[
+                ("ID", 24),
+                ("NODES", 10),
+                ("SOCS", 10),
+            ]);
 
             // Look for "boards" array in the response
             if let Some(boards_array) = boards.get("boards").and_then(|b| b.as_array()) {
                 if boards_array.is_empty() {
                     println!("No boards found.");
                 } else {
-                    for (i, board) in boards_array.iter().enumerate() {
-                        println!("{}. Board:", i + 1);
-                        if let Some(id) = board.get("board_id") {
-                            println!("   ID: {}", id.as_str().unwrap_or("Unknown"));
-                        }
-                        // Name and status may not exist in your schema, so print if present
-                        if let Some(name) = board.get("name") {
-                            println!("   Name: {}", name.as_str().unwrap_or("Unknown"));
-                        }
-                        if let Some(status) = board.get("status") {
-                            println!("   Status: {}", status.as_str().unwrap_or("Unknown"));
-                        }
-                        println!();
+                    // Print each board
+                    for board in boards_array.iter() {
+                        let id = board.get("board_id").and_then(|i| i.as_str()).unwrap_or("Unknown");
+                        let node_count = board.get("nodes")
+                            .and_then(|n| n.as_array())
+                            .map(|arr| arr.len())
+                            .unwrap_or(0);
+                        let soc_count = board.get("socs")
+                            .and_then(|s| s.as_array())
+                            .map(|arr| arr.len())
+                            .unwrap_or(0);
+
+                        println!(
+                            "{:<24} {:<10} {:<10}",
+                            id, node_count, soc_count
+                        );
                     }
                 }
             } else if let Some(id) = boards.get("board_id") {
                 // Single board response
-                println!("Board ID: {}", id.as_str().unwrap_or("Unknown"));
-                if let Some(name) = boards.get("name") {
-                    println!("Name: {}", name.as_str().unwrap_or("Unknown"));
-                }
+                let node_count = boards.get("nodes")
+                    .and_then(|n| n.as_array())
+                    .map(|arr| arr.len())
+                    .unwrap_or(0);
+                let soc_count = boards.get("socs")
+                    .and_then(|s| s.as_array())
+                    .map(|arr| arr.len())
+                    .unwrap_or(0);
+                println!(
+                    "{:<24} {:<10} {:<10}",
+                    id.as_str().unwrap_or("Unknown"), node_count, soc_count
+                );
             } else {
                 println!("No boards found.");
             }
 
+            println!();
             print_success("Boards list retrieved successfully");
         }
         Err(e) => {

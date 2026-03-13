@@ -5,7 +5,7 @@
 //! Node command implementation
 
 use crate::commands::format::{format_bytes, format_memory};
-use crate::commands::{print_error, print_info, print_json, print_success};
+use crate::commands::{print_error, print_info, print_json, print_success, print_table_header};
 use crate::{Result, SettingsClient};
 use clap::Subcommand;
 use colored::Colorize;
@@ -47,50 +47,45 @@ async fn get_nodes(client: &SettingsClient) -> Result<()> {
 
     match client.get("/api/v1/nodes").await {
         Ok(nodes) => {
-            println!("\n{}", "Nodes".bold());
-            println!("{}", "=".repeat(50));
+            print_table_header("Nodes", &[
+                ("NAME", 24),
+                ("IP", 18),
+                ("OS", 22),
+                ("ARCH", 10),
+            ]);
 
             // Look for "nodes" array in the response
             if let Some(nodes_array) = nodes.get("nodes").and_then(|n| n.as_array()) {
                 if nodes_array.is_empty() {
                     println!("No nodes found.");
                 } else {
-                    for (i, node) in nodes_array.iter().enumerate() {
-                        println!("{}. Node:", i + 1);
-                        if let Some(name) = node.get("node_name") {
-                            println!("   Name: {}", name.as_str().unwrap_or("Unknown"));
-                        }
-                        if let Some(ip) = node.get("ip") {
-                            println!("   IP: {}", ip.as_str().unwrap_or("Unknown"));
-                        }
-                        if let Some(arch) = node.get("arch") {
-                            println!("   Architecture: {}", arch.as_str().unwrap_or("Unknown"));
-                        }
-                        if let Some(os) = node.get("os") {
-                            println!("   OS: {}", os.as_str().unwrap_or("Unknown"));
-                        }
-                        if let Some(cpu_count) = node.get("cpu_count") {
-                            println!("   CPU Count: {}", cpu_count.as_u64().unwrap_or(0));
-                        }
-                        if let Some(cpu_usage) = node.get("cpu_usage") {
-                            println!("   CPU Usage: {:.2}%", cpu_usage.as_f64().unwrap_or(0.0));
-                        }
-                        if let Some(mem_usage) = node.get("mem_usage") {
-                            println!("   Memory Usage: {:.2}%", mem_usage.as_f64().unwrap_or(0.0));
-                        }
-                        println!();
+                    // Print each node
+                    for node in nodes_array.iter() {
+                        let name = node.get("node_name").and_then(|n| n.as_str()).unwrap_or("Unknown");
+                        let ip = node.get("ip").and_then(|i| i.as_str()).unwrap_or("N/A");
+                        let os = node.get("os").and_then(|o| o.as_str()).unwrap_or("Unknown");
+                        let arch = node.get("arch").and_then(|a| a.as_str()).unwrap_or("Unknown");
+
+                        println!(
+                            "{:<24} {:<18} {:<22} {:<10}",
+                            name, ip, os, arch
+                        );
                     }
                 }
             } else if let Some(name) = nodes.get("node_name") {
                 // Single node response
-                println!("Node Name: {}", name.as_str().unwrap_or("Unknown"));
-                if let Some(ip) = nodes.get("ip") {
-                    println!("IP: {}", ip.as_str().unwrap_or("Unknown"));
-                }
+                let ip = nodes.get("ip").and_then(|i| i.as_str()).unwrap_or("N/A");
+                let os = nodes.get("os").and_then(|o| o.as_str()).unwrap_or("Unknown");
+                let arch = nodes.get("arch").and_then(|a| a.as_str()).unwrap_or("Unknown");
+                println!(
+                    "{:<24} {:<18} {:<22} {:<10}",
+                    name.as_str().unwrap_or("Unknown"), ip, os, arch
+                );
             } else {
                 println!("No nodes found.");
             }
 
+            println!();
             print_success("Nodes list retrieved successfully");
         }
         Err(e) => {
