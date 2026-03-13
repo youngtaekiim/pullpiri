@@ -24,7 +24,7 @@ spec:
       resources:
         volume:
         network:
-        realtime: false
+        realtime: true
 ---
 apiVersion: v1
 kind: Model

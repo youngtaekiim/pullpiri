@@ -16,3 +16,10 @@ sudo systemctl daemon-reload
 if [ -f "$YAML_FILE" ]; then
 	rm -f "$YAML_FILE"
 fi
+
+ids=$(podman ps -aq)
+if [ -n "$ids" ]; then
+  podman rm -f $ids
+else
+  echo "No containers to remove."
+fi

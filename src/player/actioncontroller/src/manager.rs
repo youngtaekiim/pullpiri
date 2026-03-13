@@ -9,7 +9,9 @@ use crate::grpc::sender::statemanager::StateManagerSender;
 use common::logd;
 use common::{
     actioncontroller::PodStatus as Status,
-    spec::artifact::{package::ModelInfo, Model, Package, Scenario},
+    spec::artifact::{
+        package::ModelInfo, schedule::SchedPolicy, Artifact, Package, Scenario, Schedule,
+    },
     statemanager::{ResourceType, StateChange},
     Result,
 };
@@ -18,10 +20,10 @@ use common::{
 const ETCD_SCENARIO_PREFIX: &str = "Scenario";
 const ETCD_PACKAGE_PREFIX: &str = "Package";
 const ETCD_POD_PREFIX: &str = "Pod";
-const ETCD_MODEL_PREFIX: &str = "Model";
 const ETCD_NETWORK_PREFIX: &str = "Network";
 const ETCD_NODE_PREFIX: &str = "Node";
 const ETCD_NODES_PREFIX: &str = "nodes";
+const ETCD_SCHED_PREFIX: &str = "Schedule";
 const ETCD_CLUSTER_NODES_PREFIX: &str = "cluster/nodes";
 
 // Node types
@@ -235,20 +237,12 @@ impl ActionControllerManager {
                         format!("Failed to request network pod for '{}': {}", model_name, e)
                     })?;
                 }
-
-                if model_info.get_resources().get_realtime().unwrap_or(false) {
-                    self.handle_realtime_sched(model_info, &model_node).await?;
-                }
             }
             "terminate" => {
                 self.stop_workload(&pod, &model_node, node_type).await?;
             }
             "update" | "rollback" => {
                 self.restart_workload(&pod, &model_node, node_type).await?;
-
-                if model_info.get_resources().get_realtime().unwrap_or(false) {
-                    self.handle_realtime_sched(model_info, &model_node).await?;
-                }
             }
             _ => {
                 // Ignore unknown actions
@@ -259,57 +253,38 @@ impl ActionControllerManager {
     }
 
     /// Handle realtime scheduling for a model
-    async fn handle_realtime_sched(&self, model_info: &ModelInfo, model_node: &str) -> Result<()> {
-        use common::external::timpani::{SchedInfo, SchedPolicy, TaskInfo};
-        let model_str =
-            common::etcd::get(&format!("{}/{}", ETCD_MODEL_PREFIX, model_info.get_name())).await?;
-        let model: Model = serde_yaml::from_str(&model_str)?;
-        let annotations = model.get_annotations();
+    async fn handle_realtime_sched(&self, sched: &str) -> Result<()> {
+        use common::external::timpani::{SchedInfo, TaskInfo};
+        let sched_str = common::etcd::get(&format!("{}/{}", ETCD_SCHED_PREFIX, sched)).await?;
+        let schedule: Schedule = serde_yaml::from_str(&sched_str)?;
+        let spec_vec = schedule
+            .get_spec()
+            .clone()
+            .ok_or_else(|| format!("Schedule '{}' has no spec defined", sched))?;
+
+        let tasks: Vec<TaskInfo> = spec_vec
+            .iter()
+            .map(|spec| TaskInfo {
+                name: spec.name.clone(),
+                priority: spec.priority,
+                policy: match spec.policy {
+                    SchedPolicy::NORMAL => 0,
+                    SchedPolicy::FIFO => 1,
+                    SchedPolicy::RR => 2,
+                },
+                cpu_affinity: spec.cpu_affinity,
+                period: spec.period,
+                release_time: spec.release_time,
+                runtime: spec.runtime,
+                deadline: spec.deadline,
+                node_id: spec.node_id.clone(),
+                max_dmiss: spec.max_dmiss,
+            })
+            .collect();
 
         let sched_info = SchedInfo {
-            workload_id: model_info.get_name(),
-            tasks: vec![TaskInfo {
-                name: annotations
-                    .get("timpani.annotations.name")
-                    .cloned()
-                    .unwrap_or_else(|| "default_task".to_string()),
-                priority: annotations
-                    .get("timpani.annotations.priority")
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(50),
-                policy: annotations
-                    .get("timpani.annotations.policy")
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(SchedPolicy::Fifo as i32),
-                cpu_affinity: annotations
-                    .get("timpani.annotations.cpu_affinity")
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(0),
-                period: annotations
-                    .get("timpani.annotations.period")
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(100),
-                release_time: annotations
-                    .get("timpani.annotations.release_time")
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(0),
-                runtime: annotations
-                    .get("timpani.annotations.runtime")
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(50000),
-                deadline: annotations
-                    .get("timpani.annotations.deadline")
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(100),
-                node_id: annotations
-                    .get("timpani.annotations.node_id")
-                    .cloned()
-                    .unwrap_or_else(|| model_node.to_string()),
-                max_dmiss: annotations
-                    .get("timpani.annotations.max_dmiss")
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(3),
-            }],
+            workload_id: schedule.get_name(),
+            tasks,
         };
         crate::grpc::sender::timpani::add_sched_info(sched_info).await;
 
@@ -451,6 +426,10 @@ impl ActionControllerManager {
                     action, model_name, e
                 )
             })?;
+        }
+
+        if let Some(sched) = package.get_schedule() {
+            self.handle_realtime_sched(sched).await?;
         }
 
         self.notify_state_change(scenario_name, "allowed", "completed")

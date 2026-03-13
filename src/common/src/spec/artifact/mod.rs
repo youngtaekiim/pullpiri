@@ -7,6 +7,7 @@ pub mod network;
 pub mod node;
 pub mod package;
 pub mod scenario;
+pub mod schedule;
 pub mod volume;
 
 use super::MetaData;
@@ -64,6 +65,14 @@ pub struct Model {
     kind: String,
     metadata: MetaData,
     spec: model::ModelSpec,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Schedule {
+    apiVersion: String,
+    kind: String,
+    metadata: MetaData,
+    spec: Option<Vec<schedule::ScheduleSpec>>,
 }
 
 //Unit Test Cases

@@ -8,7 +8,7 @@
 pub mod data;
 
 use common::logd;
-use common::spec::artifact::{Artifact, Model, Network, Node, Package, Scenario, Volume};
+use common::spec::artifact::{Artifact, Model, Network, Node, Package, Scenario, Schedule, Volume};
 use common::spec::k8s::Pod;
 
 // Artifact kind constants
@@ -18,6 +18,7 @@ const KIND_VOLUME: &str = "Volume";
 const KIND_NETWORK: &str = "Network";
 const KIND_NODE: &str = "Node";
 const KIND_MODEL: &str = "Model";
+const KIND_SCHEDULE: &str = "Schedule";
 
 // YAML document separator
 const YAML_SEPARATOR: &str = "---";
@@ -43,6 +44,9 @@ fn parse_artifact_info(value: &serde_yaml::Value) -> Option<(String, String)> {
             .ok()?
             .get_name(),
         KIND_MODEL => serde_yaml::from_value::<Model>(value.clone())
+            .ok()?
+            .get_name(),
+        KIND_SCHEDULE => serde_yaml::from_value::<Schedule>(value.clone())
             .ok()?
             .get_name(),
         _ => return None,
@@ -201,7 +205,7 @@ async fn load_model_with_resources(
     model_info: &common::spec::artifact::package::ModelInfo,
 ) -> common::Result<Model> {
     let model_str = common::etcd::get(&format!("{}/{}", KIND_MODEL, model_info.get_name())).await?;
-    let mut model: Model = serde_yaml::from_str(&model_str)?;
+    let model: Model = serde_yaml::from_str(&model_str)?;
 
     // Load volume if specified
     if let Some(volume_name) = model_info.get_resources().get_volume() {
