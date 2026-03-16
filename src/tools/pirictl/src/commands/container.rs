@@ -52,7 +52,7 @@ async fn get_containers(client: &SettingsClient) -> Result<()> {
                 print_table_header("Containers", &[
                     ("NAME", 32),
                     ("STATUS", 12),
-                    ("ID", 14),
+                    ("ID", 66),
                     ("AGE", 8),
                 ]);
 
@@ -75,11 +75,6 @@ async fn get_containers(client: &SettingsClient) -> Result<()> {
                         .get("id")
                         .and_then(|i| i.as_str())
                         .unwrap_or("Unknown");
-                    let short_id = if id.len() >= 12 {
-                        &id[0..12]
-                    } else {
-                        id
-                    };
 
                     let age = container
                         .get("state")
@@ -89,8 +84,8 @@ async fn get_containers(client: &SettingsClient) -> Result<()> {
                         .unwrap_or_else(|| "N/A".to_string());
 
                     println!(
-                        "{:<32} {:<12} {:<14} {:<8}",
-                        name, status, short_id, age
+                        "{:<32} {:<12} {:<66} {:<8}",
+                        name, status, id, age
                     );
                 }
             }

@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
-//! Common formatting utilities for settingscli commands
+//! Common formatting utilities for pirictl commands
 
 /// Format bytes into human-readable format (KB, MB, GB)
 pub fn format_bytes(bytes: u64) -> String {

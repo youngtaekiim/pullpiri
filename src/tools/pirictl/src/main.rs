@@ -2,19 +2,19 @@
  * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
-//! SettingsCLI - Command Line Interface for Pullpiri SettingsService
+//! PiriCTL - Command Line Interface for Pullpiri SettingsService
 //!
 //! This CLI tool provides a convenient way to interact with the Pullpiri SettingsService
 //! via REST APIs. It supports various operations for managing boards, nodes, and SoCs.
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
-use settingscli::commands::{board, container, metrics, node, soc, top, yaml};
-use settingscli::{Result, SettingsClient};
+use pirictl::commands::{board, container, metrics, node, soc, top, yaml};
+use pirictl::{Result, SettingsClient};
 use url::Url;
 
 #[derive(Parser)]
-#[command(name = "settingscli")]
+#[command(name = "pirictl")]
 #[command(about = "CLI tool for Pullpiri SettingsService")]
 #[command(version)]
 #[command(long_about = None)]
@@ -264,7 +264,7 @@ async fn health_check(client: &SettingsClient) -> Result<()> {
         }
         Ok(false) => {
             println!("{} SettingsService is not reachable", "✗".red().bold());
-            return Err(settingscli::error::CliError::Custom(
+            return Err(pirictl::error::CliError::Custom(
                 "Health check failed".to_string(),
             ));
         }

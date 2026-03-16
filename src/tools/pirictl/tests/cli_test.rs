@@ -9,7 +9,7 @@
 
 #[test]
 fn test_error_display() {
-    use settingscli::error::CliError;
+    use pirictl::error::CliError;
 
     let error = CliError::Custom("test error".to_string());
     assert_eq!(format!("{}", error), "Error: test error");
@@ -17,7 +17,7 @@ fn test_error_display() {
 
 #[test]
 fn test_client_creation() {
-    use settingscli::SettingsClient;
+    use pirictl::SettingsClient;
 
     let client = SettingsClient::new("http://localhost:47098", 30);
     assert!(client.is_ok());
@@ -30,7 +30,7 @@ fn test_client_creation() {
 /// matching the dual-client (settings_client + api_client) routing design.
 #[test]
 fn test_dual_client_creation() {
-    use settingscli::SettingsClient;
+    use pirictl::SettingsClient;
 
     let settings_client = SettingsClient::new("http://localhost:8080", 30);
     let api_client = SettingsClient::new("http://localhost:47099", 30);

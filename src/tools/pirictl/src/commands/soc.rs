@@ -187,7 +187,7 @@ async fn describe_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
 
             // Hint
             println!("\n{}", "For more details:".dimmed());
-            println!("  {}", "settingscli describe node <node_name>".dimmed());
+            println!("  {}", "pirictl describe node <node_name>".dimmed());
 
             print_success("SoC information retrieved successfully");
         }
