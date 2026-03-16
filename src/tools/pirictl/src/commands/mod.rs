@@ -2,7 +2,7 @@
 * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 * SPDX-License-Identifier: Apache-2.0
 */
-//! Command implementations for SettingsCLI
+//! Command implementations for pirictl
 
 pub mod board;
 pub mod container;

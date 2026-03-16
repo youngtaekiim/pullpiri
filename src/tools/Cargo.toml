@@ -8,5 +8,5 @@ resolver = "2"
 members = [
     "idl2rs",
     "rocksdb-inspector",
-    "settingscli"
+    "pirictl"
 ]
