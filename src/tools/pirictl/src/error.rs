@@ -2,7 +2,7 @@
 * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 * SPDX-License-Identifier: Apache-2.0
 */
-//! Error handling for SettingsCLI
+//! Error handling for pirictl
 
 use std::fmt;
 

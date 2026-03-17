@@ -39,14 +39,11 @@ async fn apply_yaml(client: &SettingsClient, file_path: &str) -> Result<()> {
     // Validate that it's a multi-document YAML with required kinds
     validate_yaml_artifact(&yaml_content)?;
 
-    match client.post_yaml("/api/v1/yaml", &yaml_content).await {
+    match client.post_yaml("/api/artifact", &yaml_content).await {
         Ok(response) => {
-            println!("\n{}", "YAML Artifact Applied".bold());
-            println!("{}", "=".repeat(50));
-
             if let Some(message) = response.get("message") {
                 println!(
-                    "Message: {}",
+                    "{}",
                     message.as_str().unwrap_or("Applied successfully")
                 );
             }
@@ -89,14 +86,11 @@ async fn withdraw_yaml(client: &SettingsClient, file_path: &str) -> Result<()> {
     // Validate that it's a multi-document YAML with required kinds
     validate_yaml_artifact(&yaml_content)?;
 
-    match client.delete_yaml("/api/v1/yaml", &yaml_content).await {
+    match client.delete_yaml("/api/artifact", &yaml_content).await {
         Ok(response) => {
-            println!("\n{}", "YAML Artifact Withdrawn".bold());
-            println!("{}", "=".repeat(50));
-
             if let Some(message) = response.get("message") {
                 println!(
-                    "Message: {}",
+                    "{}",
                     message.as_str().unwrap_or("Withdrawn successfully")
                 );
             }

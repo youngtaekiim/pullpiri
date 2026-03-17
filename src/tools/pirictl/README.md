@@ -66,66 +66,66 @@ settingscli health
 
 #### Metrics
 
-Get system metrics:
+Display live system metrics:
 
 ```bash
-# Get formatted metrics
-settingscli metrics get
+# Display formatted metrics
+settingscli top metrics
 
 # Get raw JSON metrics
-settingscli metrics raw
+settingscli raw metrics
 ```
 
 #### Board Operations
 
 ```bash
-# List all boards
-settingscli board list
+# Get all boards
+settingscli get board
 
-# Get specific board information
-settingscli board get <BOARD_ID>
+# Describe specific board information
+settingscli describe board <BOARD_ID>
 
 # Get raw board data
-settingscli board raw [BOARD_ID]
+settingscli raw board [BOARD_ID]
 ```
 
 #### Node Operations
 
 ```bash
-# List all nodes
-settingscli node list
+# Get all nodes
+settingscli get node
 
-# Get specific node information
-settingscli node get <NODE_ID>
+# Describe specific node information
+settingscli describe node <NODE_ID>
 
 # Get raw node data
-settingscli node raw [NODE_ID]
+settingscli raw node [NODE_ID]
 ```
 
 #### SoC Operations
 
 ```bash
-# List all SoCs
-settingscli soc list
+# Get all SoCs
+settingscli get soc
 
-# Get specific SoC information
-settingscli soc get <SOC_ID>
+# Describe specific SoC information
+settingscli describe soc <SOC_ID>
 
 # Get raw SoC data
-settingscli soc raw [SOC_ID]
+settingscli raw soc [SOC_ID]
 ```
 
 #### Container Operations
 
 ```bash
-# List all containers
-settingscli container list
+# Get all containers
+settingscli get containers
 
-# Get specific container information
-settingscli container get <CONTAINER_ID>
+# Describe specific container information
+settingscli describe container <CONTAINER_ID>
 
 # Get raw container data
-settingscli container raw
+settingscli raw container
 ```
 
 #### YAML Artifact Management
@@ -150,26 +150,26 @@ settingscli yaml withdraw -
 # Check if SettingsService is running
 settingscli health
 
-# Get system metrics with custom URL and timeout
-settingscli -u http://192.168.1.100:8080 -t 60 metrics get
+# Display system metrics with custom URL and timeout
+settingscli -u http://192.168.1.100:8080 -t 60 top metrics
 
-# List all boards with verbose output
-settingscli -v board list
+# Get all boards with verbose output
+settingscli -v get board
 
-# Get specific node details
-settingscli node get lg-OptiPlex-3070
+# Describe specific node details
+settingscli describe node lg-OptiPlex-3070
 
 # Get raw JSON output for a specific SoC
-settingscli soc raw 10.221.40.190
+settingscli raw soc 10.221.40.190
 
-# List all containers
-settingscli container list
+# Get all containers
+settingscli get container
 
-# Get specific container details by ID
-settingscli container get 2a465a2ea2d8ce9d35ab5eaae729067267ec09377edf89d02daa6c78d3787d2e
+# Describe specific container details by ID
+settingscli describe container 2a465a2ea2d8ce9d35ab5eaae729067267ec09377edf89d02daa6c78d3787d2e
 
 # Get raw container data
-settingscli container raw
+settingscli raw container
 
 # Apply YAML artifact
 settingscli yaml apply /path/to/artifact.yaml
@@ -246,13 +246,13 @@ With all services running, test the CLI:
 ./target/release/settingscli health
 
 # Test metrics endpoint
-./target/release/settingscli metrics get
+./target/release/settingscli top metrics
 
 # Test all resource endpoints
-./target/release/settingscli board list
-./target/release/settingscli node list
-./target/release/settingscli soc list
-./target/release/settingscli container list
+./target/release/settingscli get boards
+./target/release/settingscli get nodes
+./target/release/settingscli get socs
+./target/release/settingscli get containers
 
 # Test YAML operations (requires valid YAML file)
 ./target/release/settingscli yaml apply examples/helloworld.yaml
@@ -278,7 +278,7 @@ $ settingscli health
 ✗ Failed to connect to SettingsService: Connection refused
 
 # Invalid container ID
-$ settingscli container get invalid-id
+$ settingscli describe container invalid-id
 ✗ Failed to fetch container invalid-id: Request failed with status: 404 Not Found
 
 # Missing YAML file
@@ -286,7 +286,7 @@ $ settingscli yaml apply nonexistent.yaml
 ✗ Failed to apply YAML artifact: File not found: nonexistent.yaml
 
 # Server error during container retrieval
-$ settingscli container get <container-id>
+$ settingscli describe container <container-id>
 ✗ Failed to fetch container <container-id>: Request failed with status: 500 Internal Server Error
 ```
 
@@ -304,6 +304,7 @@ src/tools/settingscli/
 │   ├── error.rs        # Error handling
 │   └── commands/       # Command implementations
 │       ├── mod.rs      # Command utilities
+│       ├── top.rs      # Live system monitoring
 │       ├── metrics.rs  # Metrics operations
 │       ├── board.rs    # Board operations
 │       ├── node.rs     # Node operations
@@ -344,20 +345,20 @@ The CLI interacts with the following SettingsService REST API endpoints:
 
 | Command | HTTP Method | Endpoint | Description |
 |---------|-------------|----------|-------------|
-| `metrics get` | GET | `/api/v1/metrics` | Get all system metrics |
-| `metrics raw` | GET | `/api/v1/metrics` | Get raw metrics data |
-| `board list` | GET | `/api/v1/boards` | List all boards |
-| `board get <id>` | GET | `/api/v1/boards/{id}` | Get specific board |
-| `board raw` | GET | `/api/v1/boards` | Get raw board data |
-| `node list` | GET | `/api/v1/nodes` | List all nodes |
-| `node get <name>` | GET | `/api/v1/nodes/{name}` | Get specific node |
-| `node raw` | GET | `/api/v1/nodes` | Get raw node data |
-| `soc list` | GET | `/api/v1/socs` | List all SoCs |
-| `soc get <id>` | GET | `/api/v1/socs/{id}` | Get specific SoC |
-| `soc raw` | GET | `/api/v1/socs` | Get raw SoC data |
-| `container list` | GET | `/api/v1/containers` | List all containers |
-| `container get <id>` | GET | `/api/v1/containers/{id}` | Get specific container |
-| `container raw` | GET | `/api/v1/containers` | Get raw container data |
+| `top metrics` | GET | `/api/v1/metrics` | Display live system metrics |
+| `raw metrics` | GET | `/api/v1/metrics` | Get raw metrics data |
+| `get boards` | GET | `/api/v1/boards` | Get all boards |
+| `describe board <id>` | GET | `/api/v1/boards/{id}` | Describe specific board |
+| `raw board` | GET | `/api/v1/boards` | Get raw board data |
+| `get nodes` | GET | `/api/v1/nodes` | Get all nodes |
+| `describe node <id>` | GET | `/api/v1/nodes/{id}` | Describe specific node |
+| `raw node` | GET | `/api/v1/nodes` | Get raw node data |
+| `get socs` | GET | `/api/v1/socs` | Get all SoCs |
+| `describe soc <id>` | GET | `/api/v1/socs/{id}` | Describe specific SoC |
+| `raw soc` | GET | `/api/v1/socs` | Get raw SoC data |
+| `get containers` | GET | `/api/v1/containers` | Get all containers |
+| `describe container <id>` | GET | `/api/v1/containers/{id}` | Describe specific container |
+| `raw container` | GET | `/api/v1/containers` | Get raw container data |
 
 ### YAML Artifact APIs
 
@@ -443,19 +444,19 @@ settingscli -u http://localhost:8080 health
 
 #### 2. Container API 500 Errors
 ```bash
-# Problem: Container GET returns 500 Internal Server Error
-$ settingscli container get <container-id>
+# Problem: Container DESCRIBE returns 500 Internal Server Error
+$ settingscli describe container <container-id>
 ✗ Failed to fetch container: Request failed with status: 500 Internal Server Error
 
-# Solution: This is a known server-side issue. Use container list or raw instead:
-settingscli container list
-settingscli container raw
+# Solution: This is a known server-side issue. Use get containers or raw container instead:
+settingscli get containers
+settingscli raw container
 ```
 
 #### 3. Empty Results
 ```bash
 # Problem: Commands return empty results
-$ settingscli board list
+$ settingscli get boards
 No boards found.
 
 # Solution: Ensure all required services are running:
@@ -484,11 +485,11 @@ The API Server expects Scenario, Package, and Model kinds for proper operation.
 #### 5. Timeout Issues
 ```bash
 # Problem: Requests timing out
-$ settingscli metrics get
+$ settingscli get metrics
 ✗ Request timed out
 
 # Solution: Increase timeout for slow responses
-settingscli -t 60 metrics get
+settingscli -t 60 get metrics
 ```
 
 ### Service Dependencies
@@ -533,74 +534,74 @@ settingscli -u http://custom-host:8080 health
 
 ```bash
 # Get formatted system metrics
-settingscli metrics get
+settingscli get metrics
 
 # Get raw JSON metrics data
-settingscli metrics raw
+settingscli raw metrics
 
 # With custom settings
-settingscli -u http://remote-host:8080 -t 30 metrics get
+settingscli -u http://remote-host:8080 -t 30 get metrics
 ```
 
 ### Board Commands
 
 ```bash
-# List all boards (formatted)
-settingscli board list
+# Get all boards (formatted)
+settingscli get boards
 
-# Get specific board details
-settingscli board get 10.221.40.100
+# Describe specific board details
+settingscli describe board 10.221.40.100
 
 # Get raw board data (all boards)
-settingscli board raw
+settingscli raw board
 
 # Get raw data for specific board
-settingscli board raw 10.221.40.100
+settingscli raw board 10.221.40.100
 ```
 
 ### Node Commands
 
 ```bash
-# List all nodes (formatted)
-settingscli node list
+# Get all nodes (formatted)
+settingscli get nodes
 
-# Get specific node details
-settingscli node get lg-OptiPlex-3070
+# Describe specific node details
+settingscli describe node lg-OptiPlex-3070
 
 # Get raw node data (all nodes)
-settingscli node raw
+settingscli raw node
 
 # Get raw data for specific node
-settingscli node raw lg-OptiPlex-3070
+settingscli raw node lg-OptiPlex-3070
 ```
 
 ### SoC Commands
 
 ```bash
-# List all SoCs (formatted)
-settingscli soc list
+# Get all SoCs (formatted)
+settingscli get soc
 
-# Get specific SoC details
-settingscli soc get 10.221.40.190
+# Describe specific SoC details
+settingscli describe soc 10.221.40.190
 
 # Get raw SoC data (all SoCs)
-settingscli soc raw
+settingscli raw soc
 
 # Get raw data for specific SoC
-settingscli soc raw 10.221.40.190
+settingscli raw soc 10.221.40.190
 ```
 
 ### Container Commands
 
 ```bash
-# List all containers (formatted)
-settingscli container list
+# Get all containers (formatted)
+settingscli get containers
 
-# Get specific container details (may return 500 error - known issue)
-settingscli container get 2a465a2ea2d8ce9d35ab5eaae729067267ec09377edf89d02daa6c78d3787d2e
+# Describe specific container details (may return 500 error - known issue)
+settingscli describe container 2a465a2ea2d8ce9d35ab5eaae729067267ec09377edf89d02daa6c78d3787d2e
 
 # Get raw container data (recommended for detailed info)
-settingscli container raw
+settingscli raw container
 ```
 
 ### YAML Artifact Commands
@@ -625,22 +626,22 @@ cat artifact.yaml | settingscli yaml withdraw -
 
 ```bash
 # Chain commands with jq for JSON processing
-settingscli metrics raw | jq '.[] | select(.component == "node")'
+settingscli raw metrics | jq '.[] | select(.component == "node")'
 
 # Save raw output to file
-settingscli container raw > containers.json
+settingscli raw container > containers.json
 
 # Check specific container by name pattern
-settingscli container raw | jq '.[] | select(.names[0] | contains("alpine"))'
+settingscli raw container | jq '.[] | select(.names[0] | contains("alpine"))'
 
 # Apply YAML with error handling
 settingscli yaml apply deployment.yaml && echo "Success" || echo "Failed"
 
 # Use custom timeout for slow networks
-settingscli -t 120 -u http://remote-vehicle:8080 board list
+settingscli -t 120 -u http://remote-vehicle:8080 get board
 
 # Verbose mode with custom settings
-settingscli -v -u http://192.168.1.100:8080 -t 60 metrics get
+settingscli -v -u http://192.168.1.100:8080 -t 60 get metrics
 ```
 
 ## Related Components

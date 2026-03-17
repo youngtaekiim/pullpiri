@@ -2,9 +2,9 @@
 * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 * SPDX-License-Identifier: Apache-2.0
 */
-//! Integration tests for SettingsCLI
+//! Integration tests for pirictl
 
-use settingscli::SettingsClient;
+use pirictl::SettingsClient;
 
 #[tokio::test]
 async fn test_client_creation() {
