@@ -65,10 +65,17 @@ enum Commands {
         #[command(subcommand)]
         resource: top::TopResource,
     },
-    /// YAML artifact management
-    Yaml {
-        #[command(subcommand)]
-        action: yaml::YamlAction,
+    /// Apply YAML artifact to the system
+    Apply {
+        /// Path to YAML file
+        #[arg(short = 'f', long = "file")]
+        file: String,
+    },
+    /// Delete YAML artifact from the system
+    Delete {
+        /// Path to YAML file
+        #[arg(short = 'f', long = "file")]
+        file: String,
     },
     /// Test connection to SettingsService
     Health,
@@ -220,7 +227,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             }
         },
         Commands::Top { resource } => top::handle(&settings_client, resource).await,
-        Commands::Yaml { action } => yaml::handle(&api_client, action).await,
+        Commands::Apply { file } => {
+            yaml::handle(&api_client, yaml::YamlAction::Apply { file }).await
+        }
+        Commands::Delete { file } => {
+            yaml::handle(&api_client, yaml::YamlAction::Withdraw { file }).await
+        }
         Commands::Health => health_check(&settings_client).await,
     };
 
