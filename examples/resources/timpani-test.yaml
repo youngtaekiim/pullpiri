@@ -7,7 +7,7 @@ metadata:
   name: timpani_test
 spec:
   condition: null
-  action: update
+  action: launch
   target: timpani_test
 ---
 apiVersion: v1
@@ -34,13 +34,23 @@ metadata:
     io.piccolo.annotations.package-type: timpani_test
     io.piccolo.annotations.package-name: timpani_test
     io.piccolo.annotations.package-network: default
+    timpani.annotations.name: container_task
+    timpani.annotations.priority: "50"
+    timpani.annotations.policy: "1"
+    timpani.annotations.cpu_affinity: "7"
+    timpani.annotations.period: "10000"
+    timpani.annotations.release_time: "5000"
+    timpani.annotations.runtime: "5000"
+    timpani.annotations.deadline: "10000"
+    timpani.annotations.node_id: "HPC"
+    timpani.annotations.max_dmiss: "3"
   labels:
     app: timpani_test
 spec:
   hostNetwork: true
   containers:
     - name: timpani_test
-      image: localhost/timpani_test:latest
+      image: ghcr.io/mco-piccolo/timpani_test:latest
       command: ["./sample_apps", "-a", "2", "-l", "5", "container_task"]
       securityContext:
         privileged: true

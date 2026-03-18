@@ -54,6 +54,7 @@ fi
 
 # Make directory and binary
 AGENT_BINARY_PATH="/opt/piccolo/nodeagent"
+rm -f "$AGENT_BINARY_PATH"
 sudo mkdir -p /opt/piccolo
 if [ ! -f "$AGENT_BINARY_PATH" ]; then
 	BINARY_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/latest/download/nodeagent-linux-${SUFFIX}"

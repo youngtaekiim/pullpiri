@@ -6,34 +6,19 @@
 //! Running gRPC message sending to timpani
 use common::external::timpani::{
     connect_timpani_server, sched_info_service_client::SchedInfoServiceClient, Response, SchedInfo,
-    SchedPolicy, TaskInfo,
 };
 use common::logd;
 
-pub async fn add_sched_info(workload_id: String, task_name: &str, node_id: &str) {
+pub async fn add_sched_info(sched_info: SchedInfo) {
     logd!(1, "Connecting to Timpani server ....");
     let mut client = SchedInfoServiceClient::connect(connect_timpani_server())
         .await
         .unwrap();
 
-    let request = SchedInfo {
-        workload_id: workload_id,
-        tasks: vec![TaskInfo {
-            name: task_name.to_string(),
-            priority: 50,
-            policy: SchedPolicy::Fifo as i32,
-            cpu_affinity: 7,
-            period: 10000, // 10 miliseconds
-            release_time: 0,
-            runtime: 5000,   // 5 miliseconds
-            deadline: 10000, // 10 miliseconds
-            node_id: node_id.to_string(),
-            max_dmiss: 3,
-        }],
-    };
-
-    let response: Result<Response, tonic::Status> =
-        client.add_sched_info(request).await.map(|r| r.into_inner());
+    let response: Result<Response, tonic::Status> = client
+        .add_sched_info(sched_info)
+        .await
+        .map(|r| r.into_inner());
 
     match response {
         Ok(res) => {
@@ -47,7 +32,7 @@ pub async fn add_sched_info(workload_id: String, task_name: &str, node_id: &str)
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use common::external::timpani::{SchedInfo, SchedPolicy, TaskInfo};
 
     // ==================== Direct Function Call Tests ====================
 
