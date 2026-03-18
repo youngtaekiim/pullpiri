@@ -47,12 +47,10 @@ async fn get_nodes(client: &SettingsClient) -> Result<()> {
 
     match client.get("/api/v1/nodes").await {
         Ok(nodes) => {
-            print_table_header("Nodes", &[
-                ("NAME", 24),
-                ("IP", 18),
-                ("OS", 22),
-                ("ARCH", 10),
-            ]);
+            print_table_header(
+                "Nodes",
+                &[("NAME", 24), ("IP", 18), ("OS", 22), ("ARCH", 10)],
+            );
 
             // Look for "nodes" array in the response
             if let Some(nodes_array) = nodes.get("nodes").and_then(|n| n.as_array()) {
@@ -61,25 +59,37 @@ async fn get_nodes(client: &SettingsClient) -> Result<()> {
                 } else {
                     // Print each node
                     for node in nodes_array.iter() {
-                        let name = node.get("node_name").and_then(|n| n.as_str()).unwrap_or("Unknown");
+                        let name = node
+                            .get("node_name")
+                            .and_then(|n| n.as_str())
+                            .unwrap_or("Unknown");
                         let ip = node.get("ip").and_then(|i| i.as_str()).unwrap_or("N/A");
                         let os = node.get("os").and_then(|o| o.as_str()).unwrap_or("Unknown");
-                        let arch = node.get("arch").and_then(|a| a.as_str()).unwrap_or("Unknown");
+                        let arch = node
+                            .get("arch")
+                            .and_then(|a| a.as_str())
+                            .unwrap_or("Unknown");
 
-                        println!(
-                            "{:<24} {:<18} {:<22} {:<10}",
-                            name, ip, os, arch
-                        );
+                        println!("{:<24} {:<18} {:<22} {:<10}", name, ip, os, arch);
                     }
                 }
             } else if let Some(name) = nodes.get("node_name") {
                 // Single node response
                 let ip = nodes.get("ip").and_then(|i| i.as_str()).unwrap_or("N/A");
-                let os = nodes.get("os").and_then(|o| o.as_str()).unwrap_or("Unknown");
-                let arch = nodes.get("arch").and_then(|a| a.as_str()).unwrap_or("Unknown");
+                let os = nodes
+                    .get("os")
+                    .and_then(|o| o.as_str())
+                    .unwrap_or("Unknown");
+                let arch = nodes
+                    .get("arch")
+                    .and_then(|a| a.as_str())
+                    .unwrap_or("Unknown");
                 println!(
                     "{:<24} {:<18} {:<22} {:<10}",
-                    name.as_str().unwrap_or("Unknown"), ip, os, arch
+                    name.as_str().unwrap_or("Unknown"),
+                    ip,
+                    os,
+                    arch
                 );
             } else {
                 println!("No nodes found.");
@@ -150,7 +160,12 @@ async fn describe_node(client: &SettingsClient, node_id: &str) -> Result<()> {
                 node.get("total_memory").and_then(|m| m.as_u64()),
                 node.get("mem_usage").and_then(|u| u.as_f64()),
             ) {
-                println!("  {:<22}{} ({:.2}% used)", "memory:", format_memory(total_memory), mem_usage);
+                println!(
+                    "  {:<22}{} ({:.2}% used)",
+                    "memory:",
+                    format_memory(total_memory),
+                    mem_usage
+                );
             }
 
             // Network I/O

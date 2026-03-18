@@ -49,12 +49,10 @@ async fn get_containers(client: &SettingsClient) -> Result<()> {
             if containers_array.is_empty() {
                 println!("No containers found.");
             } else {
-                print_table_header("Containers", &[
-                    ("NAME", 32),
-                    ("STATUS", 12),
-                    ("ID", 66),
-                    ("AGE", 8),
-                ]);
+                print_table_header(
+                    "Containers",
+                    &[("NAME", 32), ("STATUS", 12), ("ID", 66), ("AGE", 8)],
+                );
 
                 // Print each container
                 for container in containers_array.iter() {
@@ -83,10 +81,7 @@ async fn get_containers(client: &SettingsClient) -> Result<()> {
                         .and_then(|t| calculate_age(t).ok())
                         .unwrap_or_else(|| "N/A".to_string());
 
-                    println!(
-                        "{:<32} {:<12} {:<66} {:<8}",
-                        name, status, id, age
-                    );
+                    println!("{:<32} {:<12} {:<66} {:<8}", name, status, id, age);
                 }
             }
 
@@ -137,7 +132,7 @@ async fn describe_container(client: &SettingsClient, container_id: &str) -> Resu
                 .and_then(|s| s.get("Status"))
                 .and_then(|st| st.as_str())
                 .unwrap_or("Unknown");
-            
+
             let is_running = container
                 .get("state")
                 .and_then(|s| s.get("Running"))
@@ -145,11 +140,15 @@ async fn describe_container(client: &SettingsClient, container_id: &str) -> Resu
                 .map(|r| r == "true")
                 .unwrap_or(false);
 
-            println!("{:<24}{}", format!("{}:", "Status".bold()), if is_running { "Running" } else { status });
+            println!(
+                "{:<24}{}",
+                format!("{}:", "Status".bold()),
+                if is_running { "Running" } else { status }
+            );
 
             // Container section
             println!("{}", "Container:".bold());
-            
+
             // ID
             if let Some(id) = container.get("id").and_then(|i| i.as_str()) {
                 println!("  {:<22}{}", "ID:", id);
@@ -162,7 +161,10 @@ async fn describe_container(client: &SettingsClient, container_id: &str) -> Resu
 
             // State information
             if let Some(state) = container.get("state") {
-                let state_status = state.get("Status").and_then(|s| s.as_str()).unwrap_or("Unknown");
+                let state_status = state
+                    .get("Status")
+                    .and_then(|s| s.as_str())
+                    .unwrap_or("Unknown");
                 println!("  {:<22}{}", "State:", capitalize(state_status));
 
                 if is_running {
@@ -181,11 +183,22 @@ async fn describe_container(client: &SettingsClient, container_id: &str) -> Resu
                         println!("  {:<22}{}", "PID:", pid);
                     }
 
-                    println!("  {:<22}{}", "Ready:", if is_running { "True" } else { "False" });
+                    println!(
+                        "  {:<22}{}",
+                        "Ready:",
+                        if is_running { "True" } else { "False" }
+                    );
                 } else {
                     // Terminated container
-                    let exit_code = state.get("ExitCode").and_then(|e| e.as_str()).unwrap_or("0");
-                    let reason = if exit_code == "0" { "Completed" } else { "Error" };
+                    let exit_code = state
+                        .get("ExitCode")
+                        .and_then(|e| e.as_str())
+                        .unwrap_or("0");
+                    let reason = if exit_code == "0" {
+                        "Completed"
+                    } else {
+                        "Error"
+                    };
                     println!("  {:<22}{}", "Reason:", reason);
                     println!("  {:<22}{}", "Exit Code:", exit_code);
 
@@ -199,7 +212,7 @@ async fn describe_container(client: &SettingsClient, container_id: &str) -> Resu
                         if let Ok(formatted) = format_timestamp(finished_at) {
                             println!("  {:<22}{}", "Finished:", formatted);
                         }
-                        
+
                         // Calculate runtime
                         if let (Some(started), Some(finished)) = (
                             state.get("StartedAt").and_then(|s| s.as_str()),
@@ -222,7 +235,7 @@ async fn describe_container(client: &SettingsClient, container_id: &str) -> Resu
 
             // Resource Usage
             println!("{}", "Resource Usage:".bold());
-            
+
             if is_running {
                 if let Some(stats) = container.get("stats") {
                     // Check if stats are available
@@ -231,28 +244,48 @@ async fn describe_container(client: &SettingsClient, container_id: &str) -> Resu
                     } else {
                         // CPU Usage
                         if let (Some(total_cpu), Some(kernel_cpu), Some(user_cpu)) = (
-                            stats.get("CpuTotalUsage").and_then(|c| c.as_str()).and_then(|s| s.parse::<f64>().ok()),
-                            stats.get("CpuUsageInKernelMode").and_then(|c| c.as_str()).and_then(|s| s.parse::<f64>().ok()),
-                            stats.get("CpuUsageInUserMode").and_then(|c| c.as_str()).and_then(|s| s.parse::<f64>().ok()),
+                            stats
+                                .get("CpuTotalUsage")
+                                .and_then(|c| c.as_str())
+                                .and_then(|s| s.parse::<f64>().ok()),
+                            stats
+                                .get("CpuUsageInKernelMode")
+                                .and_then(|c| c.as_str())
+                                .and_then(|s| s.parse::<f64>().ok()),
+                            stats
+                                .get("CpuUsageInUserMode")
+                                .and_then(|c| c.as_str())
+                                .and_then(|s| s.parse::<f64>().ok()),
                         ) {
                             let total_secs = total_cpu / 1_000_000_000.0;
                             let kernel_secs = kernel_cpu / 1_000_000_000.0;
                             let user_secs = user_cpu / 1_000_000_000.0;
-                            println!("  {:<22}{:.2}s ({:.2}s kernel, {:.2}s user)", "CPU:", total_secs, kernel_secs, user_secs);
+                            println!(
+                                "  {:<22}{:.2}s ({:.2}s kernel, {:.2}s user)",
+                                "CPU:", total_secs, kernel_secs, user_secs
+                            );
                         }
 
                         // Memory Usage
                         if let (Some(mem_usage), Some(mem_limit)) = (
-                            stats.get("MemoryUsage").and_then(|m| m.as_str()).and_then(|s| s.parse::<u64>().ok()),
-                            stats.get("MemoryLimit").and_then(|m| m.as_str()).and_then(|s| s.parse::<u64>().ok()),
+                            stats
+                                .get("MemoryUsage")
+                                .and_then(|m| m.as_str())
+                                .and_then(|s| s.parse::<u64>().ok()),
+                            stats
+                                .get("MemoryLimit")
+                                .and_then(|m| m.as_str())
+                                .and_then(|s| s.parse::<u64>().ok()),
                         ) {
                             let usage_pct = if mem_limit > 0 {
                                 (mem_usage as f64 / mem_limit as f64) * 100.0
                             } else {
                                 0.0
                             };
-                            println!("  {:<22}{} / {} ({:.2}%)", "Memory:",
-                                format_bytes(mem_usage), 
+                            println!(
+                                "  {:<22}{} / {} ({:.2}%)",
+                                "Memory:",
+                                format_bytes(mem_usage),
                                 format_bytes(mem_limit),
                                 usage_pct
                             );
@@ -262,7 +295,9 @@ async fn describe_container(client: &SettingsClient, container_id: &str) -> Resu
                         if let Some(networks) = stats.get("Networks").and_then(|n| n.as_str()) {
                             let rx_bytes = extract_network_value(networks, "rx_bytes");
                             let tx_bytes = extract_network_value(networks, "tx_bytes");
-                            println!("  {:<22}RX: {}, TX: {}", "Network:",
+                            println!(
+                                "  {:<22}RX: {}, TX: {}",
+                                "Network:",
                                 format_bytes(rx_bytes),
                                 format_bytes(tx_bytes)
                             );

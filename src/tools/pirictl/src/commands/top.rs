@@ -276,10 +276,7 @@ impl MetricRow {
             .unwrap_or("Unknown")
             .to_string();
 
-        let cpu_count = node
-            .get("cpu_count")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
+        let cpu_count = node.get("cpu_count").and_then(|v| v.as_u64()).unwrap_or(0);
 
         let cpu_usage = node
             .get("cpu_usage")
@@ -309,20 +306,11 @@ impl MetricRow {
             .unwrap_or("-")
             .to_string();
 
-        let network_rx = node
-            .get("rx_bytes")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
+        let network_rx = node.get("rx_bytes").and_then(|v| v.as_u64()).unwrap_or(0);
 
-        let network_tx = node
-            .get("tx_bytes")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
+        let network_tx = node.get("tx_bytes").and_then(|v| v.as_u64()).unwrap_or(0);
 
-        let disk_read = node
-            .get("read_bytes")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
+        let disk_read = node.get("read_bytes").and_then(|v| v.as_u64()).unwrap_or(0);
 
         let disk_write = node
             .get("write_bytes")
