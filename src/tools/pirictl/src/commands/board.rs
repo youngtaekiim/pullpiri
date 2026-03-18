@@ -47,11 +47,7 @@ async fn get_boards(client: &SettingsClient) -> Result<()> {
 
     match client.get("/api/v1/boards").await {
         Ok(boards) => {
-            print_table_header("Boards", &[
-                ("ID", 24),
-                ("NODES", 10),
-                ("SOCS", 10),
-            ]);
+            print_table_header("Boards", &[("ID", 24), ("NODES", 10), ("SOCS", 10)]);
 
             // Look for "boards" array in the response
             if let Some(boards_array) = boards.get("boards").and_then(|b| b.as_array()) {
@@ -60,35 +56,41 @@ async fn get_boards(client: &SettingsClient) -> Result<()> {
                 } else {
                     // Print each board
                     for board in boards_array.iter() {
-                        let id = board.get("board_id").and_then(|i| i.as_str()).unwrap_or("Unknown");
-                        let node_count = board.get("nodes")
+                        let id = board
+                            .get("board_id")
+                            .and_then(|i| i.as_str())
+                            .unwrap_or("Unknown");
+                        let node_count = board
+                            .get("nodes")
                             .and_then(|n| n.as_array())
                             .map(|arr| arr.len())
                             .unwrap_or(0);
-                        let soc_count = board.get("socs")
+                        let soc_count = board
+                            .get("socs")
                             .and_then(|s| s.as_array())
                             .map(|arr| arr.len())
                             .unwrap_or(0);
 
-                        println!(
-                            "{:<24} {:<10} {:<10}",
-                            id, node_count, soc_count
-                        );
+                        println!("{:<24} {:<10} {:<10}", id, node_count, soc_count);
                     }
                 }
             } else if let Some(id) = boards.get("board_id") {
                 // Single board response
-                let node_count = boards.get("nodes")
+                let node_count = boards
+                    .get("nodes")
                     .and_then(|n| n.as_array())
                     .map(|arr| arr.len())
                     .unwrap_or(0);
-                let soc_count = boards.get("socs")
+                let soc_count = boards
+                    .get("socs")
                     .and_then(|s| s.as_array())
                     .map(|arr| arr.len())
                     .unwrap_or(0);
                 println!(
                     "{:<24} {:<10} {:<10}",
-                    id.as_str().unwrap_or("Unknown"), node_count, soc_count
+                    id.as_str().unwrap_or("Unknown"),
+                    node_count,
+                    soc_count
                 );
             } else {
                 println!("No boards found.");
@@ -122,7 +124,7 @@ async fn describe_board(client: &SettingsClient, board_id: &str) -> Result<()> {
 
             // Aggregated Resources
             println!("{}", "Aggregated Resources:".bold());
-            
+
             if let (Some(cpu_count), Some(cpu_usage)) = (
                 board.get("total_cpu_count").and_then(|c| c.as_u64()),
                 board.get("total_cpu_usage").and_then(|u| u.as_f64()),
@@ -179,7 +181,12 @@ async fn describe_board(client: &SettingsClient, board_id: &str) -> Result<()> {
                         .and_then(|n| n.as_array())
                         .map(|n| n.len())
                         .unwrap_or(0);
-                    println!("  {:<22}({} node{})", soc_id, node_count, if node_count == 1 { "" } else { "s" });
+                    println!(
+                        "  {:<22}({} node{})",
+                        soc_id,
+                        node_count,
+                        if node_count == 1 { "" } else { "s" }
+                    );
                 }
             }
 
@@ -199,13 +206,20 @@ async fn describe_board(client: &SettingsClient, board_id: &str) -> Result<()> {
 
             // Last Updated
             if let Some(last_updated) = board.get("last_updated") {
-                if let Some(secs) = last_updated.get("secs_since_epoch").and_then(|s| s.as_u64()) {
+                if let Some(secs) = last_updated
+                    .get("secs_since_epoch")
+                    .and_then(|s| s.as_u64())
+                {
                     let now = std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
                         .as_secs();
                     let elapsed = now.saturating_sub(secs);
-                    println!("{:<24}{}", format!("{}:", "Last Updated".bold()), format_duration_ago(elapsed));
+                    println!(
+                        "{:<24}{}",
+                        format!("{}:", "Last Updated".bold()),
+                        format_duration_ago(elapsed)
+                    );
                 }
             }
 

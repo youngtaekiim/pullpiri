@@ -42,10 +42,7 @@ async fn apply_yaml(client: &SettingsClient, file_path: &str) -> Result<()> {
     match client.post_yaml("/api/artifact", &yaml_content).await {
         Ok(response) => {
             if let Some(message) = response.get("message") {
-                println!(
-                    "{}",
-                    message.as_str().unwrap_or("Applied successfully")
-                );
+                println!("{}", message.as_str().unwrap_or("Applied successfully"));
             }
 
             if let Some(applied) = response.get("applied") {
@@ -89,10 +86,7 @@ async fn withdraw_yaml(client: &SettingsClient, file_path: &str) -> Result<()> {
     match client.delete_yaml("/api/artifact", &yaml_content).await {
         Ok(response) => {
             if let Some(message) = response.get("message") {
-                println!(
-                    "{}",
-                    message.as_str().unwrap_or("Withdrawn successfully")
-                );
+                println!("{}", message.as_str().unwrap_or("Withdrawn successfully"));
             }
 
             if let Some(withdrawn) = response.get("withdrawn") {

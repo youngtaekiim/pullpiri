@@ -32,11 +32,14 @@ async fn initialize(skip_grpc: bool) -> Result<(), Box<dyn Error>> {
     let node_type = &config.host.r#type;
 
     if node_type == "bluechi" {
-        logd!(5, "{} is set bluechi_nodes. Bluechi is not supported.", hostname);
+        logd!(
+            5,
+            "{} is set bluechi_nodes. Bluechi is not supported.",
+            hostname
+        );
         //logd!(2, "Adding {} to bluechi_nodes from settings.yaml", hostname);
         //manager.bluechi_nodes.push(hostname.clone());
-    } else
-    {
+    } else {
         logd!(
             2,
             "Adding {} to nodeagent_nodes from settings.yaml",

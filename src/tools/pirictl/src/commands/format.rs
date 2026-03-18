@@ -44,13 +44,25 @@ pub fn format_duration(seconds: u64) -> String {
         parts.push(format!("{} day{}", days, if days == 1 { "" } else { "s" }));
     }
     if hours > 0 {
-        parts.push(format!("{} hour{}", hours, if hours == 1 { "" } else { "s" }));
+        parts.push(format!(
+            "{} hour{}",
+            hours,
+            if hours == 1 { "" } else { "s" }
+        ));
     }
     if minutes > 0 {
-        parts.push(format!("{} minute{}", minutes, if minutes == 1 { "" } else { "s" }));
+        parts.push(format!(
+            "{} minute{}",
+            minutes,
+            if minutes == 1 { "" } else { "s" }
+        ));
     }
     if secs > 0 || parts.is_empty() {
-        parts.push(format!("{} second{}", secs, if secs == 1 { "" } else { "s" }));
+        parts.push(format!(
+            "{} second{}",
+            secs,
+            if secs == 1 { "" } else { "s" }
+        ));
     }
 
     parts.join(", ")
@@ -75,7 +87,9 @@ pub fn capitalize(s: &str) -> String {
 
 /// Format timestamp from ISO 8601 to readable format
 /// Example: "Mon, 03 Mar 2026 16:42:55 +0900"
-pub fn format_timestamp(timestamp: &str) -> std::result::Result<String, Box<dyn std::error::Error>> {
+pub fn format_timestamp(
+    timestamp: &str,
+) -> std::result::Result<String, Box<dyn std::error::Error>> {
     use chrono::{DateTime, Local};
     let dt = DateTime::parse_from_rfc3339(timestamp)?;
     let local: DateTime<Local> = dt.with_timezone(&Local);
@@ -84,15 +98,17 @@ pub fn format_timestamp(timestamp: &str) -> std::result::Result<String, Box<dyn 
 
 /// Calculate uptime from start timestamp
 /// Returns format like "29h 23m" or "15m"
-pub fn calculate_uptime(started_at: &str) -> std::result::Result<String, Box<dyn std::error::Error>> {
+pub fn calculate_uptime(
+    started_at: &str,
+) -> std::result::Result<String, Box<dyn std::error::Error>> {
     use chrono::{DateTime, Utc};
     let started = DateTime::parse_from_rfc3339(started_at)?;
     let now = Utc::now();
     let duration = now.signed_duration_since(started);
-    
+
     let hours = duration.num_hours();
     let minutes = duration.num_minutes() % 60;
-    
+
     if hours > 0 {
         Ok(format!("{}h {}m", hours, minutes))
     } else {
@@ -104,21 +120,21 @@ pub fn calculate_uptime(started_at: &str) -> std::result::Result<String, Box<dyn
 /// Returns format like "6d", "5h", "30m", "45s"
 pub fn calculate_age(started_at: &str) -> std::result::Result<String, Box<dyn std::error::Error>> {
     use chrono::{DateTime, Utc};
-    
+
     // Check for invalid timestamps
     if started_at.starts_with("0001-") {
         return Ok("N/A".to_string());
     }
-    
+
     let started = DateTime::parse_from_rfc3339(started_at)?;
     let now = Utc::now();
     let duration = now.signed_duration_since(started);
-    
+
     let days = duration.num_days();
     let hours = duration.num_hours();
     let minutes = duration.num_minutes();
     let seconds = duration.num_seconds();
-    
+
     if days > 0 {
         Ok(format!("{}d", days))
     } else if hours > 0 {
@@ -132,21 +148,24 @@ pub fn calculate_age(started_at: &str) -> std::result::Result<String, Box<dyn st
 
 /// Calculate runtime between two timestamps
 /// Returns format like "1.234s" or "0.005s"
-pub fn calculate_runtime(started_at: &str, finished_at: &str) -> std::result::Result<String, Box<dyn std::error::Error>> {
+pub fn calculate_runtime(
+    started_at: &str,
+    finished_at: &str,
+) -> std::result::Result<String, Box<dyn std::error::Error>> {
     use chrono::DateTime;
-    
+
     // Check for invalid timestamps (e.g., "0001-01-01T00:00:00Z")
     if started_at.starts_with("0001-") || finished_at.starts_with("0001-") {
         return Ok("N/A".to_string());
     }
-    
+
     let started = DateTime::parse_from_rfc3339(started_at)?;
     let finished = DateTime::parse_from_rfc3339(finished_at)?;
     let duration = finished.signed_duration_since(started);
-    
+
     let total_secs = duration.num_seconds();
     let millis = duration.num_milliseconds() % 1000;
-    
+
     if total_secs > 0 {
         Ok(format!("{}.{:03}s", total_secs, millis.abs()))
     } else {

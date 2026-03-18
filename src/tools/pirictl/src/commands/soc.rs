@@ -47,10 +47,7 @@ async fn get_socs(client: &SettingsClient) -> Result<()> {
 
     match client.get("/api/v1/socs").await {
         Ok(socs) => {
-            print_table_header("SoCs", &[
-                ("ID", 24),
-                ("NODES", 10),
-            ]);
+            print_table_header("SoCs", &[("ID", 24), ("NODES", 10)]);
 
             // Look for "socs" array in the response
             if let Some(socs_array) = socs.get("socs").and_then(|s| s.as_array()) {
@@ -59,27 +56,30 @@ async fn get_socs(client: &SettingsClient) -> Result<()> {
                 } else {
                     // Print each SoC
                     for soc in socs_array.iter() {
-                        let id = soc.get("soc_id").and_then(|i| i.as_str()).unwrap_or("Unknown");
-                        let node_count = soc.get("nodes")
+                        let id = soc
+                            .get("soc_id")
+                            .and_then(|i| i.as_str())
+                            .unwrap_or("Unknown");
+                        let node_count = soc
+                            .get("nodes")
                             .and_then(|n| n.as_array())
                             .map(|arr| arr.len())
                             .unwrap_or(0);
 
-                        println!(
-                            "{:<24} {:<10}",
-                            id, node_count
-                        );
+                        println!("{:<24} {:<10}", id, node_count);
                     }
                 }
             } else if let Some(id) = socs.get("soc_id") {
                 // Single SoC response
-                let node_count = socs.get("nodes")
+                let node_count = socs
+                    .get("nodes")
                     .and_then(|n| n.as_array())
                     .map(|arr| arr.len())
                     .unwrap_or(0);
                 println!(
                     "{:<24} {:<10}",
-                    id.as_str().unwrap_or("Unknown"), node_count
+                    id.as_str().unwrap_or("Unknown"),
+                    node_count
                 );
             } else {
                 println!("No SoCs found.");
@@ -105,7 +105,10 @@ async fn describe_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
     match client.get(&endpoint).await {
         Ok(soc) => {
             // SoC name
-            let soc_name = soc.get("soc_id").and_then(|id| id.as_str()).unwrap_or(soc_id);
+            let soc_name = soc
+                .get("soc_id")
+                .and_then(|id| id.as_str())
+                .unwrap_or(soc_id);
             println!("\n{:<24}{}", format!("{}:", "Name".bold()), soc_name);
 
             // Status (default to Active if not provided)
@@ -117,7 +120,7 @@ async fn describe_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
 
             // Aggregated Resources
             println!("{}", "Aggregated Resources:".bold());
-            
+
             if let (Some(cpu_count), Some(cpu_usage)) = (
                 soc.get("total_cpu_count").and_then(|c| c.as_u64()),
                 soc.get("total_cpu_usage").and_then(|u| u.as_f64()),
@@ -175,13 +178,20 @@ async fn describe_soc(client: &SettingsClient, soc_id: &str) -> Result<()> {
 
             // Last Updated
             if let Some(last_updated) = soc.get("last_updated") {
-                if let Some(secs) = last_updated.get("secs_since_epoch").and_then(|s| s.as_u64()) {
+                if let Some(secs) = last_updated
+                    .get("secs_since_epoch")
+                    .and_then(|s| s.as_u64())
+                {
                     let now = std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
                         .as_secs();
                     let elapsed = now.saturating_sub(secs);
-                    println!("{:<24}{}", format!("{}:", "Last Updated".bold()), format_duration_ago(elapsed));
+                    println!(
+                        "{:<24}{}",
+                        format!("{}:", "Last Updated".bold()),
+                        format_duration_ago(elapsed)
+                    );
                 }
             }
 

@@ -40,7 +40,7 @@ pub fn print_info(message: &str) {
 }
 
 /// Print table header with title and columns
-/// 
+///
 /// # Arguments
 /// * `title` - Table title (e.g., "Boards", "Nodes")
 /// * `columns` - Array of (column_name, width) tuples

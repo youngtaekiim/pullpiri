@@ -205,8 +205,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                 soc::handle(&settings_client, soc::SocAction::Describe { id }).await
             }
             ResourceTypeWithId::Container { id } => {
-                container::handle(&settings_client, container::ContainerAction::Describe { id })
-                    .await
+                container::handle(
+                    &settings_client,
+                    container::ContainerAction::Describe { id },
+                )
+                .await
             }
         },
         Commands::Raw { resource } => match resource {

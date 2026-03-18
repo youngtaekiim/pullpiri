@@ -14,7 +14,7 @@ use tokio::time::{timeout, Duration};
 /// - Returns "127.0.0.1" as fallback if inspection fails
 async fn get_container_target_ip(container_id: &str) -> String {
     let inspect_path = format!("/v4.0.0/libpod/containers/{}/json", container_id);
-    
+
     match crate::runtime::podman::get(&inspect_path).await {
         Ok(body) => {
             match serde_json::from_slice::<serde_json::Value>(&body) {
@@ -22,20 +22,29 @@ async fn get_container_target_ip(container_id: &str) -> String {
                     // Check HostConfig.NetworkMode
                     if let Some(network_mode) = json["HostConfig"]["NetworkMode"].as_str() {
                         if network_mode == "host" {
-                            println!("[Probe] Container {} uses host network, targeting localhost", container_id);
+                            println!(
+                                "[Probe] Container {} uses host network, targeting localhost",
+                                container_id
+                            );
                             return "127.0.0.1".to_string();
                         }
                     }
-                    
+
                     // For bridge/other modes, get container IP
                     if let Some(ip) = json["NetworkSettings"]["IPAddress"].as_str() {
                         if !ip.is_empty() {
-                            println!("[Probe] Container {} uses bridge network, targeting {}", container_id, ip);
+                            println!(
+                                "[Probe] Container {} uses bridge network, targeting {}",
+                                container_id, ip
+                            );
                             return ip.to_string();
                         }
                     }
-                    
-                    eprintln!("[Probe] Could not determine IP for container {}, using localhost", container_id);
+
+                    eprintln!(
+                        "[Probe] Could not determine IP for container {}, using localhost",
+                        container_id
+                    );
                     "127.0.0.1".to_string()
                 }
                 Err(e) => {
@@ -45,7 +54,10 @@ async fn get_container_target_ip(container_id: &str) -> String {
             }
         }
         Err(e) => {
-            eprintln!("[Probe] Failed to inspect container {}: {}", container_id, e);
+            eprintln!(
+                "[Probe] Failed to inspect container {}: {}",
+                container_id, e
+            );
             "127.0.0.1".to_string()
         }
     }
