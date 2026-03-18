@@ -21,9 +21,6 @@ impl Model {
     pub fn get_podspec(&self) -> ModelSpec {
         self.spec.clone()
     }
-    pub fn get_annotations(&self) -> std::collections::HashMap<String, String> {
-        self.metadata.annotations.clone().unwrap_or_default()
-    }
 }
 
 //Unit Test Cases
