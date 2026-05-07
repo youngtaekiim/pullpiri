@@ -2,11 +2,9 @@
 # SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-#BODY=$(< ./resources/helloworld.yaml)
 BODY=$(< ./resources/helloworld_no_condition.yaml)
+HOST_IP=$(hostname -I | awk '{print $1}')
 
-#URL="10.0.0.30:8080/api/v1/yaml"
-
-curl -X POST 'http://127.0.0.1:47099/api/artifact' \
+curl -X POST "http://${HOST_IP}:47099/api/artifact" \
 --header 'Content-Type: text/plain' \
 --data "${BODY}"

@@ -25,7 +25,7 @@ jobs:
 
       # Install `cargo-about` tool used for license reporting
       - name: Install cargo-about
-        run: cargo install cargo-about
+        run: cargo install cargo-about --features cli
 
       # Run your custom shell script to generate HTML license reports
       - name: Run license check script
