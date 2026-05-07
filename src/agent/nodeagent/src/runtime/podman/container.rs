@@ -37,6 +37,19 @@ const NVIDIA_CONTROL_DEVICES: &[(&str, &str)] = &[
     ("/dev/nvidiactl", "/dev/nvidiactl"),
     ("/dev/nvidia-uvm", "/dev/nvidia-uvm"),
     ("/dev/nvidia-uvm-tools", "/dev/nvidia-uvm-tools"),
+    ("/dev/nvidia-modeset", "/dev/nvidia-modeset"),
+];
+
+// NVIDIA capability devices for advanced features (MIG, etc.)
+const NVIDIA_CAP_DEVICES: &[(&str, &str)] = &[
+    (
+        "/dev/nvidia-caps/nvidia-cap1",
+        "/dev/nvidia-caps/nvidia-cap1",
+    ),
+    (
+        "/dev/nvidia-caps/nvidia-cap2",
+        "/dev/nvidia-caps/nvidia-cap2",
+    ),
 ];
 
 // NVIDIA environment variable keys
@@ -288,6 +301,18 @@ fn apply_gpu_devices(
                 host_path
             );
         }
+    }
+
+    // Add capability devices (for MIG and advanced features, optional)
+    for (host_path, container_path) in NVIDIA_CAP_DEVICES {
+        if Path::new(host_path).exists() {
+            devices.push(json!({
+                "PathOnHost": host_path,
+                "PathInContainer": container_path,
+                "CgroupPermissions": "rwm"
+            }));
+        }
+        // No warning for cap devices - they're optional
     }
 
     if !devices.is_empty() {
@@ -811,14 +836,18 @@ mod tests {
         });
 
         let env_vars = build_env_vars(&container);
-        
+
         // Should have the original env var
         assert!(env_vars.contains(&"TEST_VAR=test_value".to_string()));
-        
+
         // Should have NVIDIA env vars added
-        let has_nvidia_visible = env_vars.iter().any(|e| e.starts_with("NVIDIA_VISIBLE_DEVICES="));
-        let has_nvidia_driver = env_vars.iter().any(|e| e.starts_with("NVIDIA_DRIVER_CAPABILITIES="));
-        
+        let has_nvidia_visible = env_vars
+            .iter()
+            .any(|e| e.starts_with("NVIDIA_VISIBLE_DEVICES="));
+        let has_nvidia_driver = env_vars
+            .iter()
+            .any(|e| e.starts_with("NVIDIA_DRIVER_CAPABILITIES="));
+
         assert!(has_nvidia_visible, "Should add NVIDIA_VISIBLE_DEVICES");
         assert!(has_nvidia_driver, "Should add NVIDIA_DRIVER_CAPABILITIES");
     }
@@ -835,10 +864,13 @@ mod tests {
         });
 
         let env_vars = build_env_vars(&container);
-        
+
         // Should not have NVIDIA env vars when no GPU requested
         let has_nvidia = env_vars.iter().any(|e| e.starts_with("NVIDIA_"));
-        assert!(!has_nvidia, "Should not add NVIDIA vars without GPU request");
+        assert!(
+            !has_nvidia,
+            "Should not add NVIDIA vars without GPU request"
+        );
     }
 
     #[test]
@@ -872,7 +904,7 @@ mod tests {
 
         let exposed_ports = build_exposed_ports(&container);
         let ports_obj = exposed_ports.as_object().unwrap();
-        
+
         assert!(ports_obj.contains_key("8080/tcp"));
         assert!(ports_obj.contains_key("9090/tcp"));
     }
