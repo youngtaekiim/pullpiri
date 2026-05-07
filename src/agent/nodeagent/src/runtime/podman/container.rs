@@ -56,6 +56,16 @@ const NVIDIA_CAP_DEVICES: &[(&str, &str)] = &[
 const NVIDIA_VISIBLE_DEVICES: &str = "NVIDIA_VISIBLE_DEVICES";
 const NVIDIA_DRIVER_CAPABILITIES: &str = "NVIDIA_DRIVER_CAPABILITIES";
 
+// NVIDIA driver library paths (host)
+const NVIDIA_LIB_HOST_PATHS: &[&str] = &[
+    "/usr/lib/x86_64-linux-gnu", // Ubuntu/Debian
+    "/usr/lib64",                // RHEL/CentOS
+    "/usr/local/nvidia/lib64",   // Alternative path
+];
+
+// Container path for NVIDIA libraries (avoid conflicts with existing paths)
+const NVIDIA_LIB_CONTAINER_PATH: &str = "/opt/nvidia/lib64";
+
 /// Parse Pod YAML and extract pod name and spec
 fn parse_pod(pod_yaml: &str) -> Result<(String, serde_json::Value), Box<dyn std::error::Error>> {
     let pod = serde_yaml::from_str::<common::spec::k8s::Pod>(pod_yaml)?;
@@ -196,6 +206,7 @@ fn apply_resource_limits(
         // GPU devices (nvidia.com/gpu)
         if let Some(gpu_value) = limits.get("nvidia.com/gpu") {
             apply_gpu_devices(host_config, gpu_value);
+            apply_nvidia_libraries(host_config);
         }
     }
 }
@@ -321,6 +332,46 @@ fn apply_gpu_devices(
     }
 }
 
+/// Add NVIDIA driver libraries as volume mounts
+fn apply_nvidia_libraries(host_config: &mut serde_json::Map<String, serde_json::Value>) {
+    // Find the first existing NVIDIA library path on the host
+    let nvidia_lib_path = NVIDIA_LIB_HOST_PATHS.iter().find(|&path| {
+        let test_file = format!("{}/libcuda.so", path);
+        Path::new(&test_file).exists() || Path::new(path).exists()
+    });
+
+    if let Some(host_path) = nvidia_lib_path {
+        println!(
+            "Mounting NVIDIA libraries from {} to {}",
+            host_path, NVIDIA_LIB_CONTAINER_PATH
+        );
+
+        // Get existing Mounts or create new array
+        let mut mounts = host_config
+            .get("Mounts")
+            .and_then(|m| m.as_array())
+            .cloned()
+            .unwrap_or_default();
+
+        // Add NVIDIA library mount
+        mounts.push(json!({
+            "Type": "bind",
+            "Source": host_path,
+            "Target": NVIDIA_LIB_CONTAINER_PATH,
+            "ReadOnly": true
+        }));
+
+        host_config.insert("Mounts".to_string(), json!(mounts));
+    } else {
+        println!(
+            "Warning: NVIDIA libraries not found in standard paths: {:?}",
+            NVIDIA_LIB_HOST_PATHS
+        );
+        println!("         Container may not have GPU functionality.");
+        println!("         Make sure NVIDIA drivers are properly installed.");
+    }
+}
+
 /// Apply port bindings to HostConfig
 fn apply_port_bindings(
     host_config: &mut serde_json::Map<String, serde_json::Value>,
@@ -356,7 +407,13 @@ fn apply_volume_mounts(
 ) {
     if let Some(volume_mounts) = container["volumeMounts"].as_array() {
         if let Some(volumes) = spec["volumes"].as_array() {
-            let mut mounts = Vec::new();
+            // Get existing Mounts or create new array
+            let mut mounts = host_config
+                .get("Mounts")
+                .and_then(|m| m.as_array())
+                .cloned()
+                .unwrap_or_default();
+            
             for mount in volume_mounts {
                 let mount_name = mount["name"].as_str().unwrap_or("");
                 let mount_path = mount["mountPath"].as_str().unwrap_or("");
@@ -475,6 +532,14 @@ fn add_nvidia_env_vars(env_vars: &mut Vec<String>, container: &serde_json::Value
                 .any(|e| e.starts_with(&format!("{}=", NVIDIA_DRIVER_CAPABILITIES)))
             {
                 env_vars.push(format!("{}=compute,utility", NVIDIA_DRIVER_CAPABILITIES));
+            }
+
+            // Add LD_LIBRARY_PATH if not already set (needed to find NVIDIA libraries)
+            if !env_vars.iter().any(|e| e.starts_with("LD_LIBRARY_PATH=")) {
+                env_vars.push(format!(
+                    "LD_LIBRARY_PATH={}:/usr/local/cuda/lib64",
+                    NVIDIA_LIB_CONTAINER_PATH
+                ));
             }
         }
     }
@@ -907,5 +972,56 @@ mod tests {
 
         assert!(ports_obj.contains_key("8080/tcp"));
         assert!(ports_obj.contains_key("9090/tcp"));
+    }
+
+    #[test]
+    fn test_build_env_vars_with_gpu_includes_ld_library_path() {
+        let container = json!({
+            "env": [],
+            "resources": {
+                "limits": {
+                    "nvidia.com/gpu": "1"
+                }
+            }
+        });
+
+        let env_vars = build_env_vars(&container);
+
+        // Should have LD_LIBRARY_PATH when GPU is requested
+        let has_ld_library_path = env_vars.iter().any(|e| e.starts_with("LD_LIBRARY_PATH="));
+        assert!(
+            has_ld_library_path,
+            "Should add LD_LIBRARY_PATH with GPU request"
+        );
+
+        // Should contain NVIDIA library path
+        let ld_path = env_vars.iter().find(|e| e.starts_with("LD_LIBRARY_PATH="));
+        if let Some(path) = ld_path {
+            assert!(
+                path.contains(NVIDIA_LIB_CONTAINER_PATH),
+                "LD_LIBRARY_PATH should contain NVIDIA library path"
+            );
+        }
+    }
+
+    #[test]
+    fn test_apply_nvidia_libraries() {
+        let mut host_config = serde_json::Map::new();
+
+        // Call the function
+        apply_nvidia_libraries(&mut host_config);
+
+        // Should add Mounts if NVIDIA libraries exist
+        // This test will pass/fail depending on host system
+        if host_config.contains_key("Mounts") {
+            let mounts = host_config["Mounts"].as_array().unwrap();
+            assert!(!mounts.is_empty(), "Mounts should not be empty");
+
+            // Check that NVIDIA library mount is present
+            let has_nvidia_mount = mounts
+                .iter()
+                .any(|m| m["Target"].as_str() == Some(NVIDIA_LIB_CONTAINER_PATH));
+            assert!(has_nvidia_mount, "Should have NVIDIA library mount");
+        }
     }
 }
