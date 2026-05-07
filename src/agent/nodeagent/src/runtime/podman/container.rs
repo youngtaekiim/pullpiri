@@ -413,7 +413,7 @@ fn apply_volume_mounts(
                 .and_then(|m| m.as_array())
                 .cloned()
                 .unwrap_or_default();
-            
+
             for mount in volume_mounts {
                 let mount_name = mount["name"].as_str().unwrap_or("");
                 let mount_path = mount["mountPath"].as_str().unwrap_or("");
