@@ -341,3 +341,405 @@ async fn raw_containers(client: &SettingsClient) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    async fn make_client(base_url: &str) -> SettingsClient {
+        SettingsClient::new(base_url, 5).unwrap()
+    }
+
+    // ── handle() dispatch ─────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_handle_get() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"containers": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, ContainerAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_raw() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!([])))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, ContainerAction::Raw).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_describe() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers/abc123"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "id": "abc123",
+                "names": ["my-container"],
+                "state": {"Status": "running", "Running": "false"}
+            })))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            ContainerAction::Describe {
+                id: "abc123".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    // ── get_containers ────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_get_containers_array_response() {
+        let server = MockServer::start().await;
+        let body = json!([
+            {
+                "names": ["container-a"],
+                "state": {"Status": "running", "StartedAt": "2026-04-23T10:00:00+00:00"},
+                "id": "aaaa1111"
+            },
+            {
+                "names": ["container-b"],
+                "state": {"Status": "exited", "StartedAt": "0001-01-01T00:00:00Z"},
+                "id": "bbbb2222"
+            }
+        ]);
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, ContainerAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_containers_with_containers_key() {
+        let server = MockServer::start().await;
+        let body = json!({"containers": [
+            {"names": ["c1"], "state": {"Status": "running", "StartedAt": "2026-04-23T10:00:00+00:00"}, "id": "c1id"}
+        ]});
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, ContainerAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_containers_no_array_in_response() {
+        // Response is a plain object with no array → "No containers found"
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"status": "ok"})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, ContainerAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_containers_empty_array() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!([])))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, ContainerAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_containers_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, ContainerAction::Get).await.is_err());
+    }
+
+    // ── describe_container ────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_describe_running_container_full_stats() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "id": "run-container-id",
+            "names": ["running-app"],
+            "image": "ubuntu:22.04",
+            "config": {"Hostname": "my-host"},
+            "state": {
+                "Status": "running",
+                "Running": "true",
+                "StartedAt": "2026-04-23T10:00:00+00:00",
+                "Pid": "12345"
+            },
+            "stats": {
+                "CpuTotalUsage": "5000000000",
+                "CpuUsageInKernelMode": "2000000000",
+                "CpuUsageInUserMode": "3000000000",
+                "MemoryUsage": "536870912",
+                "MemoryLimit": "4294967296",
+                "Networks": "network: {rx_bytes: 1024, tx_bytes: 2048}"
+            }
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers/run-container-id"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            ContainerAction::Describe {
+                id: "run-container-id".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_running_container_stats_unavailable() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "id": "no-stats-id",
+            "names": ["no-stats-app"],
+            "state": {
+                "Status": "running",
+                "Running": "true",
+                "StartedAt": "2026-04-23T10:00:00+00:00",
+                "Pid": "999"
+            },
+            "stats": {"Status": "StatsUnavailable"}
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers/no-stats-id"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            ContainerAction::Describe {
+                id: "no-stats-id".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_running_container_no_stats_field() {
+        // Running container but no "stats" key at all
+        let server = MockServer::start().await;
+        let body = json!({
+            "id": "running-no-stat",
+            "names": ["app"],
+            "state": {"Status": "running", "Running": "true", "StartedAt": "2026-04-23T10:00:00+00:00", "Pid": "42"}
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers/running-no-stat"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            ContainerAction::Describe {
+                id: "running-no-stat".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_exited_container_success() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "id": "exited-container",
+            "names": ["finished-app"],
+            "image": "alpine:3.18",
+            "state": {
+                "Status": "exited",
+                "Running": "false",
+                "ExitCode": "0",
+                "StartedAt": "2026-04-23T09:00:00+00:00",
+                "FinishedAt": "2026-04-23T09:00:05+00:00",
+                "OOMKilled": "false"
+            }
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers/exited-container"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            ContainerAction::Describe {
+                id: "exited-container".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_exited_container_nonzero_exit() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "id": "failed-container",
+            "names": ["crashed-app"],
+            "state": {
+                "Status": "exited",
+                "Running": "false",
+                "ExitCode": "1",
+                "StartedAt": "2026-04-23T09:00:00+00:00",
+                "FinishedAt": "2026-04-23T09:00:01+00:00",
+                "OOMKilled": "false"
+            }
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers/failed-container"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            ContainerAction::Describe {
+                id: "failed-container".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_container_minimal_fields() {
+        // Only id field present — all other fields use defaults
+        let server = MockServer::start().await;
+        let body = json!({"id": "bare-id"});
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers/bare-id"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            ContainerAction::Describe {
+                id: "bare-id".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_container_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers/bad-id"))
+            .respond_with(ResponseTemplate::new(404))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            ContainerAction::Describe {
+                id: "bad-id".into()
+            }
+        )
+        .await
+        .is_err());
+    }
+
+    // ── raw_containers ────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_raw_containers_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!([])))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, ContainerAction::Raw).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_raw_containers_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, ContainerAction::Raw).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_describe_running_container_zero_memory_limit() {
+        // MemoryLimit == "0" → exercises the `else { 0.0 }` branch on line 283
+        let server = MockServer::start().await;
+        let body = json!({
+            "id": "zero-mem-limit-id",
+            "names": ["zero-mem-app"],
+            "state": {
+                "Status": "running",
+                "Running": "true",
+                "StartedAt": "2026-04-23T10:00:00+00:00",
+                "Pid": "777"
+            },
+            "stats": {
+                "CpuTotalUsage": "1000000000",
+                "CpuUsageInKernelMode": "500000000",
+                "CpuUsageInUserMode": "500000000",
+                "MemoryUsage": "104857600",
+                "MemoryLimit": "0",
+                "Networks": "network: {rx_bytes: 0, tx_bytes: 0}"
+            }
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/containers/zero-mem-limit-id"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            ContainerAction::Describe {
+                id: "zero-mem-limit-id".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+}

@@ -249,3 +249,285 @@ async fn get_soc_raw(client: &SettingsClient, soc_id: &str) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    async fn make_client(base_url: &str) -> SettingsClient {
+        SettingsClient::new(base_url, 5).unwrap()
+    }
+
+    // ── handle() dispatch ────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_handle_get() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"socs": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, SocAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_describe() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs/soc-1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"soc_id": "soc-1"})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, SocAction::Describe { id: "soc-1".into() })
+            .await
+            .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_raw_no_id() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"socs": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, SocAction::Raw { id: None }).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_raw_with_id() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs/s1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"soc_id": "s1"})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            SocAction::Raw {
+                id: Some("s1".into())
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    // ── get_socs ─────────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_get_socs_with_array() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "socs": [
+                {"soc_id": "soc-alpha", "nodes": [{"node_name": "n1"}, {"node_name": "n2"}]},
+                {"soc_id": "soc-beta",  "nodes": []}
+            ]
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, SocAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_socs_empty_array() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"socs": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, SocAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_socs_single_soc_response() {
+        let server = MockServer::start().await;
+        let body = json!({"soc_id": "solo-soc", "nodes": []});
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, SocAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_socs_no_soc_key() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, SocAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_socs_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, SocAction::Get).await.is_err());
+    }
+
+    // ── describe_soc ──────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_describe_soc_full_fields() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "soc_id": "full-soc",
+            "status": "Active",
+            "total_cpu_count": 8,
+            "total_cpu_usage": 60.0,
+            "total_gpu_count": 2,
+            "total_used_memory": 2147483648u64,
+            "total_mem_usage": 25.0,
+            "total_rx_bytes": 512u64,
+            "total_tx_bytes": 1024u64,
+            "total_read_bytes": 2048u64,
+            "total_write_bytes": 4096u64,
+            "nodes": [
+                {"node_name": "node-x", "ip": "10.10.10.1"},
+                {"node_name": "node-y", "ip": "10.10.10.2"}
+            ],
+            "last_updated": {"secs_since_epoch": 1000000000u64, "nanos_since_epoch": 0}
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs/full-soc"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            SocAction::Describe {
+                id: "full-soc".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_soc_minimal_fields() {
+        let server = MockServer::start().await;
+        let body = json!({"soc_id": "bare-soc"});
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs/bare-soc"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            SocAction::Describe {
+                id: "bare-soc".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_soc_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs/bad-soc"))
+            .respond_with(ResponseTemplate::new(404))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            SocAction::Describe {
+                id: "bad-soc".into()
+            }
+        )
+        .await
+        .is_err());
+    }
+
+    // ── raw endpoints ─────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_get_socs_raw_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"socs": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, SocAction::Raw { id: None }).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_socs_raw_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, SocAction::Raw { id: None }).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_get_soc_raw_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs/s99"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"soc_id": "s99"})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            SocAction::Raw {
+                id: Some("s99".into())
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_soc_raw_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/socs/bad"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            SocAction::Raw {
+                id: Some("bad".into())
+            }
+        )
+        .await
+        .is_err());
+    }
+}

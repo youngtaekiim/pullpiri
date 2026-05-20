@@ -335,3 +335,284 @@ impl MetricRow {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    async fn make_client(base_url: &str) -> SettingsClient {
+        SettingsClient::new(base_url, 5).unwrap()
+    }
+
+    // ── MetricRow::from_board ─────────────────────────────────────────────────
+
+    #[test]
+    fn test_metric_row_from_board_full_fields() {
+        let board = json!({
+            "board_id": "board-x",
+            "total_cpu_count": 16,
+            "total_cpu_usage": 75.5,
+            "total_memory": 17179869184u64,
+            "total_used_memory": 8589934592u64,
+            "total_mem_usage": 50.0,
+            "total_gpu_count": 4,
+            "total_rx_bytes": 1048576u64,
+            "total_tx_bytes": 2097152u64,
+            "total_read_bytes": 4194304u64,
+            "total_write_bytes": 8388608u64
+        });
+        let row = MetricRow::from_board(&board);
+        assert_eq!(row.level, "Board");
+        assert_eq!(row.name, "board-x");
+        assert_eq!(row.cpu, "16");
+        assert!(row.cpu_percent.contains("75.5"));
+        assert_eq!(row.gpu, "4");
+        assert_eq!(row.arch, "-");
+    }
+
+    #[test]
+    fn test_metric_row_from_board_missing_fields() {
+        let board = json!({});
+        let row = MetricRow::from_board(&board);
+        assert_eq!(row.level, "Board");
+        assert_eq!(row.name, "Unknown");
+        assert_eq!(row.cpu, "0");
+        assert_eq!(row.gpu, "0");
+    }
+
+    #[test]
+    fn test_metric_row_from_board_zero_values() {
+        let board = json!({
+            "board_id": "zero-board",
+            "total_cpu_count": 0,
+            "total_cpu_usage": 0.0,
+            "total_memory": 0u64,
+            "total_used_memory": 0u64,
+            "total_mem_usage": 0.0,
+            "total_gpu_count": 0,
+            "total_rx_bytes": 0u64,
+            "total_tx_bytes": 0u64,
+            "total_read_bytes": 0u64,
+            "total_write_bytes": 0u64
+        });
+        let row = MetricRow::from_board(&board);
+        assert_eq!(row.name, "zero-board");
+        assert!(row.cpu_percent.contains("0.0"));
+    }
+
+    // ── MetricRow::from_soc ───────────────────────────────────────────────────
+
+    #[test]
+    fn test_metric_row_from_soc_full_fields() {
+        let soc = json!({
+            "soc_id": "soc-y",
+            "total_cpu_count": 8,
+            "total_cpu_usage": 30.0,
+            "total_memory": 8589934592u64,
+            "total_used_memory": 2147483648u64,
+            "total_mem_usage": 25.0,
+            "total_gpu_count": 1,
+            "total_rx_bytes": 512u64,
+            "total_tx_bytes": 1024u64,
+            "total_read_bytes": 2048u64,
+            "total_write_bytes": 4096u64
+        });
+        let row = MetricRow::from_soc(&soc);
+        assert_eq!(row.level, "SoC");
+        assert_eq!(row.name, "soc-y");
+        assert_eq!(row.cpu, "8");
+        assert!(row.cpu_percent.contains("30.0"));
+        assert_eq!(row.gpu, "1");
+        assert_eq!(row.arch, "-");
+    }
+
+    #[test]
+    fn test_metric_row_from_soc_missing_fields() {
+        let soc = json!({});
+        let row = MetricRow::from_soc(&soc);
+        assert_eq!(row.level, "SoC");
+        assert_eq!(row.name, "Unknown");
+        assert_eq!(row.cpu, "0");
+    }
+
+    // ── MetricRow::from_node ──────────────────────────────────────────────────
+
+    #[test]
+    fn test_metric_row_from_node_full_fields() {
+        let node = json!({
+            "node_name": "node-z",
+            "cpu_count": 4,
+            "cpu_usage": 55.0,
+            "total_memory": 4294967296u64,
+            "used_memory": 2147483648u64,
+            "mem_usage": 50.0,
+            "gpu_count": 0,
+            "arch": "arm64",
+            "rx_bytes": 256u64,
+            "tx_bytes": 512u64,
+            "read_bytes": 1024u64,
+            "write_bytes": 2048u64
+        });
+        let row = MetricRow::from_node(&node);
+        assert_eq!(row.level, "Node");
+        assert_eq!(row.name, "node-z");
+        assert_eq!(row.cpu, "4");
+        assert!(row.cpu_percent.contains("55.0"));
+        assert_eq!(row.arch, "arm64");
+    }
+
+    #[test]
+    fn test_metric_row_from_node_missing_fields() {
+        let node = json!({});
+        let row = MetricRow::from_node(&node);
+        assert_eq!(row.level, "Node");
+        assert_eq!(row.name, "Unknown");
+        assert_eq!(row.arch, "-");
+    }
+
+    // ── handle() / top_metrics() ──────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_handle_metrics_with_data() {
+        let server = MockServer::start().await;
+
+        let boards = json!([{
+            "board_id": "b1",
+            "total_cpu_count": 4,
+            "total_cpu_usage": 10.0,
+            "total_memory": 1073741824u64,
+            "total_used_memory": 536870912u64,
+            "total_mem_usage": 50.0,
+            "total_gpu_count": 0,
+            "total_rx_bytes": 0u64,
+            "total_tx_bytes": 0u64,
+            "total_read_bytes": 0u64,
+            "total_write_bytes": 0u64
+        }]);
+        let socs = json!([{
+            "soc_id": "s1",
+            "total_cpu_count": 2,
+            "total_cpu_usage": 5.0,
+            "total_memory": 536870912u64,
+            "total_used_memory": 268435456u64,
+            "total_mem_usage": 50.0,
+            "total_gpu_count": 0,
+            "total_rx_bytes": 0u64,
+            "total_tx_bytes": 0u64,
+            "total_read_bytes": 0u64,
+            "total_write_bytes": 0u64
+        }]);
+        let nodes = json!([{
+            "node_name": "n1",
+            "cpu_count": 2,
+            "cpu_usage": 5.0,
+            "total_memory": 268435456u64,
+            "used_memory": 134217728u64,
+            "mem_usage": 50.0,
+            "gpu_count": 0,
+            "arch": "amd64",
+            "rx_bytes": 0u64,
+            "tx_bytes": 0u64,
+            "read_bytes": 0u64,
+            "write_bytes": 0u64
+        }]);
+
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/boards"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(boards))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/socs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(socs))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(nodes))
+            .mount(&server)
+            .await;
+
+        let client = make_client(&server.uri()).await;
+        let result = handle(&client, TopResource::Metrics).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_metrics_all_endpoints_fail() {
+        // All three API calls fail → empty metrics_data → prints error but returns Ok(())
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/boards"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/socs"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/nodes"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+
+        let client = make_client(&server.uri()).await;
+        let result = handle(&client, TopResource::Metrics).await;
+        // Empty metrics → print_error is called but Ok(()) is returned
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_metrics_non_array_responses() {
+        // API returns objects instead of arrays → no rows appended → empty path
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/boards"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/socs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&server)
+            .await;
+
+        let client = make_client(&server.uri()).await;
+        let result = handle(&client, TopResource::Metrics).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_metrics_empty_arrays() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/boards"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!([])))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/socs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!([])))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/metrics/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!([])))
+            .mount(&server)
+            .await;
+
+        let client = make_client(&server.uri()).await;
+        let result = handle(&client, TopResource::Metrics).await;
+        assert!(result.is_ok());
+    }
+}
