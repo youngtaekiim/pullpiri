@@ -52,3 +52,76 @@ pub fn print_table_header(_title: &str, columns: &[(&str, usize)]) {
     }
     println!();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_print_json_valid() {
+        let value = json!({"key": "value", "num": 42});
+        let result = print_json(&value);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_print_json_array() {
+        let value = json!([1, 2, 3]);
+        let result = print_json(&value);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_print_json_null() {
+        let value = serde_json::Value::Null;
+        let result = print_json(&value);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_print_success_does_not_panic() {
+        // Just verify it runs without panic
+        print_success("operation completed");
+    }
+
+    #[test]
+    fn test_print_error_does_not_panic() {
+        print_error("something failed");
+    }
+
+    #[test]
+    fn test_print_info_does_not_panic() {
+        print_info("informational message");
+    }
+
+    #[test]
+    fn test_print_table_header_single_column() {
+        print_table_header("Test", &[("NAME", 20)]);
+    }
+
+    #[test]
+    fn test_print_table_header_multiple_columns() {
+        print_table_header("Boards", &[("ID", 24), ("NODES", 10), ("SOCS", 10)]);
+    }
+
+    #[test]
+    fn test_print_table_header_empty_columns() {
+        print_table_header("Empty", &[]);
+    }
+
+    #[test]
+    fn test_print_success_empty_string() {
+        print_success("");
+    }
+
+    #[test]
+    fn test_print_error_empty_string() {
+        print_error("");
+    }
+
+    #[test]
+    fn test_print_info_empty_string() {
+        print_info("");
+    }
+}

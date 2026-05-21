@@ -295,6 +295,10 @@ async fn health_check(client: &SettingsClient) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    // ── build_url_with_port ───────────────────────────────────────────────────
 
     #[test]
     fn test_build_url_replaces_port() {
@@ -323,5 +327,63 @@ mod tests {
     #[test]
     fn test_build_url_invalid_input() {
         assert!(build_url_with_port("not-a-url", 8080).is_err());
+    }
+
+    #[test]
+    fn test_build_url_strips_trailing_slash() {
+        // The function should trim the trailing slash from the result
+        let result = build_url_with_port("http://localhost", 9090).unwrap();
+        assert!(
+            !result.ends_with('/'),
+            "URL should not end with slash: {}",
+            result
+        );
+    }
+
+    #[test]
+    fn test_build_url_empty_string() {
+        assert!(build_url_with_port("", 8080).is_err());
+    }
+
+    // ── health_check() ────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_health_check_fn_healthy() {
+        // Both health endpoints → primary OK → health_check returns Ok(true) → fn returns Ok(())
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/system/health"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(serde_json::json!({"healthy": true})),
+            )
+            .mount(&server)
+            .await;
+        let client = SettingsClient::new(&server.uri(), 5).unwrap();
+        let result = health_check(&client).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_health_check_fn_not_reachable() {
+        // Both endpoints fail → health_check returns Ok(false) → fn returns Err (lines 280-284)
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/system/health"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/health"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = SettingsClient::new(&server.uri(), 5).unwrap();
+        let result = health_check(&client).await;
+        // health_check client returns Ok(false) → our fn returns Err
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Health check failed"));
     }
 }

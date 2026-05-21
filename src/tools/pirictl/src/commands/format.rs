@@ -372,4 +372,73 @@ mod tests {
         let result = calculate_runtime("invalid", "also-invalid");
         assert!(result.is_err());
     }
+
+    // ── Additional branch coverage ───────────────────────────────────────────
+
+    #[test]
+    fn test_calculate_uptime_minutes_only_branch() {
+        // A timestamp very recently in the past (< 1 hour ago) → "Xm" branch (line 115)
+        // Use a timestamp ~5 minutes ago using a fixed recent past time
+        use chrono::{Duration, Utc};
+        let ts =
+            (Utc::now() - Duration::minutes(5)).to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+        let result = calculate_uptime(&ts);
+        assert!(result.is_ok());
+        let uptime = result.unwrap();
+        // Must NOT contain 'h' since < 1 hour → exercises the else branch (line 115)
+        assert!(uptime.contains('m'));
+        assert!(!uptime.contains('h'));
+    }
+
+    #[test]
+    fn test_calculate_age_hours_branch() {
+        // 2 hours ago → exercises "Xh" branch (lines 140-141)
+        use chrono::{Duration, Utc};
+        let ts =
+            (Utc::now() - Duration::hours(2)).to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+        let result = calculate_age(&ts);
+        assert!(result.is_ok());
+        let age = result.unwrap();
+        assert!(age.ends_with('h'), "expected hours format, got: {}", age);
+    }
+
+    #[test]
+    fn test_calculate_age_minutes_branch() {
+        // 10 minutes ago → exercises "Xm" branch (lines 142-143)
+        use chrono::{Duration, Utc};
+        let ts =
+            (Utc::now() - Duration::minutes(10)).to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+        let result = calculate_age(&ts);
+        assert!(result.is_ok());
+        let age = result.unwrap();
+        assert!(age.ends_with('m'), "expected minutes format, got: {}", age);
+    }
+
+    #[test]
+    fn test_calculate_age_seconds_branch() {
+        // 5 seconds ago → exercises "Xs" branch (line 145)
+        use chrono::{Duration, Utc};
+        let ts =
+            (Utc::now() - Duration::seconds(5)).to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+        let result = calculate_age(&ts);
+        assert!(result.is_ok());
+        let age = result.unwrap();
+        assert!(age.ends_with('s'), "expected seconds format, got: {}", age);
+    }
+
+    #[test]
+    fn test_calculate_runtime_sub_second_branch() {
+        // Same second, 500ms apart → total_secs == 0 → "0.XXXs" branch (line 172)
+        let result = calculate_runtime(
+            "2026-04-23T10:00:00.000+00:00",
+            "2026-04-23T10:00:00.500+00:00",
+        );
+        assert!(result.is_ok());
+        let runtime = result.unwrap();
+        assert!(
+            runtime.starts_with("0."),
+            "expected sub-second format, got: {}",
+            runtime
+        );
+    }
 }
