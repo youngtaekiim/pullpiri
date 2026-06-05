@@ -70,5 +70,14 @@ Pullpiri itself uses the [Apache-2.0](/LICENSES/Apache-2.0.txt) license.
 
 For detail, refer to [license-readme](/LICENSES/README.md).
 
+## How to Get Involved
+
+To contribute to this project, please review the contribution guidelines and join the conversation.
+- [Contribution guidelines](doc/contribution/guidelines-en.md)
+- [Weekly meeting (Microsoft Teams)](https://teams.microsoft.com/meet/46052781724289?p=v7AILMRZryXY01ApNs)
+
+Meeting minutes and announcements are posted here:
+- [Meeting minutes (2026)](https://github.com/eclipse-pullpiri/pullpiri/discussions/477)
+
 <!-- markdownlint-disable-file MD033 no-inline-html -->
 <!-- markdownlint-disable-file MD041 first-line-heading -->
