@@ -395,8 +395,8 @@ impl ActionControllerManager {
             let model_name = mi.get_name();
             let mut target_node = mi.get_node();
 
-            // Check policy if specified
-            if !policy_name.is_empty() {
+            // Check policy only for launch action
+            if action == "launch" && !policy_name.is_empty() {
                 logd!(
                     2,
                     "Checking policy '{}' for model '{}' on node '{}'",
