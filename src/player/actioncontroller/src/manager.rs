@@ -388,17 +388,70 @@ impl ActionControllerManager {
         let action = scenario.get_actions();
         let node_roles = self.load_node_roles(&package).await;
 
+        // Get policy name from package (if specified)
+        let policy_name = package.get_policy().clone().unwrap_or_default();
+
         for mi in package.get_models() {
             let model_name = mi.get_name();
-            let model_node = mi.get_node();
+            let mut target_node = mi.get_node();
 
-            let node_type = match node_roles.get(&model_node) {
+            // Check policy if specified
+            if !policy_name.is_empty() {
+                logd!(
+                    2,
+                    "Checking policy '{}' for model '{}' on node '{}'",
+                    policy_name,
+                    model_name,
+                    target_node
+                );
+
+                match crate::grpc::sender::policymanager::check_node_policy(
+                    &policy_name,
+                    &target_node,
+                )
+                .await
+                {
+                    Ok(result) => {
+                        if !result.allowed {
+                            // Node not allowed, try preferred node
+                            if let Some(preferred) = result.preferred_node {
+                                logd!(
+                                    3,
+                                    "Node '{}' not allowed, using preferred node '{}'",
+                                    target_node,
+                                    preferred
+                                );
+                                target_node = preferred;
+                            } else {
+                                logd!(
+                                    4,
+                                    "Node '{}' not allowed and no preferred node available. Skipping model '{}'.",
+                                    target_node,
+                                    model_name
+                                );
+                                continue;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        logd!(
+                            4,
+                            "Policy check failed: {}. Proceeding with original node '{}'.",
+                            e,
+                            target_node
+                        );
+                        // Fail-open: proceed with original node if policy check fails
+                    }
+                }
+            }
+
+            let node_type = match node_roles.get(&target_node) {
                 Some(role) => {
-                    logd!(2, "Using node {} as {}", model_node, role);
+                    logd!(2, "Using node {} as {}", target_node, role);
                     role.as_str()
                 }
                 None => {
-                    logd!(4, "Warning: Node '{}' is not configured or cannot determine its role. Skipping deployment.", model_node);
+                    logd!(4, "Warning: Node '{}' is not configured or cannot determine its role. Skipping deployment.", target_node);
                     continue;
                 }
             };
@@ -407,7 +460,7 @@ impl ActionControllerManager {
                 2,
                 "Processing model '{}' on node '{}' with action '{}'",
                 model_name,
-                model_node,
+                target_node,
                 action
             );
 

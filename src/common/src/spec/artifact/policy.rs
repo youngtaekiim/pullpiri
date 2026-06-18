@@ -153,7 +153,12 @@ mod tests {
     #[test]
     fn test_get_resource_threshold() {
         let policy = create_test_policy();
-        let threshold = policy.get_procedure().get_trigger().resourceThreshold.as_ref().unwrap();
+        let threshold = policy
+            .get_procedure()
+            .get_trigger()
+            .resourceThreshold
+            .as_ref()
+            .unwrap();
 
         assert_eq!(threshold.get_cpu(), Some(50));
         assert_eq!(threshold.get_memory(), Some(50));
