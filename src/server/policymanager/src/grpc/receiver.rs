@@ -298,6 +298,14 @@ impl PolicyManagerConnection for PolicyManagerGrpcServer {
 
         // Check each container with a policy for threshold violations
         for container in &running_containers {
+            println!(
+                "container {} : {} / {} / {} / {}",
+                container.container_id,
+                container.container_name,
+                container.scenario_name,
+                container.package_name,
+                container.policy_name
+            );
             if !container.policy_name.is_empty() {
                 self.check_threshold_and_trigger_offloading(&node_info, container)
                     .await;
