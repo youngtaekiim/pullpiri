@@ -5,9 +5,11 @@
 
 //! gRPC sender for MonitoringServer to communicate with PolicyManager
 
-use common::policymanager::policy_manager_connection_client::PolicyManagerConnectionClient;
-use common::policymanager::{ReportNodeMetricsRequest, ReportNodeMetricsResponse, RunningContainer};
 use common::monitoringserver::NodeInfo;
+use common::policymanager::policy_manager_connection_client::PolicyManagerConnectionClient;
+use common::policymanager::{
+    ReportNodeMetricsRequest, ReportNodeMetricsResponse, RunningContainer,
+};
 use tonic::{Request, Response, Status};
 
 const POLICYMANAGER_PORT: u16 = 47005;

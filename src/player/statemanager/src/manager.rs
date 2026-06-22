@@ -1278,9 +1278,9 @@ mod integration_tests {
         action_controller_connection_server::{
             ActionControllerConnection, ActionControllerConnectionServer,
         },
-        CompleteNetworkSettingRequest, CompleteNetworkSettingResponse,
-        OffloadModelRequest, OffloadModelResponse,
-        ReconcileRequest, ReconcileResponse, TriggerActionRequest, TriggerActionResponse,
+        CompleteNetworkSettingRequest, CompleteNetworkSettingResponse, OffloadModelRequest,
+        OffloadModelResponse, ReconcileRequest, ReconcileResponse, TriggerActionRequest,
+        TriggerActionResponse,
     };
     use std::sync::Arc;
     use tonic::{transport::Server, Request, Response, Status};

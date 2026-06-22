@@ -11,10 +11,9 @@ use common::actioncontroller::{
     action_controller_connection_server::{
         ActionControllerConnection, ActionControllerConnectionServer,
     },
-    CompleteNetworkSettingRequest, CompleteNetworkSettingResponse, 
-    OffloadModelRequest, OffloadModelResponse,
-    PodStatus as ActionStatus,
-    ReconcileRequest, ReconcileResponse, TriggerActionRequest, TriggerActionResponse,
+    CompleteNetworkSettingRequest, CompleteNetworkSettingResponse, OffloadModelRequest,
+    OffloadModelResponse, PodStatus as ActionStatus, ReconcileRequest, ReconcileResponse,
+    TriggerActionRequest, TriggerActionResponse,
 };
 use common::logd;
 

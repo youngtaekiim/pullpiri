@@ -26,7 +26,7 @@ pub async fn _send(condition: ReconcileRequest) -> Result<Response<ReconcileResp
 }
 
 /// Send offload model request to ActionController
-/// 
+///
 /// This triggers the model migration: terminate on source_node, launch on target_node
 pub async fn offload_model(
     request: OffloadModelRequest,
@@ -46,7 +46,10 @@ pub async fn offload_model(
     match client {
         Ok(mut client) => client.offload_model(Request::new(request)).await,
         Err(e) => {
-            eprintln!("[StateManager] Failed to connect to ActionController: {}", e);
+            eprintln!(
+                "[StateManager] Failed to connect to ActionController: {}",
+                e
+            );
             Err(Status::unavailable(format!(
                 "Failed to connect to ActionController: {}",
                 e

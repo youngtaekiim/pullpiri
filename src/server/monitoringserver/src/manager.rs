@@ -294,11 +294,13 @@ impl MonitoringServerManager {
             }
 
             // Get running containers on this node and report to PolicyManager
-            let running_containers = self.build_running_containers_list(&data_store, &node_info.node_name);
+            let running_containers =
+                self.build_running_containers_list(&data_store, &node_info.node_name);
             drop(data_store); // Release lock before async call
-            
+
             // Report to PolicyManager for threshold-based policy evaluation
-            self.report_to_policy_manager(node_info.clone(), running_containers).await;
+            self.report_to_policy_manager(node_info.clone(), running_containers)
+                .await;
         }
 
         println!("{}", "=".repeat(80));
@@ -311,17 +313,25 @@ impl MonitoringServerManager {
         node_name: &str,
     ) -> Vec<common::policymanager::RunningContainer> {
         use common::policymanager::RunningContainer;
-        
+
         let containers = data_store.get_containers_by_node(node_name);
         containers
             .iter()
             .map(|c| {
                 // Extract metadata from container annotation if available
                 let container_name = c.names.first().cloned().unwrap_or_default();
-                let scenario_name = c.annotation.get("scenario_name").cloned().unwrap_or_default();
-                let package_name = c.annotation.get("package_name").cloned().unwrap_or_default();
+                let scenario_name = c
+                    .annotation
+                    .get("scenario_name")
+                    .cloned()
+                    .unwrap_or_default();
+                let package_name = c
+                    .annotation
+                    .get("package_name")
+                    .cloned()
+                    .unwrap_or_default();
                 let policy_name = c.annotation.get("policy_name").cloned().unwrap_or_default();
-                
+
                 RunningContainer {
                     container_id: c.id.clone(),
                     container_name,
@@ -341,13 +351,14 @@ impl MonitoringServerManager {
     ) {
         // Only report if there are containers with policy defined
         let has_policy_containers = running_containers.iter().any(|c| !c.policy_name.is_empty());
-        
+
         if !has_policy_containers && running_containers.is_empty() {
             // Skip if no containers or no policy-enabled containers
             return;
         }
-        
-        match crate::grpc::sender::report_node_metrics(node_info.clone(), running_containers).await {
+
+        match crate::grpc::sender::report_node_metrics(node_info.clone(), running_containers).await
+        {
             Ok(response) => {
                 let resp = response.into_inner();
                 if resp.processed {

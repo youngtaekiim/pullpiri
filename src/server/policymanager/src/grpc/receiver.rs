@@ -5,8 +5,8 @@
 
 use common::policymanager::policy_manager_connection_server::PolicyManagerConnection;
 use common::policymanager::{
-    CheckNodePolicyRequest, CheckNodePolicyResponse,
-    ReportNodeMetricsRequest, ReportNodeMetricsResponse, RunningContainer,
+    CheckNodePolicyRequest, CheckNodePolicyResponse, ReportNodeMetricsRequest,
+    ReportNodeMetricsResponse, RunningContainer,
 };
 use common::spec::artifact::Policy;
 use common::statemanager::OffloadingRequest;
@@ -49,7 +49,7 @@ impl PolicyManagerGrpcServer {
         // Get threshold from policy
         let procedure = policy.get_procedure();
         let trigger = procedure.get_trigger();
-        
+
         let threshold = match &trigger.resourceThreshold {
             Some(t) => t,
             None => return, // No threshold defined
@@ -75,10 +75,7 @@ impl PolicyManagerGrpcServer {
         let current_node = &node_info.node_name;
 
         // Find first available node that is not the current node
-        let target_node = available_nodes
-            .iter()
-            .find(|n| *n != current_node)
-            .cloned();
+        let target_node = available_nodes.iter().find(|n| *n != current_node).cloned();
 
         let target_node = match target_node {
             Some(n) => n,
@@ -198,7 +195,10 @@ impl PolicyManagerConnection for PolicyManagerGrpcServer {
         let policy_str = match common::etcd::get(&etcd_key).await {
             Ok(s) => s,
             Err(e) => {
-                println!("[PolicyManager] Policy '{}' not found in etcd: {}", policy_name, e);
+                println!(
+                    "[PolicyManager] Policy '{}' not found in etcd: {}",
+                    policy_name, e
+                );
                 // If policy not found, allow by default (fail-open)
                 return Ok(Response::new(CheckNodePolicyResponse {
                     allowed: true,
@@ -212,7 +212,10 @@ impl PolicyManagerConnection for PolicyManagerGrpcServer {
         let policy: Policy = match serde_yaml::from_str(&policy_str) {
             Ok(p) => p,
             Err(e) => {
-                println!("[PolicyManager] Failed to parse policy '{}': {}", policy_name, e);
+                println!(
+                    "[PolicyManager] Failed to parse policy '{}': {}",
+                    policy_name, e
+                );
                 return Err(Status::internal(format!(
                     "Failed to parse policy '{}': {}",
                     policy_name, e
@@ -238,7 +241,10 @@ impl PolicyManagerConnection for PolicyManagerGrpcServer {
                 target_node, available_nodes
             );
             if !preferred_node.is_empty() {
-                println!("[PolicyManager] Suggested preferred node: '{}'", preferred_node);
+                println!(
+                    "[PolicyManager] Suggested preferred node: '{}'",
+                    preferred_node
+                );
             }
         }
 
@@ -269,7 +275,7 @@ impl PolicyManagerConnection for PolicyManagerGrpcServer {
         request: Request<ReportNodeMetricsRequest>,
     ) -> Result<Response<ReportNodeMetricsResponse>, Status> {
         let req = request.into_inner();
-        
+
         let node_info = match req.node_info {
             Some(info) => info,
             None => {
@@ -293,7 +299,8 @@ impl PolicyManagerConnection for PolicyManagerGrpcServer {
         // Check each container with a policy for threshold violations
         for container in &running_containers {
             if !container.policy_name.is_empty() {
-                self.check_threshold_and_trigger_offloading(&node_info, container).await;
+                self.check_threshold_and_trigger_offloading(&node_info, container)
+                    .await;
             }
         }
 

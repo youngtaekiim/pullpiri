@@ -765,12 +765,7 @@ impl ActionControllerManager {
             })?;
 
         // Step 2: Get pod YAML for the model
-        let model_yaml_key = format!(
-            "{}/{}/{}",
-            ETCD_POD_PREFIX,
-            package_name,
-            model.get_name()
-        );
+        let model_yaml_key = format!("{}/{}/{}", ETCD_POD_PREFIX, package_name, model.get_name());
         let pod_yaml = common::etcd::get(&model_yaml_key)
             .await
             .map_err(|e| format!("Failed to get pod YAML for model '{}': {}", model_name, e))?;

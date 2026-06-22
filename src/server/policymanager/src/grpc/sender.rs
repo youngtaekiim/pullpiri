@@ -23,10 +23,7 @@ pub async fn trigger_offloading(
     match client {
         Ok(mut client) => client.trigger_offloading(Request::new(request)).await,
         Err(e) => {
-            eprintln!(
-                "[PolicyManager] Failed to connect to StateManager: {}",
-                e
-            );
+            eprintln!("[PolicyManager] Failed to connect to StateManager: {}", e);
             Err(Status::unavailable(format!(
                 "Failed to connect to StateManager: {}",
                 e

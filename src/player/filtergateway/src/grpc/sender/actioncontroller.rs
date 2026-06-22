@@ -123,7 +123,10 @@ mod tests {
             request: Request<OffloadModelRequest>,
         ) -> std::result::Result<Response<OffloadModelResponse>, Status> {
             let req = request.into_inner();
-            println!("Mock server received offload_model: {} -> {}", req.source_node, req.target_node);
+            println!(
+                "Mock server received offload_model: {} -> {}",
+                req.source_node, req.target_node
+            );
             Ok(Response::new(OffloadModelResponse {
                 success: true,
                 message: "Mock offload successful".to_string(),
