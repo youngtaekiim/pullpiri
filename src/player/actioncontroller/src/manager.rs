@@ -413,19 +413,19 @@ impl ActionControllerManager {
                 {
                     Ok(result) => {
                         if !result.allowed {
-                            // Node not allowed, try preferred node
-                            if let Some(preferred) = result.preferred_node {
+                            // Node not allowed, try suggested node
+                            if let Some(suggested) = result.suggested_node {
                                 logd!(
                                     3,
-                                    "Node '{}' not allowed, using preferred node '{}'",
+                                    "Node '{}' not allowed, using suggested node '{}'",
                                     target_node,
-                                    preferred
+                                    suggested
                                 );
-                                target_node = preferred;
+                                target_node = suggested;
                             } else {
                                 logd!(
                                     4,
-                                    "Node '{}' not allowed and no preferred node available. Skipping model '{}'.",
+                                    "Node '{}' not allowed and no suggested node available. Skipping model '{}'.",
                                     target_node,
                                     model_name
                                 );
@@ -710,6 +710,112 @@ impl ActionControllerManager {
 
     pub async fn reload_all_node(&self, _model_name: &str, _model_node: &str) -> Result<()> {
         thread::sleep(Duration::from_millis(100));
+        Ok(())
+    }
+
+    /// Offloads (migrates) a model from source node to target node
+    ///
+    /// This method handles container migration when resource thresholds are exceeded.
+    /// It first stops the container on the source node, then starts it on the target node.
+    ///
+    /// # Arguments
+    ///
+    /// * `scenario_name` - Name of the scenario
+    /// * `package_name` - Name of the package containing the model
+    /// * `model_name` - Name of the model (container) to offload
+    /// * `source_node` - Current node where the container is running
+    /// * `target_node` - Target node to migrate to
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if offloading was successful
+    /// * `Err(...)` if offloading failed
+    pub async fn offload_model(
+        &self,
+        scenario_name: &str,
+        package_name: &str,
+        model_name: &str,
+        source_node: &str,
+        target_node: &str,
+    ) -> Result<()> {
+        println!(
+            "[ActionController] Starting offload: model '{}' from '{}' to '{}'",
+            model_name, source_node, target_node
+        );
+
+        // Step 1: Get model info from package
+        let package_key = format!("{}/{}", ETCD_PACKAGE_PREFIX, package_name);
+        let package_str = common::etcd::get(&package_key)
+            .await
+            .map_err(|e| format!("Failed to get package '{}': {}", package_name, e))?;
+
+        let package: Package = serde_yaml::from_str(&package_str)
+            .map_err(|e| format!("Failed to parse package '{}': {}", package_name, e))?;
+
+        // Find the model in the package
+        let models = package.get_models();
+        let model = models
+            .iter()
+            .find(|m: &&ModelInfo| m.get_name() == model_name)
+            .ok_or_else(|| {
+                format!(
+                    "Model '{}' not found in package '{}'",
+                    model_name, package_name
+                )
+            })?;
+
+        // Step 2: Get pod YAML for the model
+        let model_yaml_key = format!(
+            "{}/{}/{}",
+            ETCD_POD_PREFIX,
+            package_name,
+            model.get_name()
+        );
+        let pod_yaml = common::etcd::get(&model_yaml_key)
+            .await
+            .map_err(|e| format!("Failed to get pod YAML for model '{}': {}", model_name, e))?;
+
+        // Step 3: Determine node type (assume nodeagent for now)
+        let node_type = NODE_TYPE_NODEAGENT;
+
+        // Step 4: Stop the container on source node
+        println!(
+            "[ActionController] Stopping model '{}' on source node '{}'",
+            model_name, source_node
+        );
+        if let Err(e) = self.stop_workload(&pod_yaml, source_node, node_type).await {
+            eprintln!(
+                "[ActionController] Warning: Failed to stop workload on source node: {}",
+                e
+            );
+            // Continue anyway - the container might already be stopped or crashed
+        }
+
+        // Brief delay to ensure cleanup
+        thread::sleep(Duration::from_millis(200));
+
+        // Step 5: Start the container on target node
+        println!(
+            "[ActionController] Starting model '{}' on target node '{}'",
+            model_name, target_node
+        );
+        self.start_workload(&pod_yaml, target_node, node_type)
+            .await
+            .map_err(|e| {
+                format!(
+                    "Failed to start workload on target node '{}': {}",
+                    target_node, e
+                )
+            })?;
+
+        println!(
+            "[ActionController] Successfully offloaded model '{}' from '{}' to '{}'",
+            model_name, source_node, target_node
+        );
+
+        // Note: State change notification is handled by the caller (StateManager)
+        // as it manages the overall state transitions
+
         Ok(())
     }
 }

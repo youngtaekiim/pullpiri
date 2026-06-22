@@ -35,8 +35,6 @@ spec:
     availableNodes:
       - HPC
       - cloud
-    preferredNode: HPC
-    fallbackNode: cloud
   procedure:
     type: offloading
     strategy: redeployment

@@ -13,7 +13,7 @@ use common::Result;
 #[derive(Debug, Clone)]
 pub struct PolicyCheckResult {
     pub allowed: bool,
-    pub preferred_node: Option<String>,
+    pub suggested_node: Option<String>,
     pub message: String,
 }
 
@@ -65,10 +65,10 @@ pub async fn check_node_policy(policy_name: &str, target_node: &str) -> Result<P
 
     let result = PolicyCheckResult {
         allowed: response.allowed,
-        preferred_node: if response.fallback_node.is_empty() {
+        suggested_node: if response.suggested_node.is_empty() {
             None
         } else {
-            Some(response.fallback_node)
+            Some(response.suggested_node)
         },
         message: response.message,
     };
@@ -82,8 +82,8 @@ pub async fn check_node_policy(policy_name: &str, target_node: &str) -> Result<P
             target_node,
             result.message
         );
-        if let Some(ref preferred) = result.preferred_node {
-            logd!(3, "Preferred node suggested: '{}'", preferred);
+        if let Some(ref suggested) = result.suggested_node {
+            logd!(3, "Suggested node: '{}'", suggested);
         }
     }
 

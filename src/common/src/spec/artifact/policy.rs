@@ -29,9 +29,9 @@ pub struct PolicySpec {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct Placement {
+    /// List of nodes where the workload can be deployed.
+    /// The first node is preferred, and remaining nodes serve as fallback options.
     pub availableNodes: Vec<String>,
-    pub preferredNode: Option<String>,
-    pub fallbackNode: Option<String>,
 }
 
 impl Placement {
@@ -39,12 +39,18 @@ impl Placement {
         &self.availableNodes
     }
 
+    /// Get the preferred node (first in availableNodes)
     pub fn get_preferred_node(&self) -> Option<&str> {
-        self.preferredNode.as_deref()
+        self.availableNodes.first().map(|s| s.as_str())
     }
 
-    pub fn get_fallback_node(&self) -> Option<&str> {
-        self.fallbackNode.as_deref()
+    /// Get fallback nodes (all nodes except the first one)
+    pub fn get_fallback_nodes(&self) -> &[String] {
+        if self.availableNodes.len() > 1 {
+            &self.availableNodes[1..]
+        } else {
+            &[]
+        }
     }
 }
 
@@ -108,8 +114,6 @@ mod tests {
             spec: PolicySpec {
                 placement: Placement {
                     availableNodes: vec!["HPC".to_string(), "cloud".to_string()],
-                    preferredNode: Some("HPC".to_string()),
-                    fallbackNode: Some("cloud".to_string()),
                 },
                 procedure: Procedure {
                     r#type: "offloading".to_string(),
@@ -138,7 +142,7 @@ mod tests {
 
         assert_eq!(placement.get_available_nodes().len(), 2);
         assert_eq!(placement.get_preferred_node(), Some("HPC"));
-        assert_eq!(placement.get_fallback_node(), Some("cloud"));
+        assert_eq!(placement.get_fallback_nodes(), &["cloud".to_string()]);
     }
 
     #[test]
@@ -170,8 +174,6 @@ mod tests {
         let serialized = serde_json::to_string(&policy).unwrap();
 
         assert!(serialized.contains("\"availableNodes\""));
-        assert!(serialized.contains("\"preferredNode\""));
-        assert!(serialized.contains("\"fallbackNode\""));
         assert!(serialized.contains("\"resourceThreshold\""));
     }
 
@@ -185,9 +187,7 @@ mod tests {
             },
             "spec": {
                 "placement": {
-                    "availableNodes": ["HPC", "cloud"],
-                    "preferredNode": "HPC",
-                    "fallbackNode": "cloud"
+                    "availableNodes": ["HPC", "cloud"]
                 },
                 "procedure": {
                     "type": "offloading",

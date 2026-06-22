@@ -7,9 +7,14 @@ syntax = "proto3";
 
 package policymanager;
 
+import "monitoringserver.proto";
+
 service PolicyManagerConnection {
   // Check if a node is allowed for deployment based on policy
   rpc CheckNodePolicy(CheckNodePolicyRequest) returns (CheckNodePolicyResponse);
+  
+  // Report node metrics for threshold-based policy evaluation
+  rpc ReportNodeMetrics(ReportNodeMetricsRequest) returns (ReportNodeMetricsResponse);
 }
 
 // Request to check if deployment to a specific node is allowed
@@ -21,6 +26,27 @@ message CheckNodePolicyRequest {
 // Response for node policy check
 message CheckNodePolicyResponse {
   bool allowed = 1;            // Whether deployment to target_node is allowed
-  string fallback_node = 2;    // Suggested fallback node if not allowed (from policy)
+  string suggested_node = 2;   // Suggested alternative node if not allowed (first from availableNodes)
   string message = 3;          // Additional information or error message
+}
+
+// Request to report node metrics from monitoring server
+message ReportNodeMetricsRequest {
+  monitoringserver.NodeInfo node_info = 1;           // Current node metrics
+  repeated RunningContainer running_containers = 2;   // Containers running on this node
+}
+
+// Container info for policy evaluation
+message RunningContainer {
+  string container_id = 1;       // Container ID
+  string container_name = 2;     // Container name (model name)
+  string package_name = 3;       // Package this container belongs to
+  string scenario_name = 4;      // Scenario this container belongs to
+  string policy_name = 5;        // Policy associated with this container's package
+}
+
+// Response for node metrics report
+message ReportNodeMetricsResponse {
+  bool processed = 1;            // Whether the metrics were processed successfully
+  string message = 2;            // Additional information
 }
