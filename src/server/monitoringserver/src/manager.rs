@@ -335,6 +335,11 @@ impl MonitoringServerManager {
                     .get("io.piccolo.annotations.policy")
                     .cloned()
                     .unwrap_or_default();
+                let model_name = c
+                    .annotation
+                    .get("io.piccolo.annotations.model")
+                    .cloned()
+                    .unwrap_or_default();
 
                 RunningContainer {
                     container_id: c.id.clone(),
@@ -342,6 +347,7 @@ impl MonitoringServerManager {
                     package_name,
                     scenario_name,
                     policy_name,
+                    model_name,
                 }
             })
             .collect()

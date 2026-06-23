@@ -460,10 +460,20 @@ fn apply_cdi_mounts_and_env(
         .cloned()
         .unwrap_or_default();
 
+    // Collect existing mount targets to avoid duplicates
+    let mut existing_targets: std::collections::HashSet<String> = mounts
+        .iter()
+        .filter_map(|m| m["Target"].as_str().map(|s| s.to_string()))
+        .collect();
+
     // Add mounts from top-level containerEdits
     if let Some(ref common_edits) = cdi_spec.container_edits {
         if let Some(ref cdi_mounts) = common_edits.mounts {
             for mount in cdi_mounts {
+                // Skip if target already exists (avoid duplicate mount destination)
+                if existing_targets.contains(&mount.container_path) {
+                    continue;
+                }
                 if Path::new(&mount.host_path).exists() {
                     let options = mount
                         .options
@@ -477,6 +487,7 @@ fn apply_cdi_mounts_and_env(
                         "Target": mount.container_path,
                         "Options": options.split(',').collect::<Vec<_>>()
                     }));
+                    existing_targets.insert(mount.container_path.clone());
                 }
             }
         }
@@ -536,9 +547,21 @@ fn apply_volume_mounts(
                 .cloned()
                 .unwrap_or_default();
 
+            // Collect existing mount targets to avoid duplicates
+            let mut existing_targets: std::collections::HashSet<String> = mounts
+                .iter()
+                .filter_map(|m| m["Target"].as_str().map(|s| s.to_string()))
+                .collect();
+
             for mount in volume_mounts {
                 let mount_name = mount["name"].as_str().unwrap_or("");
                 let mount_path = mount["mountPath"].as_str().unwrap_or("");
+
+                // Skip if target already exists (avoid duplicate mount destination)
+                if existing_targets.contains(mount_path) {
+                    continue;
+                }
+
                 for volume in volumes {
                     if volume["name"].as_str() == Some(mount_name) {
                         if let Some(host_path) = volume["hostPath"]["path"].as_str() {
@@ -547,6 +570,7 @@ fn apply_volume_mounts(
                                 "Source": host_path,
                                 "Target": mount_path
                             }));
+                            existing_targets.insert(mount_path.to_string());
                         }
                         break;
                     }

@@ -239,6 +239,7 @@ impl ActionControllerConnection for ActionControllerReceiver {
                 &req.model_name,
                 &req.source_node,
                 &req.target_node,
+                &req.policy_name,
             )
             .await
         {

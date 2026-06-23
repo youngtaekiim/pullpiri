@@ -39,10 +39,11 @@ message ReportNodeMetricsRequest {
 // Container info for policy evaluation
 message RunningContainer {
   string container_id = 1;       // Container ID
-  string container_name = 2;     // Container name (model name)
+  string container_name = 2;     // Container name (e.g., modelname_containername)
   string package_name = 3;       // Package this container belongs to
   string scenario_name = 4;      // Scenario this container belongs to
   string policy_name = 5;        // Policy associated with this container's package
+  string model_name = 6;         // Model name from annotation (for accurate lookup)
 }
 
 // Response for node metrics report

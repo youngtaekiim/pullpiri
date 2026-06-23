@@ -572,6 +572,29 @@ impl ActionControllerManager {
             })?;
         }
 
+        // Delete policy from etcd when terminate action completes
+        if action == "terminate" && !policy_name.is_empty() {
+            let policy_key = format!("Policy/{}", policy_name);
+            match common::etcd::delete(&policy_key).await {
+                Ok(_) => {
+                    logd!(
+                        2,
+                        "Deleted policy '{}' from etcd after terminate action",
+                        policy_name
+                    );
+                }
+                Err(e) => {
+                    logd!(
+                        4,
+                        "Warning: Failed to delete policy '{}' from etcd: {}",
+                        policy_name,
+                        e
+                    );
+                    // Don't fail the whole operation if policy deletion fails
+                }
+            }
+        }
+
         if let Some(sched) = package.get_schedule() {
             self.handle_realtime_sched(sched).await?;
         }
@@ -816,6 +839,7 @@ impl ActionControllerManager {
     /// * `model_name` - Name of the model (container) to offload
     /// * `source_node` - Current node where the container is running
     /// * `target_node` - Target node to migrate to
+    /// * `policy_name` - Name of the policy that triggered offloading
     ///
     /// # Returns
     ///
@@ -828,6 +852,7 @@ impl ActionControllerManager {
         model_name: &str,
         source_node: &str,
         target_node: &str,
+        policy_name: &str,
     ) -> Result<()> {
         println!(
             "[ActionController] Starting offload: model '{}' from '{}' to '{}'",
@@ -856,10 +881,19 @@ impl ActionControllerManager {
             })?;
 
         // Step 2: Get pod YAML for the model
-        let model_yaml_key = format!("{}/{}/{}", ETCD_POD_PREFIX, package_name, model.get_name());
+        let model_yaml_key = format!("{}/{}", ETCD_POD_PREFIX, model.get_name());
         let pod_yaml = common::etcd::get(&model_yaml_key)
             .await
             .map_err(|e| format!("Failed to get pod YAML for model '{}': {}", model_name, e))?;
+
+        // Step 2.5: Inject annotations for tracking (so container can be identified after migration)
+        let pod_yaml = self.inject_pod_annotations(
+            &pod_yaml,
+            scenario_name,
+            package_name,
+            policy_name,
+            model_name,
+        )?;
 
         // Step 3: Determine node type (assume nodeagent for now)
         let node_type = NODE_TYPE_NODEAGENT;

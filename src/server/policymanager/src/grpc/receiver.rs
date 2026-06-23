@@ -11,17 +11,59 @@ use common::policymanager::{
 use common::spec::artifact::Policy;
 use common::statemanager::OffloadingRequest;
 use std::collections::{HashMap, HashSet};
-use std::sync::Mutex;
+use std::sync::{Mutex, RwLock};
 use std::time::{Duration, Instant};
 use tonic::{Request, Response, Status};
 
 const ETCD_POLICY_PREFIX: &str = "Policy";
 /// Cooldown duration before allowing another offload for the same package
 const OFFLOAD_COOLDOWN_SECS: u64 = 30;
+/// Cache TTL for policies (seconds)
+const POLICY_CACHE_TTL_SECS: u64 = 10;
+
+/// Cached policy with timestamp
+struct CachedPolicy {
+    policy: Policy,
+    cached_at: Instant,
+}
 
 lazy_static::lazy_static! {
     /// Track last offload time per package to prevent duplicate offloading
     static ref OFFLOAD_COOLDOWNS: Mutex<HashMap<String, Instant>> = Mutex::new(HashMap::new());
+    /// Policy cache to reduce etcd calls
+    static ref POLICY_CACHE: RwLock<HashMap<String, CachedPolicy>> = RwLock::new(HashMap::new());
+}
+
+/// Get policy from cache or fetch from etcd
+async fn get_policy_cached(policy_name: &str) -> Option<Policy> {
+    // Try to get from cache first
+    {
+        let cache = POLICY_CACHE.read().unwrap();
+        if let Some(cached) = cache.get(policy_name) {
+            if cached.cached_at.elapsed() < Duration::from_secs(POLICY_CACHE_TTL_SECS) {
+                return Some(cached.policy.clone());
+            }
+        }
+    }
+
+    // Cache miss or expired - fetch from etcd
+    let etcd_key = format!("{}/{}", ETCD_POLICY_PREFIX, policy_name);
+    let policy_str = common::etcd::get(&etcd_key).await.ok()?;
+    let policy: Policy = serde_yaml::from_str(&policy_str).ok()?;
+
+    // Store in cache
+    {
+        let mut cache = POLICY_CACHE.write().unwrap();
+        cache.insert(
+            policy_name.to_string(),
+            CachedPolicy {
+                policy: policy.clone(),
+                cached_at: Instant::now(),
+            },
+        );
+    }
+
+    Some(policy)
 }
 
 /// gRPC server implementation for PolicyManager
@@ -61,17 +103,10 @@ impl PolicyManagerGrpcServer {
             }
         }
 
-        // Fetch policy from etcd
-        let etcd_key = format!("{}/{}", ETCD_POLICY_PREFIX, policy_name);
-        let policy_str = match common::etcd::get(&etcd_key).await {
-            Ok(s) => s,
-            Err(_) => return false, // Policy not found, skip
-        };
-
-        // Parse policy
-        let policy: Policy = match serde_yaml::from_str(&policy_str) {
-            Ok(p) => p,
-            Err(_) => return false, // Parse error, skip
+        // Fetch policy from cache (or etcd if not cached)
+        let policy = match get_policy_cached(policy_name).await {
+            Some(p) => p,
+            None => return false, // Policy not found or parse error, skip
         };
 
         // Get threshold from policy
@@ -148,7 +183,7 @@ impl PolicyManagerGrpcServer {
         let offloading_request = OffloadingRequest {
             scenario_name: container.scenario_name.clone(),
             package_name: container.package_name.clone(),
-            model_name: container.container_name.clone(),
+            model_name: container.model_name.clone(),
             source_node: current_node.clone(),
             target_node: target_node.clone(),
             policy_name: policy_name.clone(),
@@ -225,14 +260,13 @@ impl PolicyManagerConnection for PolicyManagerGrpcServer {
             }));
         }
 
-        // Fetch policy from etcd
-        let etcd_key = format!("{}/{}", ETCD_POLICY_PREFIX, policy_name);
-        let policy_str = match common::etcd::get(&etcd_key).await {
-            Ok(s) => s,
-            Err(e) => {
+        // Fetch policy from cache (or etcd if not cached)
+        let policy = match get_policy_cached(&policy_name).await {
+            Some(p) => p,
+            None => {
                 println!(
-                    "[PolicyManager] Policy '{}' not found in etcd: {}",
-                    policy_name, e
+                    "[PolicyManager] Policy '{}' not found or parse error",
+                    policy_name
                 );
                 // If policy not found, allow by default (fail-open)
                 return Ok(Response::new(CheckNodePolicyResponse {
@@ -240,21 +274,6 @@ impl PolicyManagerConnection for PolicyManagerGrpcServer {
                     suggested_node: String::new(),
                     message: format!("Policy '{}' not found, allowing deployment", policy_name),
                 }));
-            }
-        };
-
-        // Parse policy
-        let policy: Policy = match serde_yaml::from_str(&policy_str) {
-            Ok(p) => p,
-            Err(e) => {
-                println!(
-                    "[PolicyManager] Failed to parse policy '{}': {}",
-                    policy_name, e
-                );
-                return Err(Status::internal(format!(
-                    "Failed to parse policy '{}': {}",
-                    policy_name, e
-                )));
             }
         };
 
