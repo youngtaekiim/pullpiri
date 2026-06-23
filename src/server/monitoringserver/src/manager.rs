@@ -322,15 +322,19 @@ impl MonitoringServerManager {
                 let container_name = c.names.first().cloned().unwrap_or_default();
                 let scenario_name = c
                     .annotation
-                    .get("scenario_name")
+                    .get("io.piccolo.annotations.scenario")
                     .cloned()
                     .unwrap_or_default();
                 let package_name = c
                     .annotation
-                    .get("package_name")
+                    .get("io.piccolo.annotations.package")
                     .cloned()
                     .unwrap_or_default();
-                let policy_name = c.annotation.get("policy_name").cloned().unwrap_or_default();
+                let policy_name = c
+                    .annotation
+                    .get("io.piccolo.annotations.policy")
+                    .cloned()
+                    .unwrap_or_default();
 
                 RunningContainer {
                     container_id: c.id.clone(),

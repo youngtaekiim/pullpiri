@@ -10,9 +10,19 @@ use common::policymanager::{
 };
 use common::spec::artifact::Policy;
 use common::statemanager::OffloadingRequest;
+use std::collections::{HashMap, HashSet};
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 use tonic::{Request, Response, Status};
 
 const ETCD_POLICY_PREFIX: &str = "Policy";
+/// Cooldown duration before allowing another offload for the same package
+const OFFLOAD_COOLDOWN_SECS: u64 = 30;
+
+lazy_static::lazy_static! {
+    /// Track last offload time per package to prevent duplicate offloading
+    static ref OFFLOAD_COOLDOWNS: Mutex<HashMap<String, Instant>> = Mutex::new(HashMap::new());
+}
 
 /// gRPC server implementation for PolicyManager
 pub struct PolicyManagerGrpcServer {}
@@ -23,27 +33,45 @@ impl PolicyManagerGrpcServer {
     }
 
     /// Check if resource threshold is exceeded and trigger offloading if needed
+    /// Returns true if offloading was triggered, false otherwise
     async fn check_threshold_and_trigger_offloading(
         &self,
         node_info: &common::monitoringserver::NodeInfo,
         container: &RunningContainer,
-    ) {
+    ) -> bool {
         let policy_name = &container.policy_name;
+        let package_name = &container.package_name;
+
         if policy_name.is_empty() {
-            return;
+            return false;
+        }
+
+        // Check cooldown - skip if this package was offloaded recently
+        {
+            let cooldowns = OFFLOAD_COOLDOWNS.lock().unwrap();
+            if let Some(last_offload) = cooldowns.get(package_name) {
+                if last_offload.elapsed() < Duration::from_secs(OFFLOAD_COOLDOWN_SECS) {
+                    println!(
+                        "[PolicyManager] Skipping offload for package '{}': cooldown active ({:.1}s remaining)",
+                        package_name,
+                        OFFLOAD_COOLDOWN_SECS as f64 - last_offload.elapsed().as_secs_f64()
+                    );
+                    return false;
+                }
+            }
         }
 
         // Fetch policy from etcd
         let etcd_key = format!("{}/{}", ETCD_POLICY_PREFIX, policy_name);
         let policy_str = match common::etcd::get(&etcd_key).await {
             Ok(s) => s,
-            Err(_) => return, // Policy not found, skip
+            Err(_) => return false, // Policy not found, skip
         };
 
         // Parse policy
         let policy: Policy = match serde_yaml::from_str(&policy_str) {
             Ok(p) => p,
-            Err(_) => return, // Parse error, skip
+            Err(_) => return false, // Parse error, skip
         };
 
         // Get threshold from policy
@@ -52,7 +80,7 @@ impl PolicyManagerGrpcServer {
 
         let threshold = match &trigger.resourceThreshold {
             Some(t) => t,
-            None => return, // No threshold defined
+            None => return false, // No threshold defined
         };
 
         // Check CPU threshold
@@ -66,7 +94,7 @@ impl PolicyManagerGrpcServer {
         });
 
         if !cpu_exceeded && !mem_exceeded {
-            return; // No threshold exceeded
+            return false; // No threshold exceeded
         }
 
         // Find target node for offloading
@@ -81,10 +109,10 @@ impl PolicyManagerGrpcServer {
             Some(n) => n,
             None => {
                 println!(
-                    "[PolicyManager] No target node available for offloading container '{}' from '{}'",
-                    container.container_name, current_node
+                    "[PolicyManager] No target node available for offloading package '{}' from '{}'",
+                    package_name, current_node
                 );
-                return;
+                return false;
             }
         };
 
@@ -112,8 +140,8 @@ impl PolicyManagerGrpcServer {
         };
 
         println!(
-            "[PolicyManager] Triggering offloading: container '{}' from '{}' to '{}'. Reason: {}",
-            container.container_name, current_node, target_node, reason
+            "[PolicyManager] Triggering offloading: package '{}' from '{}' to '{}'. Reason: {}",
+            package_name, current_node, target_node, reason
         );
 
         // Trigger offloading via StateManager
@@ -135,6 +163,12 @@ impl PolicyManagerGrpcServer {
                         "[PolicyManager] Offloading request accepted: {}",
                         resp.message
                     );
+                    // Record cooldown for this package
+                    {
+                        let mut cooldowns = OFFLOAD_COOLDOWNS.lock().unwrap();
+                        cooldowns.insert(package_name.clone(), Instant::now());
+                    }
+                    return true;
                 } else {
                     println!(
                         "[PolicyManager] Offloading request rejected: {}",
@@ -149,6 +183,7 @@ impl PolicyManagerGrpcServer {
                 );
             }
         }
+        false
     }
 }
 
@@ -296,19 +331,37 @@ impl PolicyManagerConnection for PolicyManagerGrpcServer {
             running_containers.len()
         );
 
+        // Track which packages have been processed in this request to avoid duplicates
+        let mut processed_packages: HashSet<String> = HashSet::new();
+
         // Check each container with a policy for threshold violations
         for container in &running_containers {
+            // Skip if no policy or package defined
+            if container.policy_name.is_empty() || container.package_name.is_empty() {
+                continue;
+            }
+
+            // Skip if this package was already processed in this request
+            if processed_packages.contains(&container.package_name) {
+                println!(
+                    "[PolicyManager] Skipping container '{}': package '{}' already processed in this request",
+                    container.container_name, container.package_name
+                );
+                continue;
+            }
+
             println!(
-                "container {} : {} / {} / {} / {}",
-                container.container_id,
-                container.container_name,
-                container.scenario_name,
-                container.package_name,
-                container.policy_name
+                "[PolicyManager] Checking container '{}' (package: {}, policy: {})",
+                container.container_name, container.package_name, container.policy_name
             );
-            if !container.policy_name.is_empty() {
-                self.check_threshold_and_trigger_offloading(&node_info, container)
-                    .await;
+
+            // Check threshold and trigger offloading if needed
+            if self
+                .check_threshold_and_trigger_offloading(&node_info, container)
+                .await
+            {
+                // Mark this package as processed
+                processed_packages.insert(container.package_name.clone());
             }
         }
 

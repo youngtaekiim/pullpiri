@@ -94,13 +94,33 @@ struct CdiMount {
     options: Option<Vec<String>>,
 }
 
-/// Parse Pod YAML and extract pod name and spec
-fn parse_pod(pod_yaml: &str) -> Result<(String, serde_json::Value), Box<dyn std::error::Error>> {
+/// Parse Pod YAML and extract pod name, spec, and annotations
+fn parse_pod(
+    pod_yaml: &str,
+) -> Result<
+    (
+        String,
+        serde_json::Value,
+        std::collections::HashMap<String, String>,
+    ),
+    Box<dyn std::error::Error>,
+> {
     let pod = serde_yaml::from_str::<common::spec::k8s::Pod>(pod_yaml)?;
     let pod_name = pod.get_name();
     let pod_json = serde_json::to_value(&pod)?;
     let spec = pod_json["spec"].clone();
-    Ok((pod_name, spec))
+
+    // Extract annotations from metadata
+    let annotations = pod_json["metadata"]["annotations"]
+        .as_object()
+        .map(|obj| {
+            obj.iter()
+                .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    Ok((pod_name, spec, annotations))
 }
 
 /// Get container names from pod spec
@@ -694,6 +714,7 @@ async fn create_container(
     container: &serde_json::Value,
     spec: &serde_json::Value,
     host_network: bool,
+    annotations: &std::collections::HashMap<String, String>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let image = container["image"]
         .as_str()
@@ -708,7 +729,8 @@ async fn create_container(
     let name = format!("{}_{}", pod_name, container_name);
 
     // Build the complete container creation request
-    let create_body = build_container_spec(&name, image, container, spec, host_network);
+    let create_body =
+        build_container_spec(&name, image, container, spec, host_network, annotations);
 
     println!("{}", create_body);
 
@@ -733,11 +755,17 @@ fn build_container_spec(
     container: &serde_json::Value,
     spec: &serde_json::Value,
     host_network: bool,
+    annotations: &std::collections::HashMap<String, String>,
 ) -> serde_json::Value {
     let mut create_body = json!({
         "Image": image,
         "Name": name,
     });
+
+    // Add annotations as Labels (Docker-compatible API uses Labels, not Annotations)
+    if !annotations.is_empty() {
+        create_body["Labels"] = json!(annotations);
+    }
 
     // Terminal settings (stdin/tty)
     apply_terminal_settings(&mut create_body, container);
@@ -818,14 +846,15 @@ async fn create_container_via_api(
 }
 
 pub async fn start(pod_yaml: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let (pod_name, spec) = parse_pod(pod_yaml)?;
+    let (pod_name, spec, annotations) = parse_pod(pod_yaml)?;
     let host_network = spec["hostNetwork"].as_bool().unwrap_or(false);
 
     let mut container_ids = Vec::new();
 
     if let Some(containers) = spec["containers"].as_array() {
         for container in containers.iter() {
-            let container_id = create_container(&pod_name, container, &spec, host_network).await?;
+            let container_id =
+                create_container(&pod_name, container, &spec, host_network, &annotations).await?;
 
             // Start the container
             println!("Starting container: {}", container_id);
@@ -841,7 +870,7 @@ pub async fn start(pod_yaml: &str) -> Result<Vec<String>, Box<dyn std::error::Er
 }
 
 pub async fn stop(pod_yaml: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let (pod_name, spec) = parse_pod(pod_yaml)?;
+    let (pod_name, spec, _annotations) = parse_pod(pod_yaml)?;
     let container_names = get_container_names(&pod_name, &spec)?;
 
     for full_container_name in container_names {
@@ -878,7 +907,7 @@ pub async fn stop(pod_yaml: &str) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub async fn restart(pod_yaml: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let (pod_name, spec) = parse_pod(pod_yaml)?;
+    let (pod_name, spec, _annotations) = parse_pod(pod_yaml)?;
     let container_names = get_container_names(&pod_name, &spec)?;
 
     for full_container_name in container_names {

@@ -215,6 +215,8 @@ impl ActionControllerManager {
         model_info: &ModelInfo,
         node_type: &str,
         scenario_name: &str,
+        package_name: &str,
+        policy_name: &str,
         network_str: &Option<String>,
         node_str: &Option<String>,
     ) -> Result<()> {
@@ -222,9 +224,19 @@ impl ActionControllerManager {
         let model_node = model_info.get_node();
         let pod = common::etcd::get(&format!("{}/{}", ETCD_POD_PREFIX, model_name)).await?;
 
+        // Inject annotations into pod YAML for tracking
+        let pod_with_annotations = self.inject_pod_annotations(
+            &pod,
+            scenario_name,
+            package_name,
+            policy_name,
+            &model_name,
+        )?;
+
         match action {
             "launch" => {
-                self.start_workload(&pod, &model_node, node_type).await?;
+                self.start_workload(&pod_with_annotations, &model_node, node_type)
+                    .await?;
 
                 if network_str.is_some() && node_str.is_some() {
                     request_network_pod(
@@ -239,10 +251,12 @@ impl ActionControllerManager {
                 }
             }
             "terminate" => {
-                self.stop_workload(&pod, &model_node, node_type).await?;
+                self.stop_workload(&pod_with_annotations, &model_node, node_type)
+                    .await?;
             }
             "update" | "rollback" => {
-                self.restart_workload(&pod, &model_node, node_type).await?;
+                self.restart_workload(&pod_with_annotations, &model_node, node_type)
+                    .await?;
             }
             _ => {
                 // Ignore unknown actions
@@ -250,6 +264,80 @@ impl ActionControllerManager {
         }
 
         Ok(())
+    }
+
+    /// Inject tracking annotations into pod YAML
+    fn inject_pod_annotations(
+        &self,
+        pod_yaml: &str,
+        scenario_name: &str,
+        package_name: &str,
+        policy_name: &str,
+        model_name: &str,
+    ) -> Result<String> {
+        // Parse pod YAML as generic Value to preserve structure
+        let mut pod: serde_yaml::Value = serde_yaml::from_str(pod_yaml)
+            .map_err(|e| format!("Failed to parse pod YAML: {}", e))?;
+
+        // Build annotations mapping
+        let mut annotations = serde_yaml::Mapping::new();
+        annotations.insert(
+            serde_yaml::Value::String("io.piccolo.annotations.scenario".to_string()),
+            serde_yaml::Value::String(scenario_name.to_string()),
+        );
+        annotations.insert(
+            serde_yaml::Value::String("io.piccolo.annotations.package".to_string()),
+            serde_yaml::Value::String(package_name.to_string()),
+        );
+        annotations.insert(
+            serde_yaml::Value::String("io.piccolo.annotations.policy".to_string()),
+            serde_yaml::Value::String(policy_name.to_string()),
+        );
+        annotations.insert(
+            serde_yaml::Value::String("io.piccolo.annotations.model".to_string()),
+            serde_yaml::Value::String(model_name.to_string()),
+        );
+
+        // Get or create metadata mapping
+        let metadata = match pod.get_mut("metadata") {
+            Some(m) if m.is_mapping() => m.as_mapping_mut().unwrap(),
+            _ => {
+                pod.as_mapping_mut().ok_or("Pod is not a mapping")?.insert(
+                    serde_yaml::Value::String("metadata".to_string()),
+                    serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+                );
+                pod.get_mut("metadata")
+                    .and_then(|m| m.as_mapping_mut())
+                    .ok_or("Failed to create metadata")?
+            }
+        };
+
+        // Merge with existing annotations if present
+        if let Some(existing) =
+            metadata.get_mut(&serde_yaml::Value::String("annotations".to_string()))
+        {
+            if let Some(existing_map) = existing.as_mapping_mut() {
+                for (k, v) in annotations {
+                    existing_map.insert(k, v);
+                }
+            } else {
+                // Replace non-mapping with our annotations
+                metadata.insert(
+                    serde_yaml::Value::String("annotations".to_string()),
+                    serde_yaml::Value::Mapping(annotations),
+                );
+            }
+        } else {
+            // No existing annotations, insert new ones
+            metadata.insert(
+                serde_yaml::Value::String("annotations".to_string()),
+                serde_yaml::Value::Mapping(annotations),
+            );
+        }
+
+        // Serialize back to YAML
+        serde_yaml::to_string(&pod)
+            .map_err(|e| format!("Failed to serialize pod YAML: {}", e).into())
     }
 
     /// Handle realtime scheduling for a model
@@ -388,8 +476,9 @@ impl ActionControllerManager {
         let action = scenario.get_actions();
         let node_roles = self.load_node_roles(&package).await;
 
-        // Get policy name from package (if specified)
+        // Get policy name and package name for annotation injection
         let policy_name = package.get_policy().clone().unwrap_or_default();
+        let package_name = package.get_name();
 
         for mi in package.get_models() {
             let model_name = mi.get_name();
@@ -469,6 +558,8 @@ impl ActionControllerManager {
                 &mi,
                 node_type,
                 scenario_name,
+                &package_name,
+                &policy_name,
                 &network_str,
                 &node_str,
             )
