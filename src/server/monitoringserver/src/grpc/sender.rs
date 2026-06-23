@@ -8,19 +8,16 @@
 use common::monitoringserver::NodeInfo;
 use common::policymanager::policy_manager_connection_client::PolicyManagerConnectionClient;
 use common::policymanager::{
-    ReportNodeMetricsRequest, ReportNodeMetricsResponse, RunningContainer,
+    connect_server, ReportNodeMetricsRequest, ReportNodeMetricsResponse, RunningContainer,
 };
 use tonic::{Request, Response, Status};
-
-const POLICYMANAGER_PORT: u16 = 47005;
 
 /// Send node metrics to PolicyManager for threshold-based policy evaluation
 pub async fn report_node_metrics(
     node_info: NodeInfo,
     running_containers: Vec<RunningContainer>,
 ) -> Result<Response<ReportNodeMetricsResponse>, Status> {
-    // PolicyManager runs on localhost (same machine as MonitoringServer on master node)
-    let addr = format!("http://127.0.0.1:{}", POLICYMANAGER_PORT);
+    let addr = connect_server();
 
     let client = PolicyManagerConnectionClient::connect(addr).await;
 
