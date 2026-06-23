@@ -6,17 +6,14 @@
 //! gRPC sender for PolicyManager to communicate with StateManager
 
 use common::statemanager::state_manager_connection_client::StateManagerConnectionClient;
-use common::statemanager::{OffloadingRequest, OffloadingResponse};
+use common::statemanager::{connect_server, OffloadingRequest, OffloadingResponse};
 use tonic::{Request, Response, Status};
-
-const STATEMANAGER_PORT: u16 = 47006;
 
 /// Trigger offloading request to StateManager for container migration
 pub async fn trigger_offloading(
     request: OffloadingRequest,
 ) -> Result<Response<OffloadingResponse>, Status> {
-    // StateManager runs on localhost (same machine as PolicyManager on master node)
-    let addr = format!("http://127.0.0.1:{}", STATEMANAGER_PORT);
+    let addr = connect_server();
 
     let client = StateManagerConnectionClient::connect(addr).await;
 
