@@ -50,6 +50,6 @@ spec:
   volumes:
   - name: test-script
     hostPath:
-      path: /root/work/pullpiri/examples/gpu/test-gpu-basic.sh
+      path: /root/work/pullpiri/examples/resources/gpu/test-gpu-basic.sh
       type: File
   restartPolicy: Never

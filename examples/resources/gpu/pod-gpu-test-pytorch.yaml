@@ -53,6 +53,6 @@ spec:
   volumes:
   - name: test-script
     hostPath:
-      path: /root/work/pullpiri/examples/gpu/test-gpu-cuda.py
+      path: /root/work/pullpiri/examples/resources/gpu/test-gpu-cuda.py
       type: File
   restartPolicy: Never

@@ -37,7 +37,7 @@ metadata:
 spec:
   containers:
   - name: gpu-test
-    image: nvidia/cuda:12.2.0-runtime-ubuntu22.04
+    image: nvcr.io/nvidia/cuda:13.3.0-runtime-ubuntu24.04
     command: ["/bin/bash"]
     args: ["/test-nvidia-smi.sh"]
     resources:
@@ -59,7 +59,7 @@ spec:
   volumes:
   - name: test-script
     hostPath:
-      path: /root/work/pullpiri/examples/gpu/test-nvidia-smi.sh
+      path: /root/work/pullpiri/examples/resources/gpu/test-nvidia-smi.sh
       type: File
   - name: nvidia-smi
     hostPath:
