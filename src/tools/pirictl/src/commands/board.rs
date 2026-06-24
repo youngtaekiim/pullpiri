@@ -273,3 +273,333 @@ async fn get_board_raw(client: &SettingsClient, board_id: &str) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    async fn make_client(base_url: &str) -> SettingsClient {
+        SettingsClient::new(base_url, 5).unwrap()
+    }
+
+    // ── handle() dispatch ────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_handle_get() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"boards": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        let result = handle(&client, BoardAction::Get).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_describe() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards/board-1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"board_id": "board-1"})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        let result = handle(
+            &client,
+            BoardAction::Describe {
+                id: "board-1".into(),
+            },
+        )
+        .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_raw_no_id() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"boards": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        let result = handle(&client, BoardAction::Raw { id: None }).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_raw_with_id() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards/b1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"board_id": "b1"})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        let result = handle(
+            &client,
+            BoardAction::Raw {
+                id: Some("b1".into()),
+            },
+        )
+        .await;
+        assert!(result.is_ok());
+    }
+
+    // ── get_boards ───────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_get_boards_with_boards_array() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "boards": [
+                {
+                    "board_id": "board-alpha",
+                    "nodes": [{"node_name": "n1"}, {"node_name": "n2"}],
+                    "socs": [{"soc_id": "s1"}]
+                }
+            ]
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        let result = handle(&client, BoardAction::Get).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_boards_empty_array() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"boards": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, BoardAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_boards_single_board_response() {
+        // Response is a single board object (no "boards" array key)
+        let server = MockServer::start().await;
+        let body = json!({
+            "board_id": "solo-board",
+            "nodes": [],
+            "socs": []
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, BoardAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_boards_no_boards_key() {
+        // Response has neither "boards" array nor "board_id"
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, BoardAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_boards_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, BoardAction::Get).await.is_err());
+    }
+
+    // ── describe_board ───────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_describe_board_full_fields() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "board_id": "board-full",
+            "total_cpu_count": 8,
+            "total_cpu_usage": 42.5,
+            "total_gpu_count": 2,
+            "total_memory": 1073741824u64,
+            "total_used_memory": 536870912u64,
+            "total_mem_usage": 50.0,
+            "total_rx_bytes": 1024u64,
+            "total_tx_bytes": 2048u64,
+            "total_read_bytes": 4096u64,
+            "total_write_bytes": 8192u64,
+            "socs": [{"soc_id": "soc-1", "nodes": [{"node_name": "n1"}]}],
+            "nodes": [{"node_name": "node-1", "ip": "10.0.0.1"}],
+            "last_updated": {"secs_since_epoch": 1000000000u64, "nanos_since_epoch": 0}
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards/board-full"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        let result = handle(
+            &client,
+            BoardAction::Describe {
+                id: "board-full".into(),
+            },
+        )
+        .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_board_missing_optional_fields() {
+        let server = MockServer::start().await;
+        // Minimal response - only board_id, no resource fields
+        let body = json!({"board_id": "bare-board"});
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards/bare-board"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            BoardAction::Describe {
+                id: "bare-board".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_board_with_multiple_socs_and_nodes() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "board_id": "multi-board",
+            "socs": [
+                {"soc_id": "soc-a", "nodes": [{"node_name": "n1"}, {"node_name": "n2"}]},
+                {"soc_id": "soc-b", "nodes": []}
+            ],
+            "nodes": [
+                {"node_name": "node-a", "ip": "192.168.1.1"},
+                {"node_name": "node-b", "ip": "192.168.1.2"}
+            ]
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards/multi-board"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            BoardAction::Describe {
+                id: "multi-board".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_board_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards/bad-id"))
+            .respond_with(ResponseTemplate::new(404))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            BoardAction::Describe {
+                id: "bad-id".into()
+            }
+        )
+        .await
+        .is_err());
+    }
+
+    // ── get_boards_raw / get_board_raw ───────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_get_boards_raw_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"boards": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, BoardAction::Raw { id: None }).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_boards_raw_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, BoardAction::Raw { id: None })
+            .await
+            .is_err());
+    }
+
+    #[tokio::test]
+    async fn test_get_board_raw_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards/b99"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"board_id": "b99"})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            BoardAction::Raw {
+                id: Some("b99".into())
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_board_raw_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/boards/bad"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            BoardAction::Raw {
+                id: Some("bad".into())
+            }
+        )
+        .await
+        .is_err());
+    }
+}

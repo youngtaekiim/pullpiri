@@ -236,3 +236,290 @@ async fn get_node_raw(client: &SettingsClient, node_id: &str) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    async fn make_client(base_url: &str) -> SettingsClient {
+        SettingsClient::new(base_url, 5).unwrap()
+    }
+
+    // ── handle() dispatch ────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_handle_get() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"nodes": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, NodeAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_describe() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes/node-1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"node_name": "node-1"})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            NodeAction::Describe {
+                id: "node-1".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_raw_no_id() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"nodes": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, NodeAction::Raw { id: None }).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_raw_with_id() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes/n1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"node_name": "n1"})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            NodeAction::Raw {
+                id: Some("n1".into())
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    // ── get_nodes ────────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_get_nodes_with_array() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "nodes": [
+                {"node_name": "worker-1", "ip": "10.0.0.2", "os": "Ubuntu 22.04", "arch": "amd64"},
+                {"node_name": "worker-2", "ip": "10.0.0.3", "os": "Ubuntu 22.04", "arch": "arm64"}
+            ]
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, NodeAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_nodes_empty_array() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"nodes": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, NodeAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_nodes_single_node_response() {
+        // Single node object (no "nodes" array key)
+        let server = MockServer::start().await;
+        let body =
+            json!({"node_name": "solo-node", "ip": "10.1.1.1", "os": "Linux", "arch": "x86_64"});
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, NodeAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_nodes_no_nodes_key() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, NodeAction::Get).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_nodes_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, NodeAction::Get).await.is_err());
+    }
+
+    // ── describe_node ────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_describe_node_full_fields() {
+        let server = MockServer::start().await;
+        let body = json!({
+            "node_name": "full-node",
+            "ip": "172.16.0.1",
+            "os": "Ubuntu 22.04 LTS",
+            "arch": "amd64",
+            "cpu_count": 4,
+            "gpu_count": 1,
+            "total_memory": 8589934592u64,
+            "cpu_usage": 35.5,
+            "used_memory": 4294967296u64,
+            "mem_usage": 50.0,
+            "rx_bytes": 102400u64,
+            "tx_bytes": 204800u64,
+            "read_bytes": 409600u64,
+            "write_bytes": 819200u64
+        });
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes/full-node"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            NodeAction::Describe {
+                id: "full-node".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_node_minimal_fields() {
+        let server = MockServer::start().await;
+        let body = json!({"node_name": "minimal-node"});
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes/minimal-node"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(body))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            NodeAction::Describe {
+                id: "minimal-node".into()
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_describe_node_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes/bad-node"))
+            .respond_with(ResponseTemplate::new(404))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            NodeAction::Describe {
+                id: "bad-node".into()
+            }
+        )
+        .await
+        .is_err());
+    }
+
+    // ── raw endpoints ────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_get_nodes_raw_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"nodes": []})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, NodeAction::Raw { id: None }).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_nodes_raw_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(&client, NodeAction::Raw { id: None }).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_get_node_raw_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes/n99"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"node_name": "n99"})))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            NodeAction::Raw {
+                id: Some("n99".into())
+            }
+        )
+        .await
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_node_raw_server_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/nodes/bad"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+        let client = make_client(&server.uri()).await;
+        assert!(handle(
+            &client,
+            NodeAction::Raw {
+                id: Some("bad".into())
+            }
+        )
+        .await
+        .is_err());
+    }
+}

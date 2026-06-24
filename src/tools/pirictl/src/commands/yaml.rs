@@ -189,6 +189,197 @@ fn validate_yaml_artifact(yaml_content: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
+    use std::io::Write;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    async fn make_client(base_url: &str) -> SettingsClient {
+        SettingsClient::new(base_url, 5).unwrap()
+    }
+
+    fn write_temp_yaml(content: &str) -> tempfile::NamedTempFile {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        write!(f, "{}", content).unwrap();
+        f
+    }
+
+    // ── handle() dispatch ─────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_handle_apply_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/artifact"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(json!({"message": "Applied", "applied": []})),
+            )
+            .mount(&server)
+            .await;
+        let tmp = write_temp_yaml("---\nkind: Scenario\nmetadata:\n  name: test\n");
+        let client = make_client(&server.uri()).await;
+        let action = YamlAction::Apply {
+            file: tmp.path().to_str().unwrap().to_string(),
+        };
+        assert!(handle(&client, action).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_withdraw_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/api/artifact"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(json!({"message": "Withdrawn", "withdrawn": []})),
+            )
+            .mount(&server)
+            .await;
+        let tmp = write_temp_yaml("---\nkind: Scenario\nmetadata:\n  name: test\n");
+        let client = make_client(&server.uri()).await;
+        let action = YamlAction::Withdraw {
+            file: tmp.path().to_str().unwrap().to_string(),
+        };
+        assert!(handle(&client, action).await.is_ok());
+    }
+
+    // ── apply_yaml() ──────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_apply_yaml_with_message_and_resources() {
+        // Response with message + applied array containing kind+name (covers lines 44-63)
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/artifact"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "message": "Applied successfully",
+                "applied": [
+                    {"kind": "Scenario", "name": "my-scenario"},
+                    {"kind": "Package",  "name": "my-package"}
+                ]
+            })))
+            .mount(&server)
+            .await;
+        let tmp = write_temp_yaml("---\nkind: Scenario\n---\nkind: Package\n---\nkind: Model\n");
+        let client = make_client(&server.uri()).await;
+        let action = YamlAction::Apply {
+            file: tmp.path().to_str().unwrap().to_string(),
+        };
+        assert!(handle(&client, action).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_apply_yaml_no_message_no_applied() {
+        // Minimal response — no "message" or "applied" keys
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/artifact"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&server)
+            .await;
+        let tmp = write_temp_yaml("---\nkind: Scenario\n");
+        let client = make_client(&server.uri()).await;
+        let action = YamlAction::Apply {
+            file: tmp.path().to_str().unwrap().to_string(),
+        };
+        assert!(handle(&client, action).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_apply_yaml_server_error() {
+        // API returns error → exercises the Err branch (lines 68-71)
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/artifact"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("Internal Error"))
+            .mount(&server)
+            .await;
+        let tmp = write_temp_yaml("---\nkind: Scenario\n");
+        let client = make_client(&server.uri()).await;
+        let action = YamlAction::Apply {
+            file: tmp.path().to_str().unwrap().to_string(),
+        };
+        assert!(handle(&client, action).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_apply_yaml_file_not_found() {
+        let server = MockServer::start().await;
+        let client = make_client(&server.uri()).await;
+        let action = YamlAction::Apply {
+            file: "/nonexistent/missing.yaml".to_string(),
+        };
+        assert!(handle(&client, action).await.is_err());
+    }
+
+    // ── withdraw_yaml() ───────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_withdraw_yaml_with_message_and_resources() {
+        // Response with message + withdrawn array (covers lines 88-107)
+        let server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/api/artifact"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "message": "Withdrawn successfully",
+                "withdrawn": [
+                    {"kind": "Scenario", "name": "my-scenario"},
+                    {"kind": "Package",  "name": "my-package"}
+                ]
+            })))
+            .mount(&server)
+            .await;
+        let tmp = write_temp_yaml("---\nkind: Scenario\n---\nkind: Package\n---\nkind: Model\n");
+        let client = make_client(&server.uri()).await;
+        let action = YamlAction::Withdraw {
+            file: tmp.path().to_str().unwrap().to_string(),
+        };
+        assert!(handle(&client, action).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_withdraw_yaml_no_message_no_withdrawn() {
+        let server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/api/artifact"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&server)
+            .await;
+        let tmp = write_temp_yaml("---\nkind: Scenario\n");
+        let client = make_client(&server.uri()).await;
+        let action = YamlAction::Withdraw {
+            file: tmp.path().to_str().unwrap().to_string(),
+        };
+        assert!(handle(&client, action).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_withdraw_yaml_server_error() {
+        // API returns error → exercises the Err branch (lines 112-115)
+        let server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/api/artifact"))
+            .respond_with(ResponseTemplate::new(404).set_body_string("Not Found"))
+            .mount(&server)
+            .await;
+        let tmp = write_temp_yaml("---\nkind: Scenario\n");
+        let client = make_client(&server.uri()).await;
+        let action = YamlAction::Withdraw {
+            file: tmp.path().to_str().unwrap().to_string(),
+        };
+        assert!(handle(&client, action).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_withdraw_yaml_file_not_found() {
+        let server = MockServer::start().await;
+        let client = make_client(&server.uri()).await;
+        let action = YamlAction::Withdraw {
+            file: "/nonexistent/missing.yaml".to_string(),
+        };
+        assert!(handle(&client, action).await.is_err());
+    }
 
     #[test]
     fn test_read_yaml_content_file_not_found() {
@@ -258,6 +449,31 @@ apiVersion: v1
 metadata:
   name: test
 "#;
+        let result = validate_yaml_artifact(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_read_yaml_content_with_real_file() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        writeln!(tmp, "---\nkind: Scenario").unwrap();
+        let path = tmp.path().to_str().unwrap().to_string();
+        let result = read_yaml_content(&path);
+        assert!(result.is_ok());
+        assert!(result.unwrap().contains("Scenario"));
+    }
+
+    #[test]
+    fn test_validate_yaml_artifact_all_kinds_present() {
+        let yaml = "---\nkind: Scenario\n---\nkind: Package\n---\nkind: Model\n";
+        let result = validate_yaml_artifact(yaml);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_yaml_artifact_extra_whitespace_around_kind() {
+        let yaml = "---\n  kind:   MyKind  \n";
         let result = validate_yaml_artifact(yaml);
         assert!(result.is_ok());
     }

@@ -113,4 +113,17 @@ mod tests {
         let err: Box<dyn std::error::Error> = Box::new(CliError::Custom("trait test".to_string()));
         assert!(err.to_string().contains("trait test"));
     }
+
+    #[test]
+    fn test_cli_error_display_http() {
+        // Build a real reqwest::Error (URL parse error) via a blocking client builder
+        // so we can exercise the CliError::Http(e) => write!(f, "HTTP error: {}", e) branch.
+        let reqwest_err = reqwest::blocking::Client::new()
+            .get("not-a-valid-url")
+            .send()
+            .unwrap_err();
+        let cli_err = CliError::Http(reqwest_err.without_url());
+        let display = format!("{}", cli_err);
+        assert!(display.starts_with("HTTP error:"), "got: {}", display);
+    }
 }
