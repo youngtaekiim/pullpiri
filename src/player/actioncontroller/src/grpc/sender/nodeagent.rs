@@ -5,13 +5,20 @@ use common::nodeagent::node_agent_connection_client::NodeAgentConnectionClient;
 use common::nodeagent::{UpdateResourcesRequest, UpdateResourcesResponse};
 use tonic::{Request, Status};
 
+/// Send a workload command to the NodeAgent at the given node IP address.
 pub async fn send_workload_handle_request(
     addr: &str,
     request: HandleWorkloadRequest,
 ) -> Result<HandleWorkloadResponse, Status> {
-    let mut client = NodeAgentConnectionClient::connect(connect_server(&addr))
+    let endpoint = connect_server(addr);
+    let mut client = NodeAgentConnectionClient::connect(endpoint.clone())
         .await
-        .unwrap();
+        .map_err(|error| {
+            Status::unavailable(format!(
+                "NodeAgent connection failed at {}: {}",
+                endpoint, error
+            ))
+        })?;
 
     let response = client
         .handle_workload(Request::new(request))

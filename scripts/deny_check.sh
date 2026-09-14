@@ -18,14 +18,27 @@ echo "🔍 Running Cargo Deny checks..." | tee -a "$LOG_FILE"
 PROJECT_ROOT=${GITHUB_WORKSPACE:-$(pwd)}
 cd "$PROJECT_ROOT"
 
+resolve_manifest() {
+  local primary="$1"
+  local fallback="${primary#src/}"
+
+  if [[ -f "$primary" ]]; then
+    echo "$primary"
+  elif [[ -f "$fallback" ]]; then
+    echo "$fallback"
+  else
+    echo ""
+  fi
+}
+
 FAILED_TOTAL=0   # Count of manifests that failed deny check
 PASSED_TOTAL=0   # Count of manifests that passed deny check
 
 # Define paths to Cargo.toml manifests to check
-MAJOR_MANIFEST="src/Cargo.toml"
-NODEAGENT_MANIFEST="src/agent/nodeagent/Cargo.toml"
-ROCKSDBSERVICE_MANIFEST="src/server/rocksdbservice/Cargo.toml"
-TOOLS_MANIFEST="src/tools/Cargo.toml"
+MAJOR_MANIFEST=$(resolve_manifest "src/Cargo.toml")
+NODEAGENT_MANIFEST=$(resolve_manifest "src/agent/nodeagent/Cargo.toml")
+ROCKSDBSERVICE_MANIFEST=$(resolve_manifest "src/server/rocksdbservice/Cargo.toml")
+TOOLS_MANIFEST=$(resolve_manifest "src/tools/Cargo.toml")
 
 # Function to run cargo-deny on a given manifest and log results
 run_deny() {
@@ -49,20 +62,39 @@ run_deny() {
   # Append pass/fail status to markdown summary report
   if $deny_passed; then
     echo "✅ deny check for $label: PASSED" >> "$REPORT_FILE"
-    (( PASSED_TOTAL++ ))
+    PASSED_TOTAL=$((PASSED_TOTAL + 1))
   else
     echo "❌ deny check for $label: FAILED" >> "$REPORT_FILE"
-    (( FAILED_TOTAL++ ))
+    FAILED_TOTAL=$((FAILED_TOTAL + 1))
   fi
 }
 
 # Run cargo-deny on desired manifests
 # Uncomment manifests as needed
 
-[[ -f "$MAJOR_MANIFEST" ]]          && run_deny "$MAJOR_MANIFEST" "major" || echo "::warning ::$MAJOR_MANIFEST not found, skipping..."
-[[ -f "$NODEAGENT_MANIFEST" ]]      && run_deny "$NODEAGENT_MANIFEST" "nodeagent" || echo "::warning ::$NODEAGENT_MANIFEST not found, skipping..."
-[[ -f "$ROCKSDBSERVICE_MANIFEST" ]] && run_deny "$ROCKSDBSERVICE_MANIFEST" "rocksdbservice" || echo "::warning ::$ROCKSDBSERVICE_MANIFEST not found, skipping..."
-[[ -f "$TOOLS_MANIFEST" ]]          && run_deny "$TOOLS_MANIFEST" "tools" || echo "::warning ::$TOOLS_MANIFEST not found, skipping..."
+if [[ -n "$MAJOR_MANIFEST" ]]; then
+  run_deny "$MAJOR_MANIFEST" "major"
+else
+  echo "::warning ::src/Cargo.toml not found, skipping..."
+fi
+
+if [[ -n "$NODEAGENT_MANIFEST" ]]; then
+  run_deny "$NODEAGENT_MANIFEST" "nodeagent"
+else
+  echo "::warning ::src/agent/nodeagent/Cargo.toml not found, skipping..."
+fi
+
+if [[ -n "$ROCKSDBSERVICE_MANIFEST" ]]; then
+  run_deny "$ROCKSDBSERVICE_MANIFEST" "rocksdbservice"
+else
+  echo "::warning ::src/server/rocksdbservice/Cargo.toml not found, skipping..."
+fi
+
+if [[ -n "$TOOLS_MANIFEST" ]]; then
+  run_deny "$TOOLS_MANIFEST" "tools"
+else
+  echo "::warning ::src/tools/Cargo.toml not found, skipping..."
+fi
 
 # Print final summary report to console and log
 echo -e "\n📄 Summary:" | tee -a "$LOG_FILE"

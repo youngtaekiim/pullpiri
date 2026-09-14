@@ -222,19 +222,35 @@ impl ActionControllerManager {
         policy_name: &str,
         network_str: &Option<String>,
         node_str: &Option<String>,
+        schedule_name: &Option<String>,
     ) -> Result<()> {
         let model_name = model_info.get_name();
         let model_node = model_info.get_node();
         let pod = common::kvstore::get(&format!("{}/{}", KVSTORE_POD_PREFIX, model_name)).await?;
 
         // Inject annotations into pod YAML for tracking
-        let pod_with_annotations = self.inject_pod_annotations(
+        let mut pod_with_annotations = self.inject_pod_annotations(
             &pod,
             scenario_name,
             package_name,
             policy_name,
             &model_name,
         )?;
+
+        // Inject CPUset information if schedule is available
+        if let Some(_sched_name) = schedule_name {
+            if let Ok(cpuset) = self.get_cpuset_for_node(&model_node).await {
+                pod_with_annotations =
+                    self.inject_cpuset_annotation(&pod_with_annotations, &cpuset)?;
+                logd!(
+                    3,
+                    "Injected cpuset '{}' for model '{}' on node '{}'",
+                    cpuset,
+                    model_name,
+                    model_node
+                );
+            }
+        }
 
         match action {
             "launch" => {
@@ -337,6 +353,89 @@ impl ActionControllerManager {
                 serde_yaml::Value::Mapping(annotations),
             );
         }
+
+        // Serialize back to YAML
+        serde_yaml::to_string(&pod)
+            .map_err(|e| format!("Failed to serialize pod YAML: {}", e).into())
+    }
+
+    /// Get CPUset information for a specific node from RocksDB
+    ///
+    /// Retrieves the available CPU cores for a node from RocksDB.
+    /// Key format: `timpani/nodes/{node_id}/available_cpus`
+    /// Value format: "0-2,5-7" (Podman-compatible format)
+    ///
+    /// # Arguments
+    /// * `node_id` - Node identifier
+    ///
+    /// # Returns
+    /// * `Ok(String)` - CPU cores in Podman format (e.g., "0-2,5-7")
+    /// * `Err(...)` - If node not found or configuration not available
+    async fn get_cpuset_for_node(&self, node_id: &str) -> Result<String> {
+        let key = format!("timpani/nodes/{}/available_cpus", node_id);
+        let cpuset = common::kvstore::get(&key).await.map_err(|e| {
+            format!(
+                "CPUset configuration not found for node '{}': {}",
+                node_id, e
+            )
+        })?;
+
+        logd!(3, "Retrieved cpuset for node '{}': {}", node_id, cpuset);
+        Ok(cpuset)
+    }
+
+    /// Inject CPUset information into pod YAML annotations
+    ///
+    /// Adds CPUset annotation to pod YAML for NodeAgent to consume.
+    /// The annotation key is: `io.pullpiri.cpusetcpus`
+    ///
+    /// # Arguments
+    /// * `pod_yaml` - Pod YAML string
+    /// * `cpuset` - CPU cores in Podman format (e.g., "0-2,5-7")
+    ///
+    /// # Returns
+    /// * `Ok(String)` - Modified pod YAML with cpuset annotation
+    /// * `Err(...)` - If YAML parsing or serialization fails
+    fn inject_cpuset_annotation(&self, pod_yaml: &str, cpuset: &str) -> Result<String> {
+        // Parse pod YAML as generic Value to preserve structure
+        let mut pod: serde_yaml::Value = serde_yaml::from_str(pod_yaml)
+            .map_err(|e| format!("Failed to parse pod YAML: {}", e))?;
+
+        // Get or create metadata mapping
+        let metadata = match pod.get_mut("metadata") {
+            Some(m) if m.is_mapping() => m.as_mapping_mut().unwrap(),
+            _ => {
+                pod.as_mapping_mut().ok_or("Pod is not a mapping")?.insert(
+                    serde_yaml::Value::String("metadata".to_string()),
+                    serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+                );
+                pod.get_mut("metadata")
+                    .and_then(|m| m.as_mapping_mut())
+                    .ok_or("Failed to create metadata")?
+            }
+        };
+
+        // Get or create annotations mapping
+        let annotations =
+            match metadata.get_mut(&serde_yaml::Value::String("annotations".to_string())) {
+                Some(a) if a.is_mapping() => a.as_mapping_mut().unwrap(),
+                _ => {
+                    metadata.insert(
+                        serde_yaml::Value::String("annotations".to_string()),
+                        serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+                    );
+                    metadata
+                        .get_mut(&serde_yaml::Value::String("annotations".to_string()))
+                        .and_then(|a| a.as_mapping_mut())
+                        .ok_or("Failed to create annotations")?
+                }
+            };
+
+        // Add cpuset annotation
+        annotations.insert(
+            serde_yaml::Value::String("io.pullpiri.cpusetcpus".to_string()),
+            serde_yaml::Value::String(cpuset.to_string()),
+        );
 
         // Serialize back to YAML
         serde_yaml::to_string(&pod)
@@ -572,6 +671,7 @@ impl ActionControllerManager {
                 &policy_name,
                 &network_str,
                 &node_str,
+                &package.get_schedule(),
             )
             .await
             .map_err(|e| {
@@ -605,8 +705,11 @@ impl ActionControllerManager {
             }
         }
 
-        if let Some(sched) = package.get_schedule() {
-            self.handle_realtime_sched(sched).await?;
+        // Realtime scheduling information should be sent only when launching workloads.
+        if action == "launch" {
+            if let Some(sched) = package.get_schedule() {
+                self.handle_realtime_sched(sched).await?;
+            }
         }
 
         self.notify_state_change(scenario_name, "allowed", "completed")

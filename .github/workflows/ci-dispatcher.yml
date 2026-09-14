@@ -13,7 +13,7 @@ jobs:
       yaml_changed: ${{ steps.filter.outputs.yaml }}  # True if GitHub workflow YAMLs changed
     steps:
       # Step 1: Checkout repo contents
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Step 2: Use `dorny/paths-filter` to detect what kinds of files changed
       - id: filter

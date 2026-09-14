@@ -6,8 +6,11 @@
 pub mod container;
 pub mod resource;
 
+use bytes::Bytes;
 use common::nodeagent::fromactioncontroller::WorkloadCommand;
-use hyper::{Body, Client, Method, Request, Uri};
+use http_body_util::{BodyExt, Full};
+use hyper::{Method, Request, Uri};
+use hyper_util::{client::legacy::Client, rt::TokioExecutor};
 use hyperlocal::{UnixConnector, Uri as UnixUri};
 use once_cell::sync::Lazy;
 
@@ -30,46 +33,57 @@ static PODMAN_SOCKET: Lazy<String> = Lazy::new(|| {
 // A single `hyper::Client` is cheap to clone and manages its own connection
 // pool internally, so it is created once and reused for every request
 // instead of being rebuilt on each call to `get`/`post`/`delete`.
-static PODMAN_CLIENT: Lazy<Client<UnixConnector, Body>> =
-    Lazy::new(|| Client::builder().build::<_, Body>(UnixConnector));
+pub type PodmanBody = Full<Bytes>;
+pub type PodmanResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
-pub async fn get(path: &str) -> Result<hyper::body::Bytes, hyper::Error> {
+static PODMAN_CLIENT: Lazy<Client<UnixConnector, PodmanBody>> =
+    Lazy::new(|| Client::builder(TokioExecutor::new()).build(UnixConnector));
+
+/// Build an empty request body for Podman API calls.
+pub fn empty_body() -> PodmanBody {
+    Full::new(Bytes::new())
+}
+
+/// Build a request body from bytes for Podman API calls.
+pub fn body_from<T: Into<Bytes>>(body: T) -> PodmanBody {
+    Full::new(body.into())
+}
+
+pub async fn get(path: &str) -> PodmanResult<Bytes> {
     let uri: Uri = UnixUri::new(PODMAN_SOCKET.as_str(), path).into();
 
     let res = PODMAN_CLIENT.get(uri).await?;
-    hyper::body::to_bytes(res).await
+    Ok(res.into_body().collect().await?.to_bytes())
 }
 
-pub async fn post(path: &str, body: Body) -> Result<hyper::body::Bytes, hyper::Error> {
+pub async fn post(path: &str, body: PodmanBody) -> PodmanResult<Bytes> {
     let uri: Uri = UnixUri::new(PODMAN_SOCKET.as_str(), path).into();
 
     let req = Request::builder()
         .method(Method::POST)
         .uri(uri)
-        .body(body)
-        .unwrap();
+        .body(body)?;
 
     let res = PODMAN_CLIENT.request(req).await?;
-    hyper::body::to_bytes(res).await
+    Ok(res.into_body().collect().await?.to_bytes())
 }
 
-pub async fn delete(path: &str) -> Result<hyper::body::Bytes, hyper::Error> {
+pub async fn delete(path: &str) -> PodmanResult<Bytes> {
     let uri: Uri = UnixUri::new(PODMAN_SOCKET.as_str(), path).into();
 
     let req = Request::builder()
         .method(Method::DELETE)
         .uri(uri)
-        .body(Body::empty())
-        .unwrap();
+        .body(empty_body())?;
 
     let res = PODMAN_CLIENT.request(req).await?;
-    hyper::body::to_bytes(res).await
+    Ok(res.into_body().collect().await?.to_bytes())
 }
 
 pub async fn handle_workload(
     command: i32,
     pod: &str,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
     println!(
         "handle_workload called with command: {} for model(pod)",
         command
@@ -98,15 +112,16 @@ pub async fn handle_workload(
 #[cfg(test)]
 mod tests {
     use super::get;
-    use hyper::body::Bytes;
-    use hyper::Error;
+    use bytes::Bytes;
     use tokio;
 
     #[tokio::test]
     async fn test_get_with_valid_path() {
-        let result: Result<Bytes, Error> = get("/v1.0/version").await;
+        let result: Result<Bytes, Box<dyn std::error::Error + Send + Sync>> =
+            get("/v1.0/version").await;
         assert!(result.is_ok());
-        let bytes = result.unwrap();
-        assert!(!bytes.is_empty());
+        if let Ok(bytes) = result {
+            assert!(!bytes.is_empty());
+        }
     }
 }

@@ -71,6 +71,20 @@ podman --version
 # podman version 4.x.x or higher
 ```
 
+Podman이 `cgroupfs` cgroup manager를 사용하도록 설정합니다. systemd override 파일을 엽니다:
+
+```bash
+sudo systemctl edit podman.service
+```
+
+다음 서비스 override 내용을 추가합니다:
+
+```ini
+[Service]
+ExecStart=
+ExecStart=/usr/bin/podman --log-level=info --cgroup-manager=cgroupfs system service
+```
+
 #### 시스템 준비
 
 Pullpiri는 여러 모듈로 구성되어 있습니다.

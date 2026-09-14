@@ -47,7 +47,7 @@ jobs:
 
     steps:
       # Checkout code with submodules
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: "recursive"
 
@@ -55,84 +55,84 @@ jobs:
 
       # Optional: coverage report for the agent component (commented out)
       # - name: Download coverage report for agent
-      #   uses: actions/download-artifact@v4
+      #   uses: actions/download-artifact@v8
       #   with:
       #     name: code-coverage-html-agent
       #     path: dist/coverage/agent/
 
       # Optional: coverage report for the player component (commented out)
       # - name: Download coverage report for player
-      #   uses: actions/download-artifact@v4
+      #   uses: actions/download-artifact@v8
       #   with:
       #     name: code-coverage-html-player
       #     path: dist/coverage/player/
       
       # Code coverage HTML report for the server component
       - name: Download coverage report for server
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: code-coverage-html-server
           path: dist/coverage/server/
 
       # Code coverage HTML report for the tools component
       - name: Download coverage report for tools
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: code-coverage-html-tools
           path: dist/coverage/tools/
 
       # Code coverage HTML report for the common component
       - name: Download coverage report for common
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: code-coverage-html-common
           path: dist/coverage/common/
 
       # Deny-check report (license allowlist violations)
       - name: Download deny report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: deny-report
           path: dist/reports/deny/
       
       # Formatting report (rustfmt summary)
       - name: Download fmt report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: fmt-report
           path: dist/reports/fmt/
 
       # clippy report (lint summary)
       - name: Download clippy report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: clippy-report
           path: dist/reports/clippy/
 
       # Test result report (JUnit XML format)
       - name: Download test report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: test-report
           path: dist/tests/
       
       # License HTML report from cargo-about
       - name: Download license report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: license-report
           path: dist/licenses/
 
       # Download nodeagent binary - amd64
       - name: Download nodeagent binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: nodeagent-binary-amd64
           path: dist/binaries/amd
 
       # Download nodeagent binary - arm64
       - name: Download nodeagent binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: nodeagent-binary-arm64
           path: dist/binaries/arm
@@ -248,6 +248,22 @@ jobs:
           asset_name: nodeagent-linux-arm64
           tag: ${{ github.ref }}
 
+      - name: Generate nodeagent checksum file
+        shell: bash
+        run: |
+          sha256sum dist/binaries/amd/nodeagent-linux-amd64 > dist/binaries/amd/nodeagent-linux-amd64.sha256
+          sha256sum dist/binaries/arm/nodeagent-linux-arm64 > dist/binaries/arm/nodeagent-linux-arm64.sha256
+          cat dist/binaries/amd/nodeagent-linux-amd64.sha256 dist/binaries/arm/nodeagent-linux-arm64.sha256 > dist/binaries/SHA256SUMS-nodeagent
+
+      - name: Upload nodeagent checksum file to release
+        uses: svenstaro/upload-release-action@v2
+        id: upload_nodeagent_checksums
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/binaries/SHA256SUMS-nodeagent
+          asset_name: SHA256SUMS-nodeagent
+          tag: ${{ github.ref }}
+
       # Upload helpful documentation and compliance files
       - name: Upload README to release
         uses: svenstaro/upload-release-action@v2
@@ -324,11 +340,6 @@ jobs:
           artifacts_release_process: ${{ steps.upload_release_process.outputs.browser_download_url }} 
           artifacts_documentation: ${{ steps.upload_doc.outputs.browser_download_url }}
           artifacts_requirements: ${{ steps.upload_doc.outputs.browser_download_url }}
-          artifacts_binaries: >
-            ${{ steps.upload_nodeagent_amd64.outputs.browser_download_url }},
-            ${{ steps.upload_nodeagent_arm64.outputs.browser_download_url }},
-            ${{ steps.upload_install_script.outputs.browser_download_url }},
-            ${{ steps.upload_check_script.outputs.browser_download_url }}
           artifacts_testing: >
             # ${{ steps.upload_test_report.outputs.browser_download_url }},
             ${{ steps.upload_license_report.outputs.browser_download_url }},

@@ -6,21 +6,15 @@
 //! Fault handler for PolicyManager
 //!
 //! This module handles fault reports from Timpani (via StateManager),
-//! such as deadline miss events. It evaluates policies with deadlineMissThreshold
-//! and triggers appropriate actions.
+//! such as deadline miss events. Timpani already counts deadline misses internally
+//! and only sends FaultInfo when the threshold is reached, so PolicyManager
+//! receives pre-filtered fault notifications and triggers appropriate actions immediately.
 
 use crate::grpc::sender;
 use common::actioncontroller::StopWorkloadRequest;
 use common::policymanager::{FaultType, ReportFaultRequest, ReportFaultResponse};
 use common::spec::artifact::Package;
 use common::spec::artifact::Policy;
-use std::collections::HashMap;
-use std::sync::RwLock;
-
-lazy_static::lazy_static! {
-    /// Tracks deadline miss counts per workload (workload_id -> count)
-    static ref DEADLINE_MISS_COUNTS: RwLock<HashMap<String, u32>> = RwLock::new(HashMap::new());
-}
 
 /// Handle fault report from StateManager (originated from Timpani)
 ///
@@ -76,10 +70,12 @@ pub async fn handle_fault_report(request: ReportFaultRequest) -> ReportFaultResp
 
 /// Process deadline miss fault
 ///
+/// Timpani has already validated that the deadline miss threshold is reached,
+/// so this function proceeds directly with executing the policy action.
+///
 /// 1. Find Package by schedule name (workload_id)
 /// 2. Get policy from Package
-/// 3. Check deadlineMissThreshold
-/// 4. Increment counter and trigger action if threshold exceeded
+/// 3. Execute action based on policy strategy
 async fn process_deadline_miss_fault(request: &ReportFaultRequest) -> Result<String, String> {
     let workload_id = &request.workload_id;
     let node_id = &request.node_id;
@@ -101,44 +97,11 @@ async fn process_deadline_miss_fault(request: &ReportFaultRequest) -> Result<Str
     let policy = load_policy(policy_name).await?;
     println!("[PolicyManager] Loaded policy '{}'", policy_name);
 
-    // Step 4: Check if deadlineMissThreshold is defined
-    let threshold = policy
-        .get_procedure()
-        .get_trigger()
-        .deadlineMissThreshold
-        .as_ref()
-        .ok_or_else(|| {
-            format!(
-                "Policy '{}' has no deadlineMissThreshold defined",
-                policy_name
-            )
-        })?;
-
-    let threshold_count = threshold.get_count();
-    println!(
-        "[PolicyManager] Deadline miss threshold for '{}': {}",
-        policy_name, threshold_count
-    );
-
-    // Step 5: Increment deadline miss count
-    let current_count = increment_deadline_miss_count(workload_id);
-    println!(
-        "[PolicyManager] Deadline miss count for '{}': {}/{}",
-        workload_id, current_count, threshold_count
-    );
-
-    // Step 6: Check if threshold exceeded
-    if current_count < threshold_count {
-        return Ok(format!(
-            "Deadline miss recorded: {}/{} for workload '{}'",
-            current_count, threshold_count, workload_id
-        ));
-    }
-
-    // Threshold exceeded - trigger action based on strategy
+    // Step 4: Execute action based on strategy
+    // Timpani has already counted and validated threshold, so execute immediately
     let strategy = policy.get_procedure().get_strategy();
     println!(
-        "[PolicyManager] Threshold exceeded! Strategy: '{}'",
+        "[PolicyManager] Deadline miss fault detected! Executing strategy: '{}'",
         strategy
     );
 
@@ -150,12 +113,9 @@ async fn process_deadline_miss_fault(request: &ReportFaultRequest) -> Result<Str
             // Stop the workload
             stop_workload(&package_name, &model_name, node_id, workload_id).await?;
 
-            // Reset counter after action
-            reset_deadline_miss_count(workload_id);
-
             Ok(format!(
-                "Threshold exceeded ({}/{}). Stopped workload '{}' model '{}' on node '{}'",
-                current_count, threshold_count, workload_id, model_name, node_id
+                "Deadline miss fault handled. Stopped workload '{}' model '{}' on node '{}'",
+                workload_id, model_name, node_id
             ))
         }
         _ => Err(format!("Unknown strategy: {}", strategy)),
@@ -214,24 +174,6 @@ fn find_model_for_node(package: &Package, node_id: &str) -> Result<String, Strin
         .ok_or_else(|| "Package has no models".to_string())
 }
 
-/// Increment deadline miss count for a workload
-fn increment_deadline_miss_count(workload_id: &str) -> u32 {
-    let mut counts = DEADLINE_MISS_COUNTS
-        .write()
-        .unwrap_or_else(|e| e.into_inner());
-    let count = counts.entry(workload_id.to_string()).or_insert(0);
-    *count += 1;
-    *count
-}
-
-/// Reset deadline miss count for a workload
-fn reset_deadline_miss_count(workload_id: &str) {
-    let mut counts = DEADLINE_MISS_COUNTS
-        .write()
-        .unwrap_or_else(|e| e.into_inner());
-    counts.remove(workload_id);
-}
-
 /// Stop workload via ActionController
 async fn stop_workload(
     package_name: &str,
@@ -283,8 +225,8 @@ mod tests {
         };
 
         let response = handle_fault_report(request).await;
-        // Should process but may fail to find package (kvstore not running)
-        assert!(response.processed || !response.processed);
+        // kvstore availability can affect processed status, but a response message must exist.
+        assert!(!response.message.is_empty());
     }
 
     #[tokio::test]
@@ -299,28 +241,5 @@ mod tests {
         let response = handle_fault_report(request).await;
         assert!(response.processed);
         assert!(response.message.contains("not handled"));
-    }
-
-    #[test]
-    fn test_increment_deadline_miss_count() {
-        let workload = "test_increment_workload";
-
-        // First increment
-        let count1 = increment_deadline_miss_count(workload);
-        assert_eq!(count1, 1);
-
-        // Second increment
-        let count2 = increment_deadline_miss_count(workload);
-        assert_eq!(count2, 2);
-
-        // Reset
-        reset_deadline_miss_count(workload);
-
-        // Should start from 1 again
-        let count3 = increment_deadline_miss_count(workload);
-        assert_eq!(count3, 1);
-
-        // Cleanup
-        reset_deadline_miss_count(workload);
     }
 }

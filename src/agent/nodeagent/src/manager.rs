@@ -444,7 +444,7 @@ async fn handle_exited_container(
     backoff_states: Arc<Mutex<HashMap<String, BackoffState>>>,
 ) {
     use crate::desired_state::RestartPolicy;
-    use hyper::Body;
+    use crate::runtime::podman::empty_body;
 
     let should_restart = match desired.restart_policy {
         RestartPolicy::Always => true,
@@ -509,30 +509,34 @@ async fn handle_exited_container(
     );
 
     let restart_path = format!("/v4.0.0/libpod/containers/{}/restart", desired.container_id);
-    match crate::runtime::podman::post(&restart_path, Body::empty()).await {
-        Ok(_) => {
-            eprintln!(
-                "[Reconciliation] Container '{}' restarted successfully",
-                desired.container_id
-            );
-            // Update backoff state only on success.
-            let mut states = backoff_states.lock().await;
-            states.insert(
-                desired.container_id.clone(),
-                BackoffState {
-                    restart_count: backoff_state.restart_count + 1,
-                    last_restart_time: Some(std::time::SystemTime::now()),
-                },
-            );
-        }
-        Err(e) => {
-            eprintln!(
-                "[Reconciliation] Failed to restart container '{}': {:?}",
-                desired.container_id, e
-            );
-            // Do not update backoff_state on failure so the next loop iteration retries.
-        }
+    let restart_result = crate::runtime::podman::post(&restart_path, empty_body()).await;
+    let restart_error = match restart_result {
+        Ok(_) => None,
+        Err(e) => Some(format!("{:?}", e)),
+    };
+
+    if let Some(error_message) = restart_error {
+        eprintln!(
+            "[Reconciliation] Failed to restart container '{}': {}",
+            desired.container_id, error_message
+        );
+        // Do not update backoff_state on failure so the next loop iteration retries.
+        return;
     }
+
+    eprintln!(
+        "[Reconciliation] Container '{}' restarted successfully",
+        desired.container_id
+    );
+    // Update backoff state only on success.
+    let mut states = backoff_states.lock().await;
+    states.insert(
+        desired.container_id.clone(),
+        BackoffState {
+            restart_count: backoff_state.restart_count + 1,
+            last_restart_time: Some(std::time::SystemTime::now()),
+        },
+    );
 }
 
 fn containers_equal_except_stats<'a>(a: &'a [ContainerInfo], b: &'a [ContainerInfo]) -> bool {

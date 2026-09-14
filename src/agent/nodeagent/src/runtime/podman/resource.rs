@@ -15,8 +15,7 @@
 //! (which keeps the creation-time spec), so the applied values are returned
 //! directly from a successful update.
 
-use super::{get, post};
-use hyper::Body;
+use super::{body_from, get, post};
 use serde_json::{json, Value};
 
 /// Docker-compatible Podman API version prefix (see `container.rs`).
@@ -48,7 +47,7 @@ pub async fn update_resources(
     workload_id: &str,
     cpu_limit: Option<u32>,
     memory_limit_mib: Option<u64>,
-) -> Result<ResourceStatus, Box<dyn std::error::Error>> {
+) -> Result<ResourceStatus, Box<dyn std::error::Error + Send + Sync>> {
     let mut resources = serde_json::Map::new();
     if let Some(cpu) = cpu_limit {
         // OCI LinuxCPU: quota per period. quota == millicores * period / 1000.
@@ -73,7 +72,7 @@ pub async fn update_resources(
         "{}/libpod/containers/{}/update",
         PODMAN_API_VERSION, workload_id
     );
-    let raw = post(&path, Body::from(Value::Object(resources).to_string())).await?;
+    let raw = post(&path, body_from(Value::Object(resources).to_string())).await?;
 
     // The get/post helpers do not expose the HTTP status code, so detect the
     // outcome from the payload: on failure Podman returns a JSON error object
@@ -103,7 +102,7 @@ pub async fn update_resources(
 /// applied values are those returned by [`update_resources`].
 pub async fn get_resource_status(
     workload_id: &str,
-) -> Result<ResourceStatus, Box<dyn std::error::Error>> {
+) -> Result<ResourceStatus, Box<dyn std::error::Error + Send + Sync>> {
     let path = format!("{}/containers/{}/json", PODMAN_API_VERSION, workload_id);
     let raw = get(&path).await?;
 

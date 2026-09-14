@@ -643,7 +643,7 @@ checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
 name = "hyper"
-version = "0.14.32"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41dfc780fdec9373c01bae43289ea34c972e40ee3c9f6b3c8801a35f35586ce7"
 dependencies = [
@@ -722,15 +722,17 @@ dependencies = [
 
 [[package]]
 name = "hyperlocal"
-version = "0.8.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fafdf7b2b2de7c9784f76e02c0935e65a8117ec3b768644379983ab333ac98c"
+checksum = "986c5ce3b994526b3cd75578e62554abd09f0899d6206de48b3e96ab34ccc8c7"
 dependencies = [
- "futures-util",
  "hex",
- "hyper 0.14.32",
- "pin-project",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "pin-project-lite",
  "tokio",
+ "tower-service",
 ]
 
 [[package]]
@@ -897,11 +899,14 @@ checksum = "1d87ecb2933e8aeadb3e3a02b828fed80a7528047e68b4f424523a0981a3a084"
 name = "nodeagent"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "clap",
  "common",
  "futures",
  "hostname",
- "hyper 0.14.32",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
  "hyperlocal",
  "if-addrs",
  "once_cell",

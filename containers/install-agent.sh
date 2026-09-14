@@ -45,29 +45,94 @@ NODE_TYPE="vehicle"  # Default node type (vehicle, cloud)
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
 	SUFFIX="amd64"
+	BUILD_TARGET="x86_64-unknown-linux-musl"
 elif [ "$ARCH" = "aarch64" ]; then
 	SUFFIX="arm64"
+	BUILD_TARGET="aarch64-unknown-linux-musl"
 else
 	echo "Error: Unsupported architecture '${ARCH}'."
 	exit 1
 fi
 
+INSTALL_MODE="${INSTALL_MODE:-prod}"
+
 # Make directory and binary
 AGENT_BINARY_PATH="/opt/pullpiri/nodeagent"
-rm -f "$AGENT_BINARY_PATH"
-sudo mkdir -p /opt/pullpiri
-if [ ! -f "$AGENT_BINARY_PATH" ]; then
-	BINARY_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/latest/download/nodeagent-linux-${SUFFIX}"
-	echo "Downloading binary from ${BINARY_URL}..."
-	curl -L -o nodeagent "${BINARY_URL}"
-	if [ $? -ne 0 ]; then
-		echo "Error: Failed to download binary from ${BINARY_URL}"
+sudo mkdir -p "$(dirname "${AGENT_BINARY_PATH}")"
+# BINARY_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/latest/download/nodeagent-linux-${SUFFIX}"
+BINARY_URL="https://github.com/MCO-PICCOLO/pullpiri-timpani/releases/latest/download/nodeagent-linux-${SUFFIX}"
+
+if [[ "${INSTALL_MODE}" == "dev" ]]; then
+	BUILD_BINARY_PATH_DEFAULT="${SCRIPT_DIR}/../src/agent/nodeagent/target/${BUILD_TARGET}/release/nodeagent"
+	BUILD_BINARY_PATH="${BUILD_BINARY_PATH:-${BUILD_BINARY_PATH_DEFAULT}}"
+
+	if [[ -f "${BUILD_BINARY_PATH}" ]]; then
+		sudo cp -f "${BUILD_BINARY_PATH}" "${AGENT_BINARY_PATH}"
+		echo "Used locally built binary from ${BUILD_BINARY_PATH}"
+	elif [[ ! -f "${AGENT_BINARY_PATH}" ]]; then
+		echo "Downloading latest release binary from ${BINARY_URL}"
+		curl -fsSL -o nodeagent "${BINARY_URL}" || {
+			echo "Error: Failed to download binary from ${BINARY_URL}"
+			exit 1
+		}
+		sudo cp -f nodeagent "${AGENT_BINARY_PATH}"
+		rm -f nodeagent
+	else
+		echo "Using existing installed binary at ${AGENT_BINARY_PATH}"
+	fi
+else
+#	CHECKSUM_URL="https://github.com/eclipse-pullpiri/pullpiri/releases/latest/download/SHA256SUMS-nodeagent"
+	CHECKSUM_URL="https://github.com/MCO-PICCOLO/pullpiri-timpani/releases/latest/download/SHA256SUMS-nodeagent"
+	TMP_CHECKSUMS="$(mktemp)"
+
+	cleanup() {
+		rm -f "${TMP_CHECKSUMS}" ./nodeagent
+	}
+	trap cleanup EXIT
+
+	echo "Fetching latest checksum list from ${CHECKSUM_URL}..."
+	curl -fsSL -o "${TMP_CHECKSUMS}" "${CHECKSUM_URL}" || {
+		echo "Error: Failed to download checksum list from ${CHECKSUM_URL}"
+		exit 1
+	}
+
+	EXPECTED_HASH=$(awk -v suffix="${SUFFIX}" '$2 ~ ("nodeagent-linux-" suffix "$") {print $1; exit}' "${TMP_CHECKSUMS}")
+	if [[ -z "${EXPECTED_HASH}" ]]; then
+		echo "Error: Could not find checksum entry for nodeagent-linux-${SUFFIX}"
 		exit 1
 	fi
-	sudo mv -f nodeagent /opt/pullpiri/nodeagent
+
+	NEEDS_DOWNLOAD=1
+	if sudo test -f "${AGENT_BINARY_PATH}"; then
+		CURRENT_HASH=$(sudo sha256sum "${AGENT_BINARY_PATH}" | awk '{print $1}')
+		if [[ "${CURRENT_HASH}" == "${EXPECTED_HASH}" ]]; then
+			echo "Installed nodeagent matches latest release checksum."
+			NEEDS_DOWNLOAD=0
+		else
+			echo "Installed nodeagent is outdated. Replacing with latest release binary."
+			sudo rm -f "${AGENT_BINARY_PATH}"
+		fi
+	else
+		echo "No installed nodeagent found. Downloading latest release binary."
+	fi
+
+	if [[ "${NEEDS_DOWNLOAD}" -eq 1 ]]; then
+		echo "Downloading binary from ${BINARY_URL}..."
+		curl -fsSL -o nodeagent "${BINARY_URL}" || {
+			echo "Error: Failed to download binary from ${BINARY_URL}"
+			exit 1
+		}
+		DOWNLOADED_HASH=$(sha256sum nodeagent | awk '{print $1}')
+		if [[ "${DOWNLOADED_HASH}" != "${EXPECTED_HASH}" ]]; then
+			echo "Error: Downloaded binary checksum mismatch for nodeagent-linux-${SUFFIX}"
+			exit 1
+		fi
+		sudo cp -f nodeagent "${AGENT_BINARY_PATH}"
+	fi
 fi
-sudo chmod +x /opt/pullpiri/nodeagent
-echo "Binary installed to /opt/pullpiri/nodeagent"
+
+sudo chmod +x "${AGENT_BINARY_PATH}"
+echo "Binary installed to ${AGENT_BINARY_PATH}"
 
 # Create configuration file
 echo "Creating configuration file..."

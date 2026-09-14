@@ -72,7 +72,13 @@ async fn get_container_target_ip(container_id: &str) -> String {
 /// Returns `true` if the response status code is in the range 200–399.
 /// Returns `false` on connection error, timeout, or non-2xx/3xx response.
 pub async fn check_http(container_id: &str, path: &str, port: u16, timeout_secs: u32) -> bool {
-    use hyper::{Client, Uri};
+    use bytes::Bytes;
+    use http_body_util::Empty;
+    use hyper::Uri;
+    use hyper_util::{
+        client::legacy::{connect::HttpConnector, Client},
+        rt::TokioExecutor,
+    };
 
     let target_ip = get_container_target_ip(container_id).await;
     let uri_str = format!("http://{}:{}{}", target_ip, port, path);
@@ -87,7 +93,8 @@ pub async fn check_http(container_id: &str, path: &str, port: u16, timeout_secs:
         }
     };
 
-    let client = Client::new();
+    let client: Client<HttpConnector, Empty<Bytes>> =
+        Client::builder(TokioExecutor::new()).build_http();
     let duration = Duration::from_secs(timeout_secs as u64);
 
     match timeout(duration, client.get(uri)).await {
