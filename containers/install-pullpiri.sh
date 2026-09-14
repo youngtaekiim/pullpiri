@@ -15,6 +15,21 @@ HOST_NAME="$(hostname)"
 # uncomment the lines below and comment out the argument parsing above
 # MASTER_IP="127.0.0.1"  # First argument - Pullpiri master IP address
 
+# Warn (not fail) if Podman is not using the cgroupfs cgroup manager,
+# since some workloads (e.g. GPU/device passthrough) require it.
+# The warning is repeated at the end of the script so it isn't missed
+# among the output of the sub-scripts run below.
+CGROUP_WARNING=""
+if command -v podman >/dev/null 2>&1; then
+	CGROUP_MANAGER="$(podman info --format '{{.Host.CgroupManager}}' 2>/dev/null)"
+	if [ -n "${CGROUP_MANAGER}" ] && [ "${CGROUP_MANAGER}" != "cgroupfs" ]; then
+		CGROUP_WARNING="WARNING: Podman cgroup manager is '${CGROUP_MANAGER}', not 'cgroupfs'.\nSome Pullpiri workloads require the 'cgroupfs' cgroup manager.\nSee doc/guides/getting-started.md for how to configure it:\n  sudo systemctl edit podman.service"
+		echo "-----------------------------------------------------------------------"
+		echo -e "${CGROUP_WARNING}"
+		echo "-----------------------------------------------------------------------"
+	fi
+fi
+
 # Make rocksdb folder
 mkdir -p /etc/pullpiri/pullpiri_shared_rocksdb
 chown 1001:1001 /etc/pullpiri/pullpiri_shared_rocksdb
@@ -44,3 +59,11 @@ EOF
 sleep 1
 
 "${SCRIPT_DIR}/install-agent.sh" ${MASTER_IP} ${MASTER_IP}
+
+# Re-show the cgroup manager warning last, so it isn't lost above the
+# output produced by the server/player/agent install scripts.
+if [ -n "${CGROUP_WARNING}" ]; then
+	echo "-----------------------------------------------------------------------"
+	echo -e "${CGROUP_WARNING}"
+	echo "-----------------------------------------------------------------------"
+fi
