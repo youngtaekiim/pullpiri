@@ -190,15 +190,16 @@ impl fmt::Display for ContainerNetworkStats {
 #[cfg(test)]
 mod tests {
     use crate::runtime::podman::get;
-    use hyper::body::Bytes;
-    use hyper::Error;
+    use bytes::Bytes;
     use tokio;
 
     #[tokio::test]
     async fn test_get_with_valid_path() {
-        let result: Result<Bytes, Error> = get("/v1.0/version").await;
+        let result: Result<Bytes, Box<dyn std::error::Error + Send + Sync>> =
+            get("/v1.0/version").await;
         assert!(result.is_ok());
-        let bytes = result.unwrap();
-        assert!(!bytes.is_empty());
+        if let Ok(bytes) = result {
+            assert!(!bytes.is_empty());
+        }
     }
 }

@@ -162,10 +162,10 @@ pub async fn probe_loop(desired_states_cache: Arc<Mutex<HashMap<String, DesiredS
 
 /// Stop a container by its Podman container ID.
 async fn stop_container_by_id(container_id: &str) {
-    use hyper::Body;
+    use crate::runtime::podman::empty_body;
 
     let stop_path = format!("/v4.0.0/libpod/containers/{}/stop", container_id);
-    match crate::runtime::podman::post(&stop_path, Body::empty()).await {
+    match crate::runtime::podman::post(&stop_path, empty_body()).await {
         Ok(_) => println!("[Probe] Container '{}' stopped successfully", container_id),
         Err(e) => eprintln!(
             "[Probe] Failed to stop container '{}': {:?}",

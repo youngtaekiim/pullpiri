@@ -54,11 +54,11 @@ uninstall:
 
 .PHONY: dev-install
 dev-install:
-	-./containers/devonly/install-pullpiri.sh
+	-INSTALL_MODE=dev ./containers/install-pullpiri.sh
 
 .PHONY: dev-uninstall
 dev-uninstall:
-	-./containers/devonly/uninstall-pullpiri.sh
+	-INSTALL_MODE=dev ./containers/uninstall-pullpiri.sh
 
 .PHONY: tools
 tools:

@@ -1,0 +1,164 @@
+name: Dev Release (Fast Artifacts)
+
+on:
+  push:
+    tags:
+      - dev*
+
+concurrency:
+  group: "dev-release-${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  CONTAINER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-nodeagent:
+    name: Build nodeagent (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            rust_target: x86_64-unknown-linux-musl
+            extra_apt_packages: musl-tools
+            output_name: nodeagent-linux-amd64
+            output_path: src/agent/nodeagent/target/x86_64-unknown-linux-musl/release/nodeagent
+            asset_name: nodeagent-linux-amd64
+          - arch: arm64
+            runner: ubuntu-22.04-arm
+            rust_target: aarch64-unknown-linux-musl
+            extra_apt_packages: ""
+            output_name: nodeagent-linux-arm64
+            output_path: src/agent/nodeagent/target/aarch64-unknown-linux-musl/release/nodeagent
+            asset_name: nodeagent-linux-arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            protobuf-compiler \
+            libdbus-1-dev \
+            pkg-config \
+            build-essential
+
+      - name: Install architecture specific dependencies
+        if: matrix.extra_apt_packages != ''
+        run: |
+          sudo apt-get install -y ${{ matrix.extra_apt_packages }}
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Build nodeagent binary
+        run: |
+          cd src/agent/nodeagent
+          cargo build --release --target "${{ matrix.rust_target }}"
+
+      - name: Stage binary artifact
+        run: |
+          mkdir -p dist/binaries
+          cp "${{ matrix.output_path }}" "dist/binaries/${{ matrix.output_name }}"
+          chmod +x "dist/binaries/${{ matrix.output_name }}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: nodeagent-binary-${{ matrix.arch }}
+          path: dist/binaries/${{ matrix.output_name }}
+
+      - name: Upload binary to GitHub Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/binaries/${{ matrix.output_name }}
+          asset_name: ${{ matrix.asset_name }}
+          tag: ${{ github.ref }}
+
+  upload-nodeagent-checksums:
+    name: Upload nodeagent checksums
+    runs-on: ubuntu-latest
+    needs:
+      - build-nodeagent
+
+    steps:
+      - name: Download nodeagent binary (amd64)
+        uses: actions/download-artifact@v8
+        with:
+          name: nodeagent-binary-amd64
+          path: dist/binaries/amd
+
+      - name: Download nodeagent binary (arm64)
+        uses: actions/download-artifact@v8
+        with:
+          name: nodeagent-binary-arm64
+          path: dist/binaries/arm
+
+      - name: Generate nodeagent checksum file
+        shell: bash
+        run: |
+          sha256sum dist/binaries/amd/nodeagent-linux-amd64 > dist/binaries/amd/nodeagent-linux-amd64.sha256
+          sha256sum dist/binaries/arm/nodeagent-linux-arm64 > dist/binaries/arm/nodeagent-linux-arm64.sha256
+          cat dist/binaries/amd/nodeagent-linux-amd64.sha256 dist/binaries/arm/nodeagent-linux-arm64.sha256 > dist/binaries/SHA256SUMS-nodeagent
+
+      - name: Upload nodeagent checksum file to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/binaries/SHA256SUMS-nodeagent
+          asset_name: SHA256SUMS-nodeagent
+          tag: ${{ github.ref }}
+
+  build-and-push-container:
+    name: Build and push container image (amd64/arm64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.CONTAINER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Normalize image repository to lowercase
+        id: normalize-image
+        shell: bash
+        run: |
+          image_repo="${IMAGE_NAME,,}"
+          echo "image_repo=${image_repo}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push multi-arch image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: containers/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            TARGETARCH
+          tags: |
+            ${{ env.CONTAINER_REGISTRY }}/${{ steps.normalize-image.outputs.image_repo }}:${{ github.ref_name }}
+            ${{ env.CONTAINER_REGISTRY }}/${{ steps.normalize-image.outputs.image_repo }}:dev-latest

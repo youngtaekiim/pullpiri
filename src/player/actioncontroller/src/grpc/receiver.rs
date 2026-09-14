@@ -211,15 +211,21 @@ impl ActionControllerConnection for ActionControllerReceiver {
     ) -> Result<Response<OffloadModelResponse>, Status> {
         let req = request.into_inner();
 
-        println!(
+        logd!(
+            3,
             "[ActionController] Offloading model '{}' from '{}' to '{}'",
-            req.model_name, req.source_node, req.target_node
+            req.model_name,
+            req.source_node,
+            req.target_node
         );
-        println!(
+        logd!(
+            3,
             "[ActionController]   Scenario: {}, Package: {}, Policy: {}",
-            req.scenario_name, req.package_name, req.policy_name
+            req.scenario_name,
+            req.package_name,
+            req.policy_name
         );
-        println!("[ActionController]   Reason: {}", req.reason);
+        logd!(3, "[ActionController]   Reason: {}", req.reason);
 
         // Generate transition ID
         let transition_id = format!(
@@ -245,9 +251,12 @@ impl ActionControllerConnection for ActionControllerReceiver {
             .await
         {
             Ok(_) => {
-                println!(
+                logd!(
+                    3,
                     "[ActionController] Successfully offloaded '{}' from '{}' to '{}'",
-                    req.model_name, req.source_node, req.target_node
+                    req.model_name,
+                    req.source_node,
+                    req.target_node
                 );
                 Ok(Response::new(OffloadModelResponse {
                     success: true,
@@ -259,9 +268,11 @@ impl ActionControllerConnection for ActionControllerReceiver {
                 }))
             }
             Err(e) => {
-                eprintln!(
+                logd!(
+                    5,
                     "[ActionController] Failed to offload '{}': {}",
-                    req.model_name, e
+                    req.model_name,
+                    e
                 );
                 Ok(Response::new(OffloadModelResponse {
                     success: false,
@@ -291,22 +302,25 @@ impl ActionControllerConnection for ActionControllerReceiver {
     ) -> Result<Response<StopWorkloadResponse>, Status> {
         let req = request.into_inner();
 
-        println!(
+        logd!(
+            3,
             "[ActionController] Stopping workload: package='{}', model='{}', node='{}'",
-            req.package_name, req.model_name, req.node_name
+            req.package_name,
+            req.model_name,
+            req.node_name
         );
-        println!("[ActionController]   Reason: {}", req.reason);
+        logd!(3, "[ActionController]   Reason: {}", req.reason);
 
-        // Get Pod YAML from kvstore for the package/model
-        let pod_key = format!("Pod/{}", req.package_name);
+        // Pod artifacts are stored per model name ("Pod/{model}"), not per package.
+        let pod_key = format!("Pod/{}", req.model_name);
         let pod_yaml = match common::kvstore::get(&pod_key).await {
             Ok(yaml) if !yaml.is_empty() => yaml,
             Ok(_) => {
                 let msg = format!(
-                    "Pod not found for package '{}' in kvstore key '{}'",
-                    req.package_name, pod_key
+                    "Pod not found for model '{}' in kvstore key '{}'",
+                    req.model_name, pod_key
                 );
-                eprintln!("[ActionController] {}", msg);
+                logd!(5, "[ActionController] {}", msg);
                 return Ok(Response::new(StopWorkloadResponse {
                     success: false,
                     message: msg,
@@ -314,7 +328,7 @@ impl ActionControllerConnection for ActionControllerReceiver {
             }
             Err(e) => {
                 let msg = format!("Failed to get Pod from kvstore: {}", e);
-                eprintln!("[ActionController] {}", msg);
+                logd!(5, "[ActionController] {}", msg);
                 return Ok(Response::new(StopWorkloadResponse {
                     success: false,
                     message: msg,
@@ -334,29 +348,33 @@ impl ActionControllerConnection for ActionControllerReceiver {
 
         match stop_result {
             Ok(_) => {
-                println!(
+                logd!(
+                    3,
                     "[ActionController] Successfully stopped workload '{}' on node '{}'",
-                    req.model_name, req.node_name
+                    req.model_name,
+                    req.node_name
                 );
 
                 // Notify Timpani about the recovery action (if workload_id is provided)
                 if !req.workload_id.is_empty() {
-                    use common::external::timpani::RecoveryPolicy;
+                    let recovery_policy = determine_recovery_policy(&req.reason);
                     if let Err(e) = crate::grpc::sender::timpani::enforce_recovery_policy(
                         &req.workload_id,
-                        RecoveryPolicy::RecoveryStop,
+                        recovery_policy,
                     )
                     .await
                     {
                         // Log but don't fail the operation - Timpani notification is best-effort
-                        eprintln!(
+                        logd!(
+                            5,
                             "[ActionController] Failed to notify Timpani about recovery: {}",
                             e
                         );
                     } else {
-                        println!(
-                            "[ActionController] Notified Timpani about recovery: workload='{}', policy=STOP",
-                            req.workload_id
+                        logd!(
+                            3,
+                            "[ActionController] Notified Timpani about recovery: workload='{}', policy={:?}",
+                            req.workload_id, recovery_policy
                         );
                     }
                 }
@@ -374,7 +392,7 @@ impl ActionControllerConnection for ActionControllerReceiver {
                     "Failed to stop workload '{}' on node '{}': {}",
                     req.model_name, req.node_name, e
                 );
-                eprintln!("[ActionController] {}", msg);
+                logd!(5, "[ActionController] {}", msg);
                 Ok(Response::new(StopWorkloadResponse {
                     success: false,
                     message: msg,
@@ -400,9 +418,13 @@ impl ActionControllerConnection for ActionControllerReceiver {
 
         let req = request.into_inner();
 
-        println!(
+        logd!(
+            3,
             "[ActionController] RequestResourceScaling node='{}' workload='{}' cpu={}m mem={}MiB",
-            req.node_id, req.workload_id, req.target_cpu_limit, req.target_memory_limit
+            req.node_id,
+            req.workload_id,
+            req.target_cpu_limit,
+            req.target_memory_limit
         );
 
         // 1. Validate resource availability. The ResourceManager decides whether
@@ -534,6 +556,22 @@ async fn lookup_node_ip_by_hostname(hostname: &str) -> Option<String> {
         }
     }
     None
+}
+
+/// Determine recovery policy from request reason.
+///
+/// Default is STOP for compatibility with current PolicyManager behavior.
+/// This mapping is future-ready so RESTART/TERMINATE can be selected without
+/// changing the gRPC plumbing.
+fn determine_recovery_policy(reason: &str) -> common::external::timpani::RecoveryPolicy {
+    let reason_lc = reason.to_ascii_lowercase();
+    if reason_lc.contains("restart") {
+        common::external::timpani::RecoveryPolicy::RecoveryRestart
+    } else if reason_lc.contains("terminate") {
+        common::external::timpani::RecoveryPolicy::RecoveryTerminate
+    } else {
+        common::external::timpani::RecoveryPolicy::RecoveryStop
+    }
 }
 
 fn i32_to_status(value: i32) -> ActionStatus {

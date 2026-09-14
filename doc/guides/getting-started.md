@@ -71,6 +71,20 @@ podman --version
 # podman version 4.x.x or higher
 ```
 
+Configure Podman to use the `cgroupfs` cgroup manager. Open the systemd override file:
+
+```bash
+sudo systemctl edit podman.service
+```
+
+Add the following service override:
+
+```ini
+[Service]
+ExecStart=
+ExecStart=/usr/bin/podman --log-level=info --cgroup-manager=cgroupfs system service
+```
+
 #### Prepare System
 
 Pullpiri consists of many modules.
