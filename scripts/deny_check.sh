@@ -3,29 +3,42 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail  # Exit on error, undefined variables, or pipe failure
 
-# Initialize log and report files
-LOG_FILE="deny_results.log"
-TMP_FILE="deny_output.txt"
-mkdir -p dist/reports/deny
-REPORT_FILE="dist/reports/deny/deny_summary.md"
+# Determine project root directory dynamically based on script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="${GITHUB_WORKSPACE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+cd "$PROJECT_ROOT"
 
-# Remove old logs and report files
+
+# Initialize log and report files at project root
+LOG_FILE="$PROJECT_ROOT/deny_results.log"
+TMP_FILE="$PROJECT_ROOT/deny_output.txt"
+mkdir -p "$PROJECT_ROOT/dist/reports/deny"
+REPORT_FILE="$PROJECT_ROOT/dist/reports/deny/deny_summary.md"
+
+# Remove old logs and create clean summary report file
 rm -f "$LOG_FILE" "$TMP_FILE" "$REPORT_FILE"
+touch "$REPORT_FILE"
 
 echo "🔍 Running Cargo Deny checks..." | tee -a "$LOG_FILE"
 
-# Determine project root directory
-PROJECT_ROOT=${GITHUB_WORKSPACE:-$(pwd)}
-cd "$PROJECT_ROOT"
+# Find cargo-deny executable even if running under sudo
+DENY_CMD="cargo deny"
+if command -v cargo-deny &>/dev/null; then
+  DENY_CMD="cargo-deny"
+elif [[ -x "$HOME/.cargo/bin/cargo-deny" ]]; then
+  DENY_CMD="$HOME/.cargo/bin/cargo-deny"
+elif [[ -n "${SUDO_USER:-}" ]] && [[ -x "/home/${SUDO_USER}/.cargo/bin/cargo-deny" ]]; then
+  DENY_CMD="/home/${SUDO_USER}/.cargo/bin/cargo-deny"
+fi
 
 resolve_manifest() {
   local primary="$1"
   local fallback="${primary#src/}"
 
-  if [[ -f "$primary" ]]; then
-    echo "$primary"
-  elif [[ -f "$fallback" ]]; then
-    echo "$fallback"
+  if [[ -f "$PROJECT_ROOT/$primary" ]]; then
+    echo "$PROJECT_ROOT/$primary"
+  elif [[ -f "$PROJECT_ROOT/$fallback" ]]; then
+    echo "$PROJECT_ROOT/$fallback"
   else
     echo ""
   fi
@@ -38,6 +51,7 @@ PASSED_TOTAL=0   # Count of manifests that passed deny check
 MAJOR_MANIFEST=$(resolve_manifest "src/Cargo.toml")
 NODEAGENT_MANIFEST=$(resolve_manifest "src/agent/nodeagent/Cargo.toml")
 ROCKSDBSERVICE_MANIFEST=$(resolve_manifest "src/server/rocksdbservice/Cargo.toml")
+
 TOOLS_MANIFEST=$(resolve_manifest "src/tools/Cargo.toml")
 
 # Function to run cargo-deny on a given manifest and log results
@@ -50,7 +64,8 @@ run_deny() {
   local deny_passed=false
 
   # Run cargo deny check; capture all output to temp file
-  if cargo deny --manifest-path="$manifest" check 2>&1 | tee "$TMP_FILE"; then
+  if $DENY_CMD --manifest-path="$manifest" check 2>&1 | tee "$TMP_FILE"; then
+
     echo "✅ deny check for $label passed clean." | tee -a "$LOG_FILE"
     deny_passed=true
   else

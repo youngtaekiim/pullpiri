@@ -25,3 +25,6 @@ exclude = [
 
 [workspace.dependencies]
 common = { path = "./common" }
+regex = "1.13"
+rustls = "0.23.45"
+
