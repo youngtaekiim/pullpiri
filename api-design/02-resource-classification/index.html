@@ -13,7 +13,7 @@
         <meta name="author" content="Eclipse Pullpiri Contributors">
       
       
-        <link rel="canonical" href="https://eclipse-pullpiri.github.io/pullpiri/guides/release_KO/">
+        <link rel="canonical" href="https://eclipse-pullpiri.github.io/pullpiri/api-design/02-resource-classification/">
       
       
       
@@ -26,7 +26,7 @@
     
     
       
-        <title>release KO - Eclipse Pullpiri</title>
+        <title>[2] [설계] 리소스 분류 + URI 체계 + 메서드 - Eclipse Pullpiri</title>
       
     
     
@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pullpiri" class="md-skip">
+        <a href="#2-uri" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              release KO
+              [2] [설계] 리소스 분류 + URI 체계 + 메서드
             
           </span>
         </div>
@@ -428,188 +428,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 리소스 분류
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-uri_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 리소스별 URI 체계
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 리소스별 URI 체계">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        개요
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        릴리스 프로세스
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="릴리스 프로세스">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        버전 관리
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        릴리스 생성
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        자동 릴리스 파이프라인
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="자동 릴리스 파이프라인">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-rust-run-rust-ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1단계: Rust 코드베이스 검증 (run-rust-ci)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-run-doc-lint" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2단계: 문서 검증 (run-doc-lint)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-yaml-run-yaml-validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3단계: YAML 설정 검증 (run-yaml-validation)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-run-license-report" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4단계: 라이선스 및 의존성 검사 (run-license-report)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-tag_release_artifacts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        5단계: 아티팩트 수집 및 발행 (tag_release_artifacts)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        릴리스 아티팩트
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="릴리스 아티팩트">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        코드 커버리지 리포트
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        검증 리포트
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        라이선스 리포트
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_10" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        컴파일된 바이너리
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_11" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        문서 및 스크립트
+        이름 식별자 규칙
       
     </span>
   </a>
@@ -622,60 +467,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_12" class="md-nav__link">
+  <a href="#3-api" class="md-nav__link">
     <span class="md-ellipsis">
       
-        릴리스 검증
+        3. API 버전 관리 전략
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="릴리스 검증">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_13" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        릴리스 전 검사
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_14" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        실패 처리
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_15" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        릴리스 상태 모니터링
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#_16" class="md-nav__link">
+  <a href="#4-http" class="md-nav__link">
     <span class="md-ellipsis">
       
-        릴리스 노트
+        4. HTTP 메서드 매핑
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-http-task3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. HTTP 상태 코드 체계 (Task③)
       
     </span>
   </a>
@@ -699,7 +516,7 @@
 
 
   
-    <a href="https://github.com/eclipse-pullpiri/pullpiri/edit/main/doc/guides/release_KO.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/eclipse-pullpiri/pullpiri/edit/main/doc/api-design/02-resource-classification.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -707,177 +524,216 @@
   
 
 
-<!--
-SPDX-FileCopyrightText: Copyright 2024-25 LG Electronics Inc.
-
-SPDX-License-Identifier: Apache-2.0
--->
-
-<h1 id="pullpiri">Pullpiri 릴리스 관리<a class="headerlink" href="#pullpiri" title="Permanent link">&para;</a></h1>
+<h1 id="2-uri">[2] [설계] 리소스 분류 + URI 체계 + 메서드<a class="headerlink" href="#2-uri" title="Permanent link">&para;</a></h1>
+<h2 id="1">1. 리소스 분류<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p>8종을 대칭적으로 CRUD하지 않는다. 코드 분석 결과 리소스는 <strong>역할에 따라 3계층</strong>으로 나뉜다. (근거: 모두 <code>Artifact</code> 트레잇 <code>get_name()</code>=metadata.name으로 식별. Node만 gRPC 등록 경로 별도 보유, Pod는 Model에서 파생.)</p>
+<table>
+<thead>
+<tr>
+<th>계층</th>
+<th>리소스</th>
+<th>성격</th>
+<th>필요한 REST 동작</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A. 1급 배포 리소스</td>
+<td>Scenario, Package, Model, Pod</td>
+<td>사용자가 직접 배포/조회. Scenario는 배포 파이프라인 트리거</td>
+<td>전체 CRUD + List</td>
+</tr>
+<tr>
+<td>B. 보조 리소스</td>
+<td>Volume, Network, Policy, Schedule</td>
+<td>Model/Package가 참조. 단독 배포보다 참조 대상</td>
+<td>CRUD + List (단, 참조 무결성 검증 필요)</td>
+</tr>
+<tr>
+<td>C. 읽기전용/파생</td>
+<td>Node</td>
+<td>Node=gRPC 등록·조회(<code>NodeManager</code>), Pod=<code>save_pod_yaml_from_package</code>로 자동 생성되는 파생물</td>
+<td>GET(조회)만. 생성/삭제는 내부 경로 유지</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-uri_1">2. 리소스별 URI 체계<a class="headerlink" href="#2-uri_1" title="Permanent link">&para;</a></h2>
+<p>버전 접두사 <code>/api/v1/</code> 채택. 복수형 컬렉션 + 이름 식별자 규칙.</p>
+<table>
+<thead>
+<tr>
+<th>리소스</th>
+<th>컬렉션 URI</th>
+<th>단건 URI</th>
+<th>계층</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scenario</td>
+<td>/api/v1/scenarios</td>
+<td>/api/v1/scenarios/{name}</td>
+<td>A</td>
+</tr>
+<tr>
+<td>Package</td>
+<td>/api/v1/packages</td>
+<td>/api/v1/packages/{name}</td>
+<td>A</td>
+</tr>
+<tr>
+<td>Model</td>
+<td>/api/v1/models</td>
+<td>/api/v1/models/{name}</td>
+<td>A</td>
+</tr>
+<tr>
+<td>pod</td>
+<td>/api/v1/pods</td>
+<td>/api/v1/pods/{name}</td>
+<td>A</td>
+</tr>
+<tr>
+<td>Volume</td>
+<td>/api/v1/volumes</td>
+<td>/api/v1/volumes/{name}</td>
+<td>B</td>
+</tr>
+<tr>
+<td>Network</td>
+<td>/api/v1/networks</td>
+<td>/api/v1/networks/{name}</td>
+<td>B</td>
+</tr>
+<tr>
+<td>Policy</td>
+<td>/api/v1/policies</td>
+<td>/api/v1/policies/{name}</td>
+<td>B</td>
+</tr>
+<tr>
+<td>Schedule</td>
+<td>/api/v1/schedules</td>
+<td>/api/v1/schedules/{name}</td>
+<td>B</td>
+</tr>
+<tr>
+<td>Node</td>
+<td>/api/v1/nodes</td>
+<td>/api/v1/nodes/{name}</td>
+<td>C (읽기전용)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>URI <code>/api/v1/{resource}/{name}</code> → RocksDB 저장 키 <code>{Kind}/{name}</code> 매핑이 1:1 단순 변환 가능하다.
+(단, 저장 키의 kind는 단수 PascalCase(Scenario, Package..)이고, URI는 복수 소문자(scenario, package, ..)이므로 라우팅 레이어에서 매핑이 필요함)</p>
+</blockquote>
+<h3 id="_1">이름 식별자 규칙<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
 <ul>
-<li><a href="#개요">개요</a></li>
-<li><a href="#릴리스-프로세스">릴리스 프로세스</a></li>
-<li><a href="#버전-관리">버전 관리</a></li>
-<li><a href="#릴리스-생성">릴리스 생성</a></li>
-<li><a href="#자동-릴리스-파이프라인">자동 릴리스 파이프라인</a></li>
-<li><a href="#릴리스-아티팩트">릴리스 아티팩트</a></li>
-<li><a href="#릴리스-검증">릴리스 검증</a></li>
+<li>name은 1~63자의 lowercase DNS label 형식을 사용한다.</li>
+<li>허용 문자: <code>a-z</code>, <code>0-9</code>, <code>-</code></li>
+<li>시작과 끝은 영숫자여야 한다.</li>
+<li>비교는 case-sensitive이며 서버는 대소문자를 자동 변환하지 않는다.</li>
 </ul>
-<h2 id="_1">개요<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>Pullpiri는 GitHub Actions를 사용하여 자동화된 CI/CD 파이프라인으로 릴리스 프로세스를 관리합니다. 버전 태그가 저장소에 푸시되면 워크플로우가 자동으로:</p>
-<ol>
-<li>코드베이스 검증 (포매팅, 린팅, 테스트)</li>
-<li>문서 및 설정 검증</li>
-<li>코드 커버리지 및 규정 준수 리포트 생성</li>
-<li>릴리스 아티팩트 및 바이너리 컴파일</li>
-<li>GitHub Release에 자산 발행</li>
-</ol>
-<p>이러한 자동화된 접근 방식은 각 단계에서 종합적인 검증을 통해 일관되고 고품질의 릴리스를 보장합니다.</p>
-<h2 id="_2">릴리스 프로세스<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<h3 id="_3">버전 관리<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<p>Pullpiri는 <strong>vX.Y.Z</strong> 형식의 의미있는 버전 관리(Semantic Versioning)를 따릅니다.</p>
+<h2 id="3-api">3. API 버전 관리 전략<a class="headerlink" href="#3-api" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>X</strong>: 주(Major) 버전 (호환되지 않는 변경사항)</li>
-<li><strong>Y</strong>: 부(Minor) 버전 (새로운 기능, 하위 호환성 유지)</li>
-<li><strong>Z</strong>: 패치(Patch) 버전 (버그 수정)</li>
+<li><strong>결정:</strong> URI 경로 버저닝 <code>/api/v1/</code> 채택. (목표에서 이미 방향 확정, settingsservice도 <code>/api/v1/</code> 사용 중이라 일관성 확보)</li>
+<li>헤더/콘텐츠 협상 방식 대신 경로 방식 채택 — pirictl 등 클라이언트 구현이 단순.</li>
+<li><strong>v2 정책:</strong> 하위 호환 깨지는 변경 시에만 <code>/api/v2/</code> 신설, v1은 유지(deprecation 후 제거). 무거운 별도 Task가 아니라 본 문서의 한 규칙으로 확정.</li>
 </ul>
-<p>예시: <code>v1.0.0</code>, <code>v1.1.0</code>, <code>v1.2.3</code></p>
-<h3 id="_4">릴리스 생성<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<p>새로운 릴리스를 생성하려면:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 프로젝트 디렉토리로 이동</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>/path/to/pullpiri
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># 버전 태그 생성 (예: v1.0.0)</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>git<span class="w"> </span>tag<span class="w"> </span>v1.0.0
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># 태그를 푸시하여 릴리스 워크플로우 트리거</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.0.0
-</code></pre></div>
-<p><strong>중요</strong>: 태그는 <code>v</code>로 시작해야 하며 의미있는 버전 형식을 따라야 합니다. 유효하지 않은 태그는 릴리스 워크플로우를 트리거하지 않습니다.</p>
-<p>태그가 푸시되면 GitHub Actions가 자동으로 릴리스 파이프라인을 시작합니다. GitHub 저장소의 <strong>Actions</strong> 탭에서 진행 상황을 모니터링할 수 있습니다.</p>
-<h3 id="_5">자동 릴리스 파이프라인<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<p>릴리스 파이프라인은 <strong>5개의 순차 단계</strong>로 구성되며, 모두 성공해야 발행됩니다:</p>
-<h4 id="1-rust-run-rust-ci">1단계: Rust 코드베이스 검증 (<code>run-rust-ci</code>)<a class="headerlink" href="#1-rust-run-rust-ci" title="Permanent link">&para;</a></h4>
-<p>모든 Rust 코드를 프로젝트 표준에 맞게 검증합니다:</p>
-<ul>
-<li><strong>포매팅 검사</strong> (<code>cargo fmt --check</code>): Rust 포매팅 규칙 준수 여부 검증</li>
-<li><strong>린팅 검사</strong> (<code>cargo clippy</code>): 코드 품질 문제 및 스타일 위반 식별</li>
-<li><strong>단위 테스트</strong> (<code>cargo test</code>): 모든 컴포넌트에서 단위 테스트 실행</li>
-<li>server (apiserver, settingsservice 등)</li>
-<li>player (filtergateway, actioncontroller, statemanager)</li>
-<li>tools (pirictl, rocksdb-inspector, idl2rs)</li>
-<li>common (공유 유틸리티 및 gRPC 정의)</li>
-</ul>
-<p><strong>출력</strong>: fmt_summary.md, clippy_summary.md, test_summary.xml</p>
-<h4 id="2-run-doc-lint">2단계: 문서 검증 (<code>run-doc-lint</code>)<a class="headerlink" href="#2-run-doc-lint" title="Permanent link">&para;</a></h4>
-<p>마크다운 파일 및 문서 포매팅 검증:</p>
-<ul>
-<li>마크다운 구문 검사</li>
-<li>링크 검증</li>
-<li>포매팅 일관성</li>
-</ul>
-<p><strong>실패 영향</strong>: 문서 표준을 충족하지 않으면 릴리스 방지.</p>
-<h4 id="3-yaml-run-yaml-validation">3단계: YAML 설정 검증 (<code>run-yaml-validation</code>)<a class="headerlink" href="#3-yaml-run-yaml-validation" title="Permanent link">&para;</a></h4>
-<p>저장소의 모든 YAML 파일 검증:</p>
-<ul>
-<li>GitHub Actions 워크플로우 (<code>.github/workflows/*.yml</code>)</li>
-<li>설정 파일</li>
-<li>예제 시나리오</li>
-</ul>
-<p><strong>실패 영향</strong>: YAML이 잘못된 형식이면 릴리스 방지.</p>
-<h4 id="4-run-license-report">4단계: 라이선스 및 의존성 검사 (<code>run-license-report</code>)<a class="headerlink" href="#4-run-license-report" title="Permanent link">&para;</a></h4>
-<p>오픈소스 라이선스 규정 준수 리포트 생성:</p>
-<ul>
-<li><code>cargo-about</code>를 사용한 모든 Rust 의존성 스캔</li>
-<li>허용 목록(<code>.cargo/deny.toml</code>)에 대한 검증</li>
-<li>라이선스 위반 또는 제한된 의존성 감지</li>
-<li>HTML 라이선스 리포트 생성</li>
-</ul>
-<p><strong>출력</strong>: license-report.html, deny_summary.md</p>
-<p><strong>실패 영향</strong>: 금지된 의존성이 감지되면 릴리스 방지.</p>
-<h4 id="5-tag_release_artifacts">5단계: 아티팩트 수집 및 발행 (<code>tag_release_artifacts</code>)<a class="headerlink" href="#5-tag_release_artifacts" title="Permanent link">&para;</a></h4>
-<p>이전 단계의 모든 아티팩트를 수집하여 GitHub Release에 발행:</p>
-<ul>
-<li>이전 단계에서 생성된 모든 리포트 다운로드</li>
-<li>nodeagent 바이너리 컴파일 (AMD64, ARM64)</li>
-<li>문서 아카이브 생성</li>
-<li>모든 파일을 GitHub Release 자산으로 업로드</li>
-<li>자동 릴리스 노트 생성 트리거</li>
-</ul>
-<hr />
-<h2 id="_6">릴리스 아티팩트<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>릴리스 파이프라인에서 생성된 모든 아티팩트는 GitHub Release 페이지에 자동으로 업로드됩니다.</p>
-<h3 id="_7">코드 커버리지 리포트<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<p>각 컴포넌트별로 생성됩니다:</p>
-<ul>
-<li><code>code-coverage-server.html</code> - API 서버 커버리지</li>
-<li><code>code-coverage-tools.html</code> - 도구(pirictl, rocksdb-inspector) 커버리지</li>
-<li><code>code-coverage-common.html</code> - 공유 유틸리티 커버리지</li>
-</ul>
-<h3 id="_8">검증 리포트<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>fmt_summary.md</code> - 포매팅 검사 결과</li>
-<li><code>clippy_summary.md</code> - 린팅/코드 품질 검사 결과</li>
-<li><code>test_summary.xml</code> - 단위 테스트 결과 (JUnit 형식)</li>
-<li><code>deny_summary.md</code> - 의존성 및 라이선스 검사 결과</li>
-</ul>
-<h3 id="_9">라이선스 리포트<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>license-report.html</code> - 완전한 오픈소스 라이선스 문서</li>
-</ul>
-<h3 id="_10">컴파일된 바이너리<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>nodeagent-linux-amd64</code> - Linux x86_64용 NodeAgent 바이너리</li>
-<li><code>nodeagent-linux-arm64</code> - Linux ARM64용 NodeAgent 바이너리</li>
-</ul>
-<h3 id="_11">문서 및 스크립트<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>README.md</code> - 주요 프로젝트 문서</li>
-<li><code>coding-rule.md</code> - 코딩 가이드라인 및 표준</li>
-<li><code>release.yml</code> - 릴리스 워크플로우 정의</li>
-<li><code>install_nodeagent.sh</code> - NodeAgent 설치 스크립트</li>
-<li><code>node_ready_check.sh</code> - 노드 준비 상태 검증 스크립트</li>
-<li><code>doc-archive.tar.gz</code> - 완전한 문서 폴더 아카이브</li>
-</ul>
-<hr />
-<h2 id="_12">릴리스 검증<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
-<p>릴리스 파이프라인은 각 단계에서 종합적인 검증을 구현합니다:</p>
-<h3 id="_13">릴리스 전 검사<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
-<p>릴리스가 발행되기 전에 다음이 모두 통과해야 합니다:</p>
-<ol>
-<li><strong>모든 Rust 코드</strong>가 포매팅, 린팅 및 테스트를 통과해야 함</li>
-<li><strong>모든 문서</strong>가 유효한 마크다운 형식을 가져야 함</li>
-<li><strong>모든 설정 파일</strong>이 유효한 YAML 구문을 가져야 함</li>
-<li><strong>모든 의존성</strong>이 승인되고 적절히 라이선스되어야 함</li>
-<li><strong>코드 커버리지</strong>가 품질 평가를 위해 생성되어야 함</li>
-</ol>
-<h3 id="_14">실패 처리<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
-<p>단계가 실패하면:</p>
-<ol>
-<li>워크플로우가 즉시 중지되고 이후 단계가 건너뛰어집니다</li>
-<li>릴리스는 GitHub에 <strong>발행되지 않습니다</strong></li>
-<li>자세한 오류 로그는 <strong>Actions</strong> 탭에서 확인 가능합니다</li>
-<li>개발자는 문제를 수정하고 새 태그를 푸시하여 다시 시도해야 합니다</li>
-</ol>
-<h3 id="_15">릴리스 상태 모니터링<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
-<p>릴리스 파이프라인 진행 상황 확인:</p>
-<ol>
-<li>GitHub 저장소로 이동</li>
-<li><strong>Actions</strong> 탭 클릭</li>
-<li>버전 태그로 트리거된 워크플로우 찾기</li>
-<li>각 단계의 상태 모니터링</li>
-<li>실패 시 자세한 로그 검토</li>
-</ol>
-<hr />
-<h2 id="_16">릴리스 노트<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h2>
-<p>GitHub는 다음을 기반으로 자동으로 릴리스 노트를 생성합니다:</p>
-<ul>
-<li>마지막 릴리스 이후 병합된 커밋</li>
-<li>Pull Request 제목 및 설명</li>
-<li>기여자 크레딧</li>
-</ul>
-<p>릴리스 노트는 GitHub Release 페이지에서 릴리스가 발행된 후 수동으로 편집할 수 있습니다.</p>
-<!-- markdownlint-disable-file MD033 no-inline-html -->
+<h2 id="4-http">4. HTTP 메서드 매핑<a class="headerlink" href="#4-http" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>동작</th>
+<th>메서드 + URI</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>목록 조회</td>
+<td>GET /api/v1/{resources}</td>
+<td>컬렉션 반환</td>
+</tr>
+<tr>
+<td>단건 조회</td>
+<td>GET /api/v1/{resources}/{name}</td>
+<td>없으면 404</td>
+</tr>
+<tr>
+<td>생성</td>
+<td>POST /api/v1/{resources}</td>
+<td>body에 정의. 성공 201 + Location</td>
+</tr>
+<tr>
+<td>수정(전체 교체)</td>
+<td>PUT /api/v1/{resources}/{name}</td>
+<td>멱등. 없으면 404(~~또는 201 upsert 정책 택1~~)</td>
+</tr>
+<tr>
+<td>삭제</td>
+<td>DELETE /api/v1/{resources}/{name}</td>
+<td>성공 200 ~~204~~</td>
+</tr>
+</tbody>
+</table>
+<p>Node는 GET 2종만 제공하고 POST/PUT/DELETE는 405로 명시 거부.</p>
+<h2 id="5-http-task3">5. HTTP 상태 코드 체계 (Task③)<a class="headerlink" href="#5-http-task3" title="Permanent link">&para;</a></h2>
+<p>현행 문제: <code>route/mod.rs::status()</code>가 모든 <code>Err</code>를 <strong>405로 일괄 매핑</strong>. 아래로 세분화한다.</p>
+<table>
+<thead>
+<tr>
+<th>코드</th>
+<th>사용 상황</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>200 OK</td>
+<td>조회/수정/삭제(~~내용 반환~~) 성공</td>
+</tr>
+<tr>
+<td>201 Created</td>
+<td>리소스 생성 성공 (POST). Location 헤더 포함</td>
+</tr>
+<tr>
+<td>~~204 No Content~~</td>
+<td>~~삭제 성공 등 본문 없는 성공~~</td>
+</tr>
+<tr>
+<td>400 Bad Request</td>
+<td>YAML/JSON 파싱 실패, 잘못된 형식</td>
+</tr>
+<tr>
+<td>404 Not Found</td>
+<td>존재하지 않는 리소스 조회/수정/삭제</td>
+</tr>
+<tr>
+<td>405 Method Not Allowed</td>
+<td>계층 C에 쓰기 시도 등 진짜 메서드 불허 (원래 의미로 복원)</td>
+</tr>
+<tr>
+<td>409 Conflict</td>
+<td>이미 존재하는 리소스 생성, 참조 무결성 위반(사용 중 리소스 삭제)</td>
+</tr>
+<tr>
+<td>422 Unprocessable Entity</td>
+<td>문법은 맞으나 의미 오류(필수 필드 누락, 참조 대상 없음 등 — 현행 apply()의 Scenario/Package 누락 검증이 여기 해당)</td>
+</tr>
+<tr>
+<td>500 Internal Server Error</td>
+<td>RocksDB/gRPC 등 내부 오류</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>현행 <code>apply()</code>의 "There is not any scenario/package" 오류는 405가 아니라 <strong>422</strong>로 매핑되어야 의미론적으로 맞다.</p>
+</blockquote>
+<p>```</p>
 
 
 

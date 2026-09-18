@@ -13,7 +13,7 @@
         <meta name="author" content="Eclipse Pullpiri Contributors">
       
       
-        <link rel="canonical" href="https://eclipse-pullpiri.github.io/pullpiri/guides/release_KO/">
+        <link rel="canonical" href="https://eclipse-pullpiri.github.io/pullpiri/api-design/04-interface-unification-review/">
       
       
       
@@ -26,7 +26,7 @@
     
     
       
-        <title>release KO - Eclipse Pullpiri</title>
+        <title>[4] [검토] pirictl <-> APIServer 인터페이스 일원화 방향 - Eclipse Pullpiri</title>
       
     
     
@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pullpiri" class="md-skip">
+        <a href="#4-pirictl-apiserver" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              release KO
+              [4] [검토] pirictl &lt;-&gt; APIServer 인터페이스 일원화 방향
             
           </span>
         </div>
@@ -428,33 +428,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        개요
+        1. 현행 인터페이스 구조 (코드 근거)
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        릴리스 프로세스
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="릴리스 프로세스">
+    <nav class="md-nav" aria-label="1. 현행 인터페이스 구조 (코드 근거)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#11-pirictl-2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        버전 관리
+        1.1 pirictl은 클라이언트를 2개 만든다
       
     </span>
   </a>
@@ -462,10 +451,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#12-settingsservice-apiserver" class="md-nav__link">
     <span class="md-ellipsis">
       
-        릴리스 생성
+        1.2 settingsservice는 배포 요청을 apiserver로 프록시한다
       
     </span>
   </a>
@@ -473,143 +462,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#13-3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        자동 릴리스 파이프라인
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="자동 릴리스 파이프라인">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-rust-run-rust-ci" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1단계: Rust 코드베이스 검증 (run-rust-ci)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-run-doc-lint" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2단계: 문서 검증 (run-doc-lint)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-yaml-run-yaml-validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3단계: YAML 설정 검증 (run-yaml-validation)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-run-license-report" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4단계: 라이선스 및 의존성 검사 (run-license-report)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-tag_release_artifacts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        5단계: 아티팩트 수집 및 발행 (tag_release_artifacts)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        릴리스 아티팩트
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="릴리스 아티팩트">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        코드 커버리지 리포트
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        검증 리포트
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        라이선스 리포트
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_10" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        컴파일된 바이너리
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_11" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        문서 및 스크립트
+        1.3 결과: ~~3중 경로~~
       
     </span>
   </a>
@@ -622,22 +478,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_12" class="md-nav__link">
+  <a href="#2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        릴리스 검증
+        2. 문제의 본질 — "공백"과 "중복"을 분리해서 봐야 한다
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="릴리스 검증">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 통합 방향 비교
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-a" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 방향 A 적용 시 인터페이스 재배치 (설계 관점)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 방향 A 적용 시 인터페이스 재배치 (설계 관점)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_13" class="md-nav__link">
+  <a href="#41" class="md-nav__link">
     <span class="md-ellipsis">
       
-        릴리스 전 검사
+        4.1 서비스별 책임 경계
       
     </span>
   </a>
@@ -645,10 +523,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_14" class="md-nav__link">
+  <a href="#42-pirictl-a" class="md-nav__link">
     <span class="md-ellipsis">
       
-        실패 처리
+        4.2 pirictl 라우팅 재정리(방향 A 반영)
       
     </span>
   </a>
@@ -656,10 +534,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_15" class="md-nav__link">
+  <a href="#43" class="md-nav__link">
     <span class="md-ellipsis">
       
-        릴리스 상태 모니터링
+        4.3 경로 충돌 회피 규칙
       
     </span>
   </a>
@@ -672,10 +550,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_16" class="md-nav__link">
+  <a href="#5" class="md-nav__link">
     <span class="md-ellipsis">
       
-        릴리스 노트
+        5. 마이그레이션 / 정리 개요 (구현 제외, 방향만)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-task-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 이슈 Task ⑦ 대응 정리
       
     </span>
   </a>
@@ -699,7 +588,7 @@
 
 
   
-    <a href="https://github.com/eclipse-pullpiri/pullpiri/edit/main/doc/guides/release_KO.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/eclipse-pullpiri/pullpiri/edit/main/doc/api-design/04-interface-unification-review.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -707,177 +596,268 @@
   
 
 
-<!--
-SPDX-FileCopyrightText: Copyright 2024-25 LG Electronics Inc.
-
-SPDX-License-Identifier: Apache-2.0
--->
-
-<h1 id="pullpiri">Pullpiri 릴리스 관리<a class="headerlink" href="#pullpiri" title="Permanent link">&para;</a></h1>
-<ul>
-<li><a href="#개요">개요</a></li>
-<li><a href="#릴리스-프로세스">릴리스 프로세스</a></li>
-<li><a href="#버전-관리">버전 관리</a></li>
-<li><a href="#릴리스-생성">릴리스 생성</a></li>
-<li><a href="#자동-릴리스-파이프라인">자동 릴리스 파이프라인</a></li>
-<li><a href="#릴리스-아티팩트">릴리스 아티팩트</a></li>
-<li><a href="#릴리스-검증">릴리스 검증</a></li>
-</ul>
-<h2 id="_1">개요<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>Pullpiri는 GitHub Actions를 사용하여 자동화된 CI/CD 파이프라인으로 릴리스 프로세스를 관리합니다. 버전 태그가 저장소에 푸시되면 워크플로우가 자동으로:</p>
-<ol>
-<li>코드베이스 검증 (포매팅, 린팅, 테스트)</li>
-<li>문서 및 설정 검증</li>
-<li>코드 커버리지 및 규정 준수 리포트 생성</li>
-<li>릴리스 아티팩트 및 바이너리 컴파일</li>
-<li>GitHub Release에 자산 발행</li>
-</ol>
-<p>이러한 자동화된 접근 방식은 각 단계에서 종합적인 검증을 통해 일관되고 고품질의 릴리스를 보장합니다.</p>
-<h2 id="_2">릴리스 프로세스<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<h3 id="_3">버전 관리<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<p>Pullpiri는 <strong>vX.Y.Z</strong> 형식의 의미있는 버전 관리(Semantic Versioning)를 따릅니다.</p>
-<ul>
-<li><strong>X</strong>: 주(Major) 버전 (호환되지 않는 변경사항)</li>
-<li><strong>Y</strong>: 부(Minor) 버전 (새로운 기능, 하위 호환성 유지)</li>
-<li><strong>Z</strong>: 패치(Patch) 버전 (버그 수정)</li>
-</ul>
-<p>예시: <code>v1.0.0</code>, <code>v1.1.0</code>, <code>v1.2.3</code></p>
-<h3 id="_4">릴리스 생성<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<p>새로운 릴리스를 생성하려면:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 프로젝트 디렉토리로 이동</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>/path/to/pullpiri
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># 버전 태그 생성 (예: v1.0.0)</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>git<span class="w"> </span>tag<span class="w"> </span>v1.0.0
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># 태그를 푸시하여 릴리스 워크플로우 트리거</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.0.0
+<h1 id="4-pirictl-apiserver">[4] [검토] pirictl &lt;-&gt; APIServer 인터페이스 일원화 방향<a class="headerlink" href="#4-pirictl-apiserver" title="Permanent link">&para;</a></h1>
+<h2 id="1">1. 현행 인터페이스 구조 (코드 근거)<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<h3 id="11-pirictl-2">1.1 pirictl은 클라이언트를 <strong>2개</strong> 만든다<a class="headerlink" href="#11-pirictl-2" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// src/tools/pirictl/src/main.rs — main()</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kd">let</span><span class="w"> </span><span class="n">settings_client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SettingsClient</span><span class="p">::</span><span class="n">new</span><span class="p">(</span><span class="o">&amp;</span><span class="n">settings_url</span><span class="p">,</span><span class="w"> </span><span class="o">..</span><span class="p">.);</span><span class="w">  </span><span class="c1">// :8080  (settingsservice)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kd">let</span><span class="w"> </span><span class="n">api_client</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">SettingsClient</span><span class="p">::</span><span class="n">new</span><span class="p">(</span><span class="o">&amp;</span><span class="n">api_url</span><span class="p">,</span><span class="w"> </span><span class="o">..</span><span class="p">.);</span><span class="w">       </span><span class="c1">// :47099 (apiserver)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1">// 주석: &quot;YAML commands go directly to API Server; others go to SettingsService&quot;</span>
 </code></pre></div>
-<p><strong>중요</strong>: 태그는 <code>v</code>로 시작해야 하며 의미있는 버전 형식을 따라야 합니다. 유효하지 않은 태그는 릴리스 워크플로우를 트리거하지 않습니다.</p>
-<p>태그가 푸시되면 GitHub Actions가 자동으로 릴리스 파이프라인을 시작합니다. GitHub 저장소의 <strong>Actions</strong> 탭에서 진행 상황을 모니터링할 수 있습니다.</p>
-<h3 id="_5">자동 릴리스 파이프라인<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<p>릴리스 파이프라인은 <strong>5개의 순차 단계</strong>로 구성되며, 모두 성공해야 발행됩니다:</p>
-<h4 id="1-rust-run-rust-ci">1단계: Rust 코드베이스 검증 (<code>run-rust-ci</code>)<a class="headerlink" href="#1-rust-run-rust-ci" title="Permanent link">&para;</a></h4>
-<p>모든 Rust 코드를 프로젝트 표준에 맞게 검증합니다:</p>
+<table>
+<thead>
+<tr>
+<th>pirictl 서브커맨드</th>
+<th>대상 서비스</th>
+<th>포트</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>apply -f &lt;file&gt;</code> / <code>delete -f &lt;file&gt;</code></td>
+<td><strong>apiserver</strong></td>
+<td><code>:47099</code></td>
+</tr>
+<tr>
+<td><code>get {boards\|nodes\|socs\|containers}</code></td>
+<td>settingsservice</td>
+<td><code>:8080</code></td>
+</tr>
+<tr>
+<td><code>describe</code> / <code>raw</code> / <code>top</code> / <code>health</code></td>
+<td>settingsservice</td>
+<td><code>:8080</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>기본 포트는 CLI 인자로 노출된다: <code>--api-port 47099</code>, <code>--settings-port 8080</code>(<code>main.rs</code>).</p>
+</blockquote>
+<h3 id="12-settingsservice-apiserver">1.2 settingsservice는 배포 요청을 apiserver로 <strong>프록시</strong>한다<a class="headerlink" href="#12-settingsservice-apiserver" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// src/server/settingsservice/src/settings_api/mod.rs — send_artifact_to_api_server()</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">let</span><span class="w"> </span><span class="n">api_server_url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="fm">format!</span><span class="p">(</span><span class="s">&quot;http://{}/api/artifact&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">common</span><span class="p">::</span><span class="n">apiserver</span><span class="p">::</span><span class="n">open_rest_server</span><span class="p">());</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kd">let</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">match</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;POST&quot;</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;DELETE&quot;</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">delete</span><span class="p">(</span><span class="n">url</span><span class="p">),</span><span class="w"> </span><span class="o">..</span><span class="p">.</span><span class="w"> </span><span class="p">};</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">request</span><span class="p">.</span><span class="n">header</span><span class="p">(</span><span class="s">&quot;Content-Type&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;text/plain&quot;</span><span class="p">).</span><span class="n">body</span><span class="p">(</span><span class="n">yaml_content</span><span class="p">).</span><span class="n">send</span><span class="p">().</span><span class="k">await</span>
+</code></pre></div>
+<p>즉 settingsservice의 <code>/api/v1/yaml</code>(apply/withdraw) 엔드포인트는 자체 처리를 하지 않고 <strong>apiserver <code>/api/artifact</code>로 재전송</strong>한다.</p>
+<h3 id="13-3">1.3 결과: ~~3중 경로~~<a class="headerlink" href="#13-3" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>[배포·직접]   pirictl ──(:47099)─▶ apiserver /api/artifact          ← pirictl apply/delete
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>[배포·프록시]  (다른 클라이언트) ─(:8080)─▶ settingsservice /api/v1/yaml
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>                                             └─(:47099)─▶ apiserver /api/artifact
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>[조회]        pirictl ──(:8080)──▶ settingsservice /api/v1/...       ← get/describe/raw/top
+</code></pre></div>
 <ul>
-<li><strong>포매팅 검사</strong> (<code>cargo fmt --check</code>): Rust 포매팅 규칙 준수 여부 검증</li>
-<li><strong>린팅 검사</strong> (<code>cargo clippy</code>): 코드 품질 문제 및 스타일 위반 식별</li>
-<li><strong>단위 테스트</strong> (<code>cargo test</code>): 모든 컴포넌트에서 단위 테스트 실행</li>
-<li>server (apiserver, settingsservice 등)</li>
-<li>player (filtergateway, actioncontroller, statemanager)</li>
-<li>tools (pirictl, rocksdb-inspector, idl2rs)</li>
-<li>common (공유 유틸리티 및 gRPC 정의)</li>
-</ul>
-<p><strong>출력</strong>: fmt_summary.md, clippy_summary.md, test_summary.xml</p>
-<h4 id="2-run-doc-lint">2단계: 문서 검증 (<code>run-doc-lint</code>)<a class="headerlink" href="#2-run-doc-lint" title="Permanent link">&para;</a></h4>
-<p>마크다운 파일 및 문서 포매팅 검증:</p>
-<ul>
-<li>마크다운 구문 검사</li>
-<li>링크 검증</li>
-<li>포매팅 일관성</li>
-</ul>
-<p><strong>실패 영향</strong>: 문서 표준을 충족하지 않으면 릴리스 방지.</p>
-<h4 id="3-yaml-run-yaml-validation">3단계: YAML 설정 검증 (<code>run-yaml-validation</code>)<a class="headerlink" href="#3-yaml-run-yaml-validation" title="Permanent link">&para;</a></h4>
-<p>저장소의 모든 YAML 파일 검증:</p>
-<ul>
-<li>GitHub Actions 워크플로우 (<code>.github/workflows/*.yml</code>)</li>
-<li>설정 파일</li>
-<li>예제 시나리오</li>
-</ul>
-<p><strong>실패 영향</strong>: YAML이 잘못된 형식이면 릴리스 방지.</p>
-<h4 id="4-run-license-report">4단계: 라이선스 및 의존성 검사 (<code>run-license-report</code>)<a class="headerlink" href="#4-run-license-report" title="Permanent link">&para;</a></h4>
-<p>오픈소스 라이선스 규정 준수 리포트 생성:</p>
-<ul>
-<li><code>cargo-about</code>를 사용한 모든 Rust 의존성 스캔</li>
-<li>허용 목록(<code>.cargo/deny.toml</code>)에 대한 검증</li>
-<li>라이선스 위반 또는 제한된 의존성 감지</li>
-<li>HTML 라이선스 리포트 생성</li>
-</ul>
-<p><strong>출력</strong>: license-report.html, deny_summary.md</p>
-<p><strong>실패 영향</strong>: 금지된 의존성이 감지되면 릴리스 방지.</p>
-<h4 id="5-tag_release_artifacts">5단계: 아티팩트 수집 및 발행 (<code>tag_release_artifacts</code>)<a class="headerlink" href="#5-tag_release_artifacts" title="Permanent link">&para;</a></h4>
-<p>이전 단계의 모든 아티팩트를 수집하여 GitHub Release에 발행:</p>
-<ul>
-<li>이전 단계에서 생성된 모든 리포트 다운로드</li>
-<li>nodeagent 바이너리 컴파일 (AMD64, ARM64)</li>
-<li>문서 아카이브 생성</li>
-<li>모든 파일을 GitHub Release 자산으로 업로드</li>
-<li>자동 릴리스 노트 생성 트리거</li>
+<li>같은 "배포"가 <strong>두 개의 진입점</strong>(apiserver 직접 / settingsservice 프록시)을 가진다.</li>
+<li>pirictl 사용자는 조회와 배포에서 <strong>서로 다른 포트</strong>를 의식해야 한다.</li>
 </ul>
 <hr />
-<h2 id="_6">릴리스 아티팩트<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>릴리스 파이프라인에서 생성된 모든 아티팩트는 GitHub Release 페이지에 자동으로 업로드됩니다.</p>
-<h3 id="_7">코드 커버리지 리포트<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<p>각 컴포넌트별로 생성됩니다:</p>
+<h2 id="2">2. 문제의 본질 — "공백"과 "중복"을 분리해서 봐야 한다<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<p>이원화가 전부 나쁜 게 아니다. <strong>의도된 분리</strong>와 <strong>진짜 공백</strong>을 구분해야 올바른 방향이 나온다.</p>
+<table>
+<thead>
+<tr>
+<th>조회 종류</th>
+<th>데이터 출처</th>
+<th>현재 제공자</th>
+<th>성격</th>
+<th>조치</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>① Artifact 조회</strong> (Scenario/Package/Model/…)</td>
+<td>apiserver가 apply 시 kvstore에 쓴 <strong>선언(desired)</strong></td>
+<td><strong>없음 → 진짜 공백</strong></td>
+<td>apiserver 소관</td>
+<td><strong>apiserver에 GET 신설</strong></td>
+</tr>
+<tr>
+<td><strong>② 런타임 조회</strong> (Node 상태·metrics·logs·container)</td>
+<td>nodeagent/monitoring이 채우는 <strong>텔레메트리(actual)</strong></td>
+<td>settingsservice <code>monitoring_kvstore</code></td>
+<td>monitoring 소관</td>
+<td><strong>settingsservice 존치</strong></td>
+</tr>
+</tbody>
+</table>
 <ul>
-<li><code>code-coverage-server.html</code> - API 서버 커버리지</li>
-<li><code>code-coverage-tools.html</code> - 도구(pirictl, rocksdb-inspector) 커버리지</li>
-<li><code>code-coverage-common.html</code> - 공유 유틸리티 커버리지</li>
+<li><strong>①은 진짜 공백</strong>: apiserver가 데이터를 갖고도(kvstore) 읽는 문을 안 열어놨다. → pirictl이 "배포한 걸 확인"하려면 엉뚱하게 settingsservice로 가야 한다.</li>
+<li><strong>②는 의도된 분리</strong>: 런타임 상태는 애초에 apiserver가 만든 데이터가 아니다. 옮기려면 monitoring 데이터 접근을 통째로 이관해야 하므로 <strong>단순 이동이 아니다.</strong></li>
 </ul>
-<h3 id="_8">검증 리포트<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p><strong>핵심 통찰</strong>: pirictl의 조회가 settingsservice로 가는 것은 "apiserver에 GET이 없어서"만이 아니라, <strong>원래 다른 종류의 데이터(런타임 상태)를 보기 때문</strong>이다. 따라서 "모두 apiserver로 몰기"는 틀린 목표다.</p>
+</blockquote>
+<hr />
+<h2 id="3">3. 통합 방향 비교<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>방향</th>
+<th>내용</th>
+<th>장점</th>
+<th>단점</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A (권장)</strong></td>
+<td>apiserver에 <strong>artifact 조회 GET(①)만 신설</strong>. artifact 조회+배포는 <code>:47099</code>로 일원화, <strong>런타임 조회(②)는 settingsservice 유지</strong></td>
+<td>진짜 공백(artifact 조회) 해소, 데이터 플레인 경계 유지, 배포와 조회가 같은 서비스</td>
+<td>apiserver에 조회 책임 일부 추가</td>
+</tr>
+<tr>
+<td>B</td>
+<td>settingsservice를 <strong>조회 게이트웨이</strong>로 유지(모든 조회 통일), apiserver는 배포 전용</td>
+<td>조회 진입점 단일</td>
+<td>artifact 조회 공백 지속(settingsservice가 apiserver kvstore를 다시 읽어야 함 → 새 결합 발생)</td>
+</tr>
+<tr>
+<td>C</td>
+<td><strong>settingsservice 프록시 제거</strong>, pirictl이 모든 배포를 apiserver 직접 호출</td>
+<td>3중 경로의 프록시 변 제거</td>
+<td>settingsservice 배포 API 소비자(대시보드 등) 영향 → Out of Scope 위반 소지</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>결정: 방향 A.</strong>
+- artifact <strong>조회+배포</strong>를 apiserver(<code>:47099</code>)로 모으면 pirictl의 artifact 워크플로가 <strong>단일 포트</strong>로 정리된다.
+- <strong>런타임 조회는 settingsservice에 존치</strong> — apiserver 소관이 아니고, <code>GET /api/v1/nodes</code>는 settingsservice가 <strong>이미 점유</strong> 중이라 apiserver가 같은 경로를 신설하면 충돌한다.
+- 방향 C(프록시 제거)는 settingsservice 기능 변경이라 <strong>Out of Scope</strong>. 다만 "향후 정리 후보"로만 기록한다(§5).</p>
+</blockquote>
+<hr />
+<h2 id="4-a">4. 방향 A 적용 시 인터페이스 재배치 (설계 관점)<a class="headerlink" href="#4-a" title="Permanent link">&para;</a></h2>
+<h3 id="41">4.1 서비스별 책임 경계<a class="headerlink" href="#41" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>서비스</th>
+<th>포트</th>
+<th>책임 (방향 A)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>apiserver</strong></td>
+<td><code>:47099</code></td>
+<td>번들 <strong>배포/철회</strong> + <strong>artifact 7종 조회(GET 신설)</strong></td>
+</tr>
+<tr>
+<td><strong>settingsservice</strong></td>
+<td><code>:8080</code></td>
+<td><strong>런타임/모니터링 조회</strong>(Node·Pod·metrics·container·top) — 기존 유지</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42-pirictl-a">4.2 pirictl 라우팅 재정리(방향 A 반영)<a class="headerlink" href="#42-pirictl-a" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>pirictl 서브커맨드</th>
+<th>대상(현행)</th>
+<th>대상(방향 A)</th>
+<th>변화</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>apply</code> / <code>delete</code></td>
+<td>apiserver <code>:47099</code></td>
+<td>apiserver <code>:47099</code></td>
+<td>유지</td>
+</tr>
+<tr>
+<td><strong><code>get scenarios/packages/models/…</code></strong> (신규)</td>
+<td>(불가)</td>
+<td><strong>apiserver <code>:47099</code></strong></td>
+<td><strong>신설</strong> — artifact 조회 공백 해소</td>
+</tr>
+<tr>
+<td><code>get nodes/boards/socs/containers</code></td>
+<td>settingsservice <code>:8080</code></td>
+<td>settingsservice <code>:8080</code></td>
+<td>유지(런타임)</td>
+</tr>
+<tr>
+<td><code>describe</code> / <code>raw</code> / <code>top</code> / <code>health</code></td>
+<td>settingsservice <code>:8080</code></td>
+<td>settingsservice <code>:8080</code></td>
+<td>유지</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>pirictl은 이미 <code>api_client</code>(:47099)와 <code>settings_client</code>(:8080)를 <strong>둘 다 보유</strong>하므로, artifact 조회 커맨드를 <code>api_client</code>로 라우팅만 추가하면 된다(클라이언트 구조 변경 불필요). — 단, 이는 <em>구현 범위</em>이며 본 문서는 방향만 확정.</p>
+</blockquote>
+<h3 id="43">4.3 경로 충돌 회피 규칙<a class="headerlink" href="#43" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>fmt_summary.md</code> - 포매팅 검사 결과</li>
-<li><code>clippy_summary.md</code> - 린팅/코드 품질 검사 결과</li>
-<li><code>test_summary.xml</code> - 단위 테스트 결과 (JUnit 형식)</li>
-<li><code>deny_summary.md</code> - 의존성 및 라이선스 검사 결과</li>
-</ul>
-<h3 id="_9">라이선스 리포트<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>license-report.html</code> - 완전한 오픈소스 라이선스 문서</li>
-</ul>
-<h3 id="_10">컴파일된 바이너리<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>nodeagent-linux-amd64</code> - Linux x86_64용 NodeAgent 바이너리</li>
-<li><code>nodeagent-linux-arm64</code> - Linux ARM64용 NodeAgent 바이너리</li>
-</ul>
-<h3 id="_11">문서 및 스크립트<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>README.md</code> - 주요 프로젝트 문서</li>
-<li><code>coding-rule.md</code> - 코딩 가이드라인 및 표준</li>
-<li><code>release.yml</code> - 릴리스 워크플로우 정의</li>
-<li><code>install_nodeagent.sh</code> - NodeAgent 설치 스크립트</li>
-<li><code>node_ready_check.sh</code> - 노드 준비 상태 검증 스크립트</li>
-<li><code>doc-archive.tar.gz</code> - 완전한 문서 폴더 아카이브</li>
+<li>apiserver는 <code>GET /api/v1/nodes</code>, <code>GET /api/v1/nodes/{name}</code>를 <strong>신설하지 않는다</strong>(settingsservice 점유).</li>
+<li>apiserver의 GET은 <strong>artifact 7종</strong>(Scenario/Package/Model/Volume/Network/Policy/Schedule)으로 한정한다.</li>
+<li>Pod(파생)·Node 조회는 <strong>런타임 상태 영역</strong>으로 보고 settingsservice에 위임한다.</li>
 </ul>
 <hr />
-<h2 id="_12">릴리스 검증<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
-<p>릴리스 파이프라인은 각 단계에서 종합적인 검증을 구현합니다:</p>
-<h3 id="_13">릴리스 전 검사<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
-<p>릴리스가 발행되기 전에 다음이 모두 통과해야 합니다:</p>
-<ol>
-<li><strong>모든 Rust 코드</strong>가 포매팅, 린팅 및 테스트를 통과해야 함</li>
-<li><strong>모든 문서</strong>가 유효한 마크다운 형식을 가져야 함</li>
-<li><strong>모든 설정 파일</strong>이 유효한 YAML 구문을 가져야 함</li>
-<li><strong>모든 의존성</strong>이 승인되고 적절히 라이선스되어야 함</li>
-<li><strong>코드 커버리지</strong>가 품질 평가를 위해 생성되어야 함</li>
-</ol>
-<h3 id="_14">실패 처리<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
-<p>단계가 실패하면:</p>
-<ol>
-<li>워크플로우가 즉시 중지되고 이후 단계가 건너뛰어집니다</li>
-<li>릴리스는 GitHub에 <strong>발행되지 않습니다</strong></li>
-<li>자세한 오류 로그는 <strong>Actions</strong> 탭에서 확인 가능합니다</li>
-<li>개발자는 문제를 수정하고 새 태그를 푸시하여 다시 시도해야 합니다</li>
-</ol>
-<h3 id="_15">릴리스 상태 모니터링<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
-<p>릴리스 파이프라인 진행 상황 확인:</p>
-<ol>
-<li>GitHub 저장소로 이동</li>
-<li><strong>Actions</strong> 탭 클릭</li>
-<li>버전 태그로 트리거된 워크플로우 찾기</li>
-<li>각 단계의 상태 모니터링</li>
-<li>실패 시 자세한 로그 검토</li>
-</ol>
+<h2 id="5">5. 마이그레이션 / 정리 개요 (구현 제외, 방향만)<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>내용</th>
+<th>범위</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>apiserver에 artifact 조회 GET 신설(방향 A)</td>
+<td>본 이슈 설계 대상</td>
+</tr>
+<tr>
+<td>2</td>
+<td>pirictl에 <code>get &lt;artifact&gt;</code> 커맨드를 <code>api_client</code>로 추가</td>
+<td>후속 구현 이슈</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>/api/artifact</code> → <code>/api/v1/artifacts</code> 경로 버저닝 정렬(Task ⑥)</td>
+<td>본 이슈 설계 대상</td>
+</tr>
+<tr>
+<td>4</td>
+<td>settingsservice 배포 프록시(<code>/api/v1/yaml</code> → <code>/api/artifact</code>) 존치/정리 판단</td>
+<td><strong>Out of Scope</strong> (향후 후보)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>호환성</strong>: pirictl·Timpani·settingsservice에 대한 영향은 아래와 같다.
+- <strong>pirictl</strong>: artifact 조회 커맨드 추가(가산적 변경). 기존 apply/delete·런타임 조회 무영향.
+- <strong>settingsservice</strong>: 방향 A에서는 <strong>기능 변경 없음</strong>(런타임 조회 존치). 프록시 정리(방향 C)는 별도 이슈.</p>
+</blockquote>
 <hr />
-<h2 id="_16">릴리스 노트<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h2>
-<p>GitHub는 다음을 기반으로 자동으로 릴리스 노트를 생성합니다:</p>
-<ul>
-<li>마지막 릴리스 이후 병합된 커밋</li>
-<li>Pull Request 제목 및 설명</li>
-<li>기여자 크레딧</li>
-</ul>
-<p>릴리스 노트는 GitHub Release 페이지에서 릴리스가 발행된 후 수동으로 편집할 수 있습니다.</p>
-<!-- markdownlint-disable-file MD033 no-inline-html -->
+<h2 id="6-task-7">6. 이슈 Task ⑦ 대응 정리<a class="headerlink" href="#6-task-7" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>이슈 항목</th>
+<th>결정</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>⑦ pirictl ↔ apiserver 일원화</td>
+<td><strong>방향 A</strong>: apiserver에 artifact 조회 GET 신설 → artifact 조회+배포를 <code>:47099</code>로 일원화</td>
+</tr>
+<tr>
+<td>⑦ settingsservice 통합 여부</td>
+<td>런타임/모니터링 조회는 <strong>settingsservice 존치</strong>(데이터 플레인 경계·경로 충돌 회피). 통합 아님</td>
+</tr>
+<tr>
+<td>⑦ 범위</td>
+<td><strong>방향 검토로 한정</strong>. settingsservice 기능 변경·프록시 제거·pirictl 구현은 Out of Scope</td>
+</tr>
+</tbody>
+</table>
+<hr />
 
 
 
