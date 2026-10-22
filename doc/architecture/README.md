@@ -71,6 +71,7 @@ Describes overall system architecture and component interactions.
 | Pullpiri Clustering | [EN](./EN/HLD/pullpiri_clustering.md) | [KR](./KR/HLD/pullpiri_clustering.md) |
 | Settings Service | [EN](./EN/HLD/settingsservice.md) | [KR](./KR/HLD/settingsservice.md) |
 | Dynamic Resource Scaling | [EN](./EN/HLD/dynamic_resource_scaling.md) | [KR](./KR/HLD/dynamic_resource_scaling.md) |
+| Pullpiri–Timpani Integration | — | [KR](./KR/HLD/timpani_integration.md) |
 
 ### Low-Level Design (LLD)
 
